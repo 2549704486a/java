@@ -24,6 +24,17 @@ public class RedisDao {
     @Resource
     RedissonClient redissonClient;
 
+    public Set<String> getHashKeys(String key) {
+        HashOperations<String, String, Integer> ops = redisTemplate.opsForHash();
+        return ops.keys(key);
+    }
+
+    public Long getHashSize(String key) {
+        HashOperations<String, String, Integer> ops = redisTemplate.opsForHash();
+        return ops.size(key);
+    }
+
+    //执行lua脚本
     public Boolean executeScript(String script, List<String> keys, Object... args) {
         //构造RedisScript对象
         RedisScript<Integer> redisScript = new DefaultRedisScript<>(script, Integer.class);

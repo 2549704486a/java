@@ -173,33 +173,23 @@ public class RDSBinlog {
         for(CanalEntry.RowData rowData : rowDatasList){
             List<CanalEntry.Column> afterColumnsList = rowData.getAfterColumnsList();
             String awardInventorySplitKey = "";
-            AwardInventorySplit awardInventorySplit = new AwardInventorySplit();
-            List<AwardInventorySplit> awardInventorySplitList = new ArrayList<>();
+            String awardConfigInventoryKey = "";
+            String hashKey = "";
+            Integer inventory = 0;
             for(CanalEntry.Column column : afterColumnsList){
                 if(column.getName().equals("awardId")){
                     awardInventorySplitKey = "award_inventory_split:" + column.getValue();
-                    awardInventorySplit.setAwardId(Long.parseLong(column.getValue()));
+                    awardConfigInventoryKey = "award_config:inventory:" + column.getValue();
                 }
                 if(column.getName().equals("inventory")){
-                    awardInventorySplit.setInventory(Integer.parseInt(column.getValue()));
+                    inventory = Integer.valueOf(column.getValue());
                 }
-                if(column.getName().equals("id")){
-                    awardInventorySplit.setId(Long.parseLong(column.getValue()));
-                }
-            }
-            List<Object> list = redisDao.lRange(awardInventorySplitKey, 0, -1);
-            for (Object item : list){
-                if(((AwardInventorySplit)item).getId() == (awardInventorySplit.getId())
-                    && awardInventorySplit.getInventory() != 0){
-                    awardInventorySplitList.add(awardInventorySplit);
-                }else{
-                    awardInventorySplitList.add((AwardInventorySplit) item);
+                if(column.getName().equals("splitId")){
+                    hashKey = "splitId:" +  column.getValue();
                 }
             }
-            redisDao.remove(awardInventorySplitKey);
-            for(AwardInventorySplit item : awardInventorySplitList){
-                redisDao.lPush(awardInventorySplitKey, item);
-            }
+            redisDao.hmSet(awardInventorySplitKey, hashKey, inventory);
+            redisDao.decrement(awardConfigInventoryKey);
         }
     }
 

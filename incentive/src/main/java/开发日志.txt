@@ -1,0 +1,74 @@
+1.若不允许超卖，根据商品ID查询数据库表commodity_inventory_spilt中的库存拆分记录，生成集合（List）:
+因为消费环境下只有awardId和userId，只能通过awardId获取库存拆分记录，所以在redis中，这些记录应该以list、hash或set的方式存储。
+特性	        List	        Set	                Hash
+顺序性	    有序	            无序	                无序
+元素唯一性	允许重复	        不允许重复	        键值对内部允许重复
+实现结构	    双向链表	        哈希表	            哈希表
+适用场景	    消息队列、任务处理	去重、集合运算	        结构化数据存储
+主要优点	    操作灵活，维护顺序	唯一性、高效集合运算	节省内存，操作单个字段高效
+主要缺点	    查找效率低	    无法保持顺序	        不支持顺序字段访问
+第一个版本使用了list，由于list实际上是双向链表，查询事件复杂度为O(n)，且订阅binlog更新list的逻辑较为复杂（详见历史版本），故弃用。
+----------------------------------------------------------------
+选择hash存储库存记录。大key为award_inventory_split:{awardId}，记录应该以awardInventorySplit实体类存放在该hash中，还是在该结构中再嵌
+套一层hash？第一种方案需要重复存放awardId，但获取之后写数据库可以直接用，第二种方案不存放多余的字段，但写数据库需要new一个awardInventorySplit
+实体类。
+选择第二种方案，redis存储空间有限，避免重复存储awardId。
+----------------------------------------------------------------
+不不不，第三种方案：直接将hash结构定为KEY:award_inventory_split:{awardId}
+                                HashKey:splitId:{splitId}
+                                hashValue:{inventory}
+----------------------------------------------------------------
+集合的key: "award_inventory_split:{awardId}"
+集合内部元素：
+{
+    "splitId:1" : 100,
+    "splitId:2" : 100,
+    ...
+}  搞错了，set不能放键值对
+================================================================
+2.项目启动RocketMQ重复消费一些消息，但控制台显示所有consumer的消费偏移量都和broker一致？
+重复消费的消息在重复消费的队列中查看，只要消息消费过一次，在test_consumer中就显示消费过了
+================================================================
+3.兑换成功了19个，只扣减了10个库存
+应该是award_inventory_split表并发太高导致更新错误，试着创建一个更新日志表进行记录。
+初始化库存记录的时候没有加锁，有多个线程同时在设置初始的库存记录，前面的修改可能被覆盖了。
+================================================================
+4.10个分库存都是10，总库存是-10？？？
+排查半天发现项目没有终止，然后后台修改数据库的binlog被项目订阅了，本来每次订阅到award_inventory_split都给总库存-1，
+因为对该表的修改在目前看来只有扣减，因此订阅到一条binlog就减1即可
+================================================================
+5.binlog更新redis太慢，导致缓存与数据库数据不一致
+通过设置inventory非负约束，即使redis更新inventory过慢，导致更多请求通过了判断，但是只要inventory-1<0，就会回滚，即兑换失败，
+仍然能够实现数据的一致性。
+================================================================
+6.为什么设置了非负约束，兑换成功的商品数量还是比库存量多
+主要是业务逻辑在更新分库存数量时，使用了redis的inventory减去1去更新，而这个inventory不一定是最新的，所以，应该直接写sql：
+set inventory = inventory - 1
+================================================================
+7.修改了award_inventory_split表，将id改为splitId，将splitId+awardId作为主键，测试发现虽然兑换成功的商品和商品库存相等，
+但是某些订单因为三次都抢锁失败，导致status在业务结束后还是0.
+有10个订单status是0（每次都是10个），也就是没有消费成功，且根据updateTime可知没有被再次消费，为啥呢。。丢失了吗
+----------------------------------------------------------------
+分析：status=0，且updateTime=createTime，要么是加锁成功，但事务回滚；要么是这个消息根本没被消费过（也不大可能，因为每次很巧的是，
+都是10个订单status=0，且updateTime=createTime）；
+不可能的情况：加锁失败，重试，如果等待10秒后重试必然status=-1
+排查后的两个可能的主要原因：①消费失败？进入了分支，但并没有执行到分支结尾②消费超时后并没有重试
+加入了如下代码，仍然有status=0的情况，但不是固定的10个了
+//如果分库存为0，消费成功，兑换失败
+if(splitInventory <= 0){
+UserAward userAward = new UserAward();
+userAward.setUserId(userId);
+userAward.setAwardId(awardId);
+userAward.setUpdateTime(new Date());
+userAward.setStatus(-1);//status=-1表示兑换失败
+userAwardMapper.updateStatus(userAward);
+System.out.println("TransactionConsumer.consumeMessage" +"(" + userId + ")" +
+":兑换失败");
+return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+}
+加入了比较细致的控制台日志输出后，发现事务抛出异常并回滚后，并没有返回消费状态，但mq不再消费这条记录。
+加入try-catch块，在catch中return RECONSUME_LATER,完美解决。
+================================================================
+8.UserAwardServiceImpl层遗留问题：用户兑换失败也不能再次兑换
+解决：删除user_award对userId和awardId这个组合键的唯一约束，并在UserAwardServiceImpl中加入业务逻辑，
+当status=-1时，可以再次发起请求。

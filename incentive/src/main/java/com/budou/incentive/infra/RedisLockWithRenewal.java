@@ -21,39 +21,26 @@ public class RedisLockWithRenewal {
     private final RedisDao redisDao;
     private final static Long EXPIRE_TIME = Long.valueOf(10);
     private final static int RENEWAL_INTERVAL = 5;
-    private final static String FENCING_TOKEN_KEY = "fencing_token";
     //用于定期执行业务的线程池 "schedule"
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     @Autowired
     public RedisLockWithRenewal(RedisDao redisDao){
         this.redisDao = redisDao;
-        initToken();
     }
 
-    private void initToken(){
-        if(redisDao.get(FENCING_TOKEN_KEY) == null){
-            redisDao.set(FENCING_TOKEN_KEY, 0);
-        }
-        System.out.println("RedisLockWithRenewal.acquireLock:初始化成功");
-    }
 
-    private Long getFencingToken(){
-        return redisDao.increment(FENCING_TOKEN_KEY);
-    }
-
-    public Long acquireLock(String lockKey, String lockValue){
+    public Boolean acquireLock(String lockKey, String lockValue){
         if(redisDao.setnx(lockKey, lockValue, EXPIRE_TIME)){
             System.out.println("RedisLockWithRenewal.acquireLock:加锁成功");
-            Long token = getFencingToken();
-            startRenewalThread(lockKey, lockValue, token);
-            return token;
+            startRenewalThread(lockKey, lockValue);
+            return true;
         }
         System.out.println("RedisLockWithRenewal.acquireLock:加锁失败");
-        return null;
+        return false;
     }
 
-    private void startRenewalThread(String lockKey, String lockValue, Long token) {
+    private void startRenewalThread(String lockKey, String lockValue) {
         scheduler.scheduleAtFixedRate(() -> {
             //通过lua脚本保证get和expire两个操作的原子性，首先要保证KEYS[1]存在，否则get方法返回nil，导致lua脚本返回null
             //通过exist方法，保证lua脚本返回的结果一定是0或1。
@@ -84,14 +71,14 @@ public class RedisLockWithRenewal {
     }
 
     //直接判断exists(lockKey) && get(lockKey).equals(lockValue)不就行了？同时可以通过lua脚本保证原子性，就不需要token了
-    public boolean isLatestToken(Long token){
-        Long currentToken = Long.valueOf((Integer)redisDao.get(FENCING_TOKEN_KEY));
-        System.out.println("RedisLockWithRenewal.acquireLock:token为" + token +
-                "currentToken为：" + currentToken);
-        if(token == currentToken){
-            return true;
-        } else{
-            return false;
-        }
-    }
+//    public boolean isLatestToken(Long token){
+//        Boolean result = Long.valueOf((Integer)redisDao.get(FENCING_TOKEN_KEY));
+//        System.out.println("RedisLockWithRenewal.acquireLock:token为" + token +
+//                "currentToken为：" + currentToken);
+//        if(token == currentToken){
+//            return true;
+//        } else{
+//            return false;
+//        }
+//    }
 }

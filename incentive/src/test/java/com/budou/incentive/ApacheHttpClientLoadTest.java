@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit;
 
 public class ApacheHttpClientLoadTest {
     public static void main(String[] args) throws InterruptedException, IOException {
-        int totalRequests = 20; // 总请求数
-        int concurrentThreads = 2; // 并发线程数
+        int totalRequests = 110; // 总请求数
+        int concurrentThreads = 10; // 并发线程数
 
         // 创建一个固定大小的线程池
         ExecutorService executorService = Executors.newFixedThreadPool(concurrentThreads);
@@ -24,6 +24,10 @@ public class ApacheHttpClientLoadTest {
         try {
             // 循环遍历，总共发起 totalRequests 个请求
             for (int i = 1; i <= totalRequests; i++) {
+//                if(i % 200 == 0){
+//                    System.out.println("Finished " + i + " requests.");
+//                    Thread.sleep(1000); // 1 秒后再发起下一批请求
+//                }
                 int finalI = i;
                 executorService.submit(() -> { // 将每个请求提交到线程池中执行
                     try {

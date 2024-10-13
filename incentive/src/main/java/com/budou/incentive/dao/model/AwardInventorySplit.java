@@ -10,7 +10,7 @@ import lombok.Data;
  **/
 @Data
 public class AwardInventorySplit {
-    private Long id;
+    private Long splitId;
 
     private Long awardId;
 

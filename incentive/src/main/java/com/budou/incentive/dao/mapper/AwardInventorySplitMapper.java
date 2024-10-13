@@ -13,6 +13,7 @@ public interface AwardInventorySplitMapper {
     @Select("select * from award_inventory_split where awardId = #{awardId} and inventory > 0")
     List<AwardInventorySplit> select(Long awardId);
 
-    @Update("update award_inventory_split set inventory = #{inventory} where id = #{id}")
+    @Update("update award_inventory_split set inventory = (inventory - 1) " +
+            "where splitId = #{splitId} and awardId = #{awardId}")
     int updateInventory(AwardInventorySplit awardInventorySplit);
 }
