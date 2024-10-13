@@ -17,13 +17,11 @@ import org.springframework.context.annotation.Bean;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Map;
 
 //@Configuration: 注解标明这是一个Spring配置类，用于定义Bean和配置应用程序的相关设置。
 @Configuration
-
 public class TransactionProducerConfig {
 
     @Autowired

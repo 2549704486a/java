@@ -3,7 +3,6 @@ package com.budou.incentive.dao.redis;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
@@ -21,14 +20,18 @@ public class RedisDao {
     @Resource
     RedisTemplate redisTemplate;
 
-    @Resource
-    RedissonClient redissonClient;
+    //根据模板获取key
+    public Set<String> keys(String pattern) {
+        return redisTemplate.keys(pattern);
+    }
 
+    //获取hash结构中的子字段的hashKey
     public Set<String> getHashKeys(String key) {
         HashOperations<String, String, Integer> ops = redisTemplate.opsForHash();
         return ops.keys(key);
     }
 
+    //获取hash结构的size
     public Long getHashSize(String key) {
         HashOperations<String, String, Integer> ops = redisTemplate.opsForHash();
         return ops.size(key);
@@ -44,17 +47,10 @@ public class RedisDao {
         return result == 1 ? true : false;
     }
 
+    //设置一个键的值
     public boolean set(final String key, Object value) {
         boolean result = false;
         try {
-            // ValueOperations 是 Spring Data Redis 中的一个接口，提供了一系列操作字符串类型值的方法。
-            //泛型参数 <String, Object> 表示：键（key）的类型为 String，值（value）的类型为 Object。
-            //redisTemplate 是 RedisTemplate<String, Object> 类型的实例，通过 Spring 注入（在前面的代码中使用 @Resource 注解）。
-            //RedisTemplate 提供了多种与 Redis 进行交互的方法。
-            //opsForValue() 是 RedisTemplate 类中的一个方法，用于获取 ValueOperations<String, Object> 实例。
-            //ValueOperations 提供了一系列操作 Redis 字符串类型值的方法，如 set、get、getAndSet 等。
-//            String json = objectMapper.writeValueAsString(value);
-//            redisTemplate.opsForValue().set(key, json);
             redisTemplate.opsForValue().set(key, value);
             result = true;
         } catch (Exception e) {
@@ -63,24 +59,19 @@ public class RedisDao {
         return result;
     }
 
-    public Long increment(String key){
-        return redisTemplate.opsForValue().increment(key);
-    }
-
-    public void hdcre(String key1, String key2, Integer value){
-        redisTemplate.opsForHash().increment(key1, key2 ,value);
-    }
-
+    //原子减操作
     public void decrement(String key){
         redisTemplate.opsForValue().decrement(key);
     }
 
+    //set if not exists
     public boolean setnx(String key, Object value, Long timeout){
         Duration durationTimeout = Duration.ofSeconds(timeout);
         boolean success = redisTemplate.opsForValue().setIfAbsent(key, value, durationTimeout);
         return success;
     }
 
+    //设置过期时间
     public void expire(String key, Long timeout){
         redisTemplate.expire(key, timeout, TimeUnit.SECONDS);
     }
@@ -155,6 +146,11 @@ public class RedisDao {
     public Object hmGet(String key, Object hashKey) {
         HashOperations<String, Object, Object> hash = redisTemplate.opsForHash();
         return hash.get(key, hashKey);
+    }
+
+    public void hmDel(String key, Object hashKey) {
+        HashOperations<String, Object, Object> hash = redisTemplate.opsForHash();
+        hash.delete(key, hashKey);
     }
 
     public void lPush(String k, Object v) {

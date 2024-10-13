@@ -8,20 +8,20 @@ import org.springframework.context.annotation.Bean;
 
 //@Configuration: 注解标明这是一个Spring配置类，用于定义Bean和配置应用程序的相关设置。
 @Configuration
-public class TransactionConsumerConfig {
+public class DeadLetterConsumerConfig {
     @Value("${rocketmq.name-server}")
     private String nameServer;
-    @Value("${rocketmq.consumer.group}")
+
+    @Value("${rocketmq.dead-letter-consumer.group}")
     private String consumerGroup;
-    @Value("${rocketmq.topic}")
+
+    @Value("${rocketmq.dead-letter-consumer.topic}")
     private String topic;
-    @Value("${rocketmq.consumer.max-retry-times}")
-    private int maxRetryTimes;
 
     @Resource
-    private TransactionConsumer transactionConsumer;
+    private DeadLetterConsumer deadLetterConsumer;
     //注解标明这是一个Spring Bean，方法返回一个要注册到Spring容器中的Bean。initMethod和destroyMethod分别指定Bean的初始化和销毁方法。
-    @Bean(initMethod = "start", destroyMethod = "shutdown")
+    @Bean(name = "myConsumer", initMethod = "start", destroyMethod = "shutdown")
     public DefaultMQPushConsumer createConsumer() throws Exception {
         //创建一个DefaultMQPushConsumer实例，并设置消费者组名。
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(consumerGroup);
@@ -30,9 +30,7 @@ public class TransactionConsumerConfig {
         //订阅指定的主题和标签（使用*表示订阅所有标签）。
         consumer.subscribe(topic,"*");
         //注册消息监听器，处理接收到的消息。
-        consumer.registerMessageListener(transactionConsumer);
-        //设置重试次数
-        consumer.setMaxReconsumeTimes(maxRetryTimes);
+        consumer.registerMessageListener(deadLetterConsumer);
         return consumer;
     }
 }

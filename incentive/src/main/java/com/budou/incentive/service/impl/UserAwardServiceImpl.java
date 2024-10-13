@@ -75,12 +75,24 @@ public class UserAwardServiceImpl implements UserAwardService {
             status = userAwardMapper.selectStatus(userId, awardId);
             if(status != null){
                 redisDao.set(userAwardStatusKey, status);
-                System.out.println("UserAwardServiceImpl.exchange: 用户已兑换过奖品,请查询处理结果");
-                return Result.build(null, ResultCodeEnum.AWARD_REDEEMED);
+                if(status == 0 || status == 1){
+                    System.out.println("UserAwardServiceImpl.exchange: 用户已兑换过奖品,请查询处理结果");
+                    return Result.build(null, ResultCodeEnum.AWARD_REDEEMED);
+                }else{
+                    redisDao.remove(userAwardStatusKey);
+                    Integer rows = userAwardMapper.delete(userId, awardId);
+                    System.out.println(rows);
+                }
             }
         }else{
-            System.out.println("UserAwardServiceImpl.exchange: 用户已兑换过奖品,请查询处理结果");
-            return Result.build(null, ResultCodeEnum.AWARD_REDEEMED);
+            if(status == 0 || status == 1){
+                System.out.println("UserAwardServiceImpl.exchange: 用户已兑换过奖品,请查询处理结果");
+                return Result.build(null, ResultCodeEnum.AWARD_REDEEMED);
+            }else {
+                redisDao.remove(userAwardStatusKey);
+                Integer rows = userAwardMapper.delete(userId, awardId);
+                System.out.println(rows);
+            }
         }
 
         System.out.println("UserAwardServiceImpl.exchange: 正在检查积分是否足够");

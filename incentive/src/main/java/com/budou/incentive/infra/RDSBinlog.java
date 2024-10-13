@@ -149,6 +149,9 @@ public class RDSBinlog {
     }
 
     private void handleDelete(String tableName, List<CanalEntry.RowData> rowDatasList) {
+//        if(tableName.equals("user_award")){
+//            handleDeleteUserAward(rowDatasList);
+//        }
     }
 
     private void handleInsert(String tableName, List<CanalEntry.RowData> rowDatasList) {
@@ -188,8 +191,12 @@ public class RDSBinlog {
                     hashKey = "splitId:" +  column.getValue();
                 }
             }
-            redisDao.hmSet(awardInventorySplitKey, hashKey, inventory);
-            redisDao.decrement(awardConfigInventoryKey);
+            if(inventory == 0){
+                redisDao.hmDel(awardInventorySplitKey, hashKey);
+            }else{
+                redisDao.hmSet(awardInventorySplitKey, hashKey, inventory);
+                redisDao.decrement(awardConfigInventoryKey);
+            }
         }
     }
 
@@ -269,6 +276,25 @@ public class RDSBinlog {
             }
         }
     }
+
+//    private void handleDeleteUserAward(List<CanalEntry.RowData> rowDatasList) {
+//        for(CanalEntry.RowData rowData : rowDatasList){
+//            List<CanalEntry.Column> beforeColumnsList = rowData.getBeforeColumnsList();
+//            String userId = "";
+//            String awardId = "";
+//            for(CanalEntry.Column column : beforeColumnsList){
+//                if(column.getName().equals("userId")){
+//                    userId = column.getValue();
+//                }
+//                if(column.getName().equals("awardId")){
+//                    awardId = column.getValue();
+//                }
+//            }
+//            String userAwardStatusKey = "user_award:status:" + userId + ":" + awardId;
+//            System.out.println("RDSBinlog.handleMessage:删除" + userAwardStatusKey);
+//            redisDao.remove(userAwardStatusKey);
+//        }
+//    }
 }
 
 

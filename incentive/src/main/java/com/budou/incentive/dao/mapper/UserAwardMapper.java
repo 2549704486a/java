@@ -19,4 +19,7 @@ public interface UserAwardMapper {
 
     @Select("select status from user_award where userId=#{userId} and awardId = #{awardId}")
     Integer selectStatus(Long userId, Long awardId);
+
+    @Delete("delete from user_award where userId = #{userId} and awardId = #{awardId}")
+    Integer delete(Long userId, Long awardId);
 }

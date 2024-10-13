@@ -13,8 +13,9 @@ public interface AwardConfigMapper {
     @Select("select * from award_config where awardId = #{awardId}")
     AwardConfig selectAwardInfo(Long awardId);
 
-    @Update("update award_config set inventory = #{inventory} where awardId = #{awardId}")
-    int update(AwardConfig awardConfig);
+    @Update("update award_config set inventory = #{inventory}, updateTime = #{updateTime}" +
+            "where awardId = #{awardId}")
+    int update(Long awardId, Integer inventory, Date updateTime);
 
     @Insert("insert into award_config values(#{awardId}, #{coverUrl},#{name},#{awardType},#{inventory}," +
             "#{price},#{startTime},#{endTime},#{createTime},#{updateTime},#{initInventory})")
