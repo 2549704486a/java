@@ -2,6 +2,7 @@ package com.budou.incentive.service.impl;
 
 import com.budou.incentive.dao.mapper.*;
 import com.budou.incentive.dao.model.AwardInventorySplit;
+import com.budou.incentive.dao.model.FinishTaskRecord;
 import com.budou.incentive.dao.model.UserAward;
 import com.budou.incentive.dao.model.UserCurrency;
 import com.budou.incentive.dao.redis.RedisDao;

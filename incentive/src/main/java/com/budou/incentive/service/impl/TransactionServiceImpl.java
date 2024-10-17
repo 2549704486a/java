@@ -1,9 +1,11 @@
 package com.budou.incentive.service.impl;
 
+import com.budou.incentive.dao.model.FinishTaskRecord;
 import com.budou.incentive.service.TransactionService;
 import com.budou.incentive.infra.TransactionProducer;
 import com.budou.incentive.utils.Result;
 import com.budou.incentive.utils.ResultCodeEnum;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

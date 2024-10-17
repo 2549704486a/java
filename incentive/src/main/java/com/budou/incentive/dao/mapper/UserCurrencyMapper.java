@@ -15,4 +15,7 @@ public interface UserCurrencyMapper {
 
     @Select("select currency from user_currency where userId = #{userId}")
     Integer selectCurrency(Long userId);
+
+    @Update("update user_currency set currency = currency + #{currency} where userId = #{userId}")
+    void addCurrency(Long userId, Integer currency);
 }
