@@ -43,7 +43,7 @@ public class TransactionProducerConfig {
             public LocalTransactionState executeLocalTransaction(Message message, Object o) {
                 //执行本地事务
                 ObjectMapper objectMapper = new ObjectMapper();
-                Map data;
+                Map<String, Object> data;
                 try {
                     data = objectMapper.readValue(new String(message.getBody(), StandardCharsets.UTF_8), Map.class);
                 } catch (Exception e) {
@@ -53,35 +53,30 @@ public class TransactionProducerConfig {
                 Long awardId = Long.valueOf(String.valueOf(data.get("awardId")));
                 Long id = Long.valueOf(String.valueOf(data.get("id")));
 
-                System.out.println(id);
-
-                // 加分布式锁，保证一人一单
-                boolean lock = redisDao.setnx(
-                        "createOrder-" + "awardId:" + awardId + "-userId:" + userId,
-                        Thread.currentThread().getId(),
-                        300L);
-                if(!lock){
+                String lockKey = "createOrder:award:" + awardId + ":user:" + userId;
+                boolean lock = redisDao.setnx(lockKey, Thread.currentThread().getId(), 300L);
+                if (!lock) {
                     return LocalTransactionState.ROLLBACK_MESSAGE;
                 }
 
-                // 写入订单
-                Integer count = userAwardMapper.selectUnhandleOrder(userId, awardId, 0);
-                if(count > 0) {
-                    System.out.println("回滚啦");
-                    return LocalTransactionState.ROLLBACK_MESSAGE;
-                }
-                System.out.println("到这里了");
-                UserAward userAward = new UserAward(id, userId, awardId, 0, new Date(), new Date());
-                int rows = userAwardMapper.insert(userAward);
-                redisDao.remove("createOrder-" + "awardId:" + awardId + "-userId:" + userId);
+                try {
+                    // 幂等检查：是否已存在未处理订单
+                    Integer count = userAwardMapper.selectUnhandleOrder(userId, awardId, 0);
+                    if (count != null && count > 0) {
+                        return LocalTransactionState.ROLLBACK_MESSAGE;
+                    }
 
-                //返回事务提交状态。
-                if (rows > 0) {
-                    System.out.println("user:" + userId + "写入成功");
-                    return LocalTransactionState.COMMIT_MESSAGE;
-                } else {
-                    System.out.println("user:" + userId + "写入失败");
-                    return LocalTransactionState.ROLLBACK_MESSAGE;
+                    UserAward userAward = new UserAward(id, userId, awardId, 0, new Date(), new Date());
+                    int rows = userAwardMapper.insert(userAward);
+
+                    // 返回事务提交状态。
+                    if (rows > 0) {
+                        return LocalTransactionState.COMMIT_MESSAGE;
+                    } else {
+                        return LocalTransactionState.ROLLBACK_MESSAGE;
+                    }
+                } finally {
+                    redisDao.remove(lockKey);
                 }
             }
 
@@ -89,12 +84,9 @@ public class TransactionProducerConfig {
             //MessageExt 对象，表示RocketMQ中的扩展消息。它不仅包含消息的基本信息（如消息体、主题、标签、键），
             //还包括一些扩展的元数据（如消息ID、存储信息、队列信息等）
             public LocalTransactionState checkLocalTransaction(MessageExt messageExt) {
-                //打印执行事务回查日志。
-                System.out.println("checkLocalTransaction...");
-
-                //检查事务执行
+                // 检查本地事务执行结果（依赖数据库而非缓存，更加可靠）
                 ObjectMapper objectMapper = new ObjectMapper();
-                Map data;
+                Map<String, Object> data;
                 try {
                     data = objectMapper.readValue(new String(messageExt.getBody(), StandardCharsets.UTF_8), Map.class);
                 } catch (JsonProcessingException e) {
@@ -103,17 +95,12 @@ public class TransactionProducerConfig {
                 Long userId = Long.valueOf(String.valueOf(data.get("userId")));
                 Long awardId = Long.valueOf(String.valueOf(data.get("awardId")));
 
-                //这里只查了redis，其实还要查一下数据库，懒得写了
-                String userAwardStatusKey = "user_award:status:" + userId +":" + awardId;
-                Object status = redisDao.get(userAwardStatusKey);
-                if(status == null){
-                    System.out.println("回滚");
-                    return LocalTransactionState.ROLLBACK_MESSAGE;
-                } else {
-                    //返回事务提交状态。
-                    System.out.println("提交");
+                // 是否已有未处理订单：有则认为本地事务成功，提交消息；否则回滚
+                Integer count = userAwardMapper.selectUnhandleOrder(userId, awardId, 0);
+                if (count != null && count > 0) {
                     return LocalTransactionState.COMMIT_MESSAGE;
                 }
+                return LocalTransactionState.ROLLBACK_MESSAGE;
             }
         };
     }

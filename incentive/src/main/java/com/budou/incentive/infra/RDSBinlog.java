@@ -234,10 +234,9 @@ public class RDSBinlog {
      * @param rowDatasList 行数据列表
      */
     private void handleDelete(String tableName, List<CanalEntry.RowData> rowDatasList) {
-        // 注释掉的代码，表示删除操作的处理逻辑
-//        if(tableName.equals("user_award")){
-//            handleDeleteUserAward(rowDatasList);
-//        }
+        if (tableName.equals("user_award")) {
+            handleDeleteUserAward(rowDatasList);
+        }
     }
 
     /**
@@ -250,7 +249,7 @@ public class RDSBinlog {
      * @param rowDatasList 行数据列表
      */
     private void handleInsert(String tableName, List<CanalEntry.RowData> rowDatasList) {
-        // 当前为空方法，未实现任何处理逻辑
+        // 当前暂未对插入做缓存处理，必要时可在此补充
     }
 
     /**
@@ -263,12 +262,12 @@ public class RDSBinlog {
      */
     private void handleUpdate(String tableName, List<CanalEntry.RowData> rowDatasList) {
         // 根据表名分派到不同的处理方法
-//        if(tableName.equals("user_award")){
-//            handleUpdateUserAward(rowDatasList);  // 处理用户奖品表更新
-//        }
-//        if(tableName.equals("user_currency")){
-//            handleUpdateUserCurrency(rowDatasList);  // 处理用户货币表更新
-//        }
+        if (tableName.equals("user_award")) {
+            handleUpdateUserAward(rowDatasList);  // 处理用户奖品表更新
+        }
+        if (tableName.equals("user_currency")) {
+            handleUpdateUserCurrency(rowDatasList);  // 处理用户货币表更新
+        }
         if (tableName.equals("award_config")){
             handleUpdateAwardConfig(rowDatasList);  // 处理奖品配置表更新
         }
@@ -290,7 +289,6 @@ public class RDSBinlog {
             // 获取更新后的列数据
             List<CanalEntry.Column> afterColumnsList = rowData.getAfterColumnsList();
             String awardInventorySplitKey = "";  // Redis缓存键：奖品库存分配
-            String awardConfigInventoryKey = "";  // Redis缓存键：奖品配置库存
             String hashKey = "";  // Redis哈希字段
             Integer inventory = 0;  // 库存数量
 
@@ -299,7 +297,6 @@ public class RDSBinlog {
                 if(column.getName().equals("awardId")){
                     // 构建Redis缓存键
                     awardInventorySplitKey = "award_inventory_split:" + column.getValue();
-                    awardConfigInventoryKey = "award_config:inventory:" + column.getValue();
                 }
                 if(column.getName().equals("inventory")){
                     inventory = Integer.valueOf(column.getValue());  // 获取库存数量
@@ -310,13 +307,12 @@ public class RDSBinlog {
             }
 
             // 根据库存数量更新Redis缓存
-            if(inventory == 0){
+            if (inventory == 0) {
                 // 库存为0时删除对应的哈希字段
                 redisDao.hmDel(awardInventorySplitKey, hashKey);
-            }else{
-                // 库存不为0时设置哈希字段，并递减总库存
+            } else {
+                // 库存不为0时设置哈希字段
                 redisDao.hmSet(awardInventorySplitKey, hashKey, inventory);
-                redisDao.decrement(awardConfigInventoryKey);
             }
         }
     }
@@ -360,34 +356,34 @@ public class RDSBinlog {
      *
      * @param rowDatasList 行数据列表
      */
-//    private void handleUpdateUserAward(List<CanalEntry.RowData> rowDatasList) {
-//        for(CanalEntry.RowData rowData : rowDatasList){
-//            // 获取更新后的列数据
-//            List<CanalEntry.Column> afterColumnsList = rowData.getAfterColumnsList();
-//            String userId = "";
-//            String awardId = "";
-//
-//            // 遍历所有列获取用户ID和奖品ID
-//            for(CanalEntry.Column column : afterColumnsList){
-//                if(column.getName().equals("userId")){
-//                    userId = column.getValue();
-//                }
-//                if(column.getName().equals("awardId")){
-//                    awardId = column.getValue();
-//                }
-//            }
-//
-//            // 构建缓存键
-//            String userAwardStatusKey = "user_award:status:" + userId + ":" + awardId;
-//
-//            // 遍历获取状态并更新Redis
-//            for(CanalEntry.Column column : afterColumnsList){
-//                if (column.getName().equals("status")) {
-//                    redisDao.set(userAwardStatusKey, Integer.valueOf(column.getValue()));
-//                }
-//            }
-//        }
-//    }
+    private void handleUpdateUserAward(List<CanalEntry.RowData> rowDatasList) {
+        for (CanalEntry.RowData rowData : rowDatasList) {
+            // 获取更新后的列数据
+            List<CanalEntry.Column> afterColumnsList = rowData.getAfterColumnsList();
+            String userId = "";
+            String awardId = "";
+            Integer status = null;
+
+            for (CanalEntry.Column column : afterColumnsList) {
+                if (column.getName().equals("userId")) {
+                    userId = column.getValue();
+                }
+                if (column.getName().equals("awardId")) {
+                    awardId = column.getValue();
+                }
+                if (column.getName().equals("status")) {
+                    status = Integer.valueOf(column.getValue());
+                }
+            }
+
+            if (StringUtils.isBlank(userId) || StringUtils.isBlank(awardId) || status == null) {
+                continue;
+            }
+
+            String userAwardStatusKey = "user_award:status:" + userId + ":" + awardId;
+            redisDao.set(userAwardStatusKey, status);
+        }
+    }
 
     /**
      * 处理奖品配置表的更新
@@ -451,22 +447,24 @@ public class RDSBinlog {
      *
      * @param rowDatasList 行数据列表
      */
-//    private void handleDeleteUserAward(List<CanalEntry.RowData> rowDatasList) {
-//        for(CanalEntry.RowData rowData : rowDatasList){
-//            List<CanalEntry.Column> beforeColumnsList = rowData.getBeforeColumnsList();
-//            String userId = "";
-//            String awardId = "";
-//            for(CanalEntry.Column column : beforeColumnsList){
-//                if(column.getName().equals("userId")){
-//                    userId = column.getValue();
-//                }
-//                if(column.getName().equals("awardId")){
-//                    awardId = column.getValue();
-//                }
-//            }
-//            String userAwardStatusKey = "user_award:status:" + userId + ":" + awardId;
-//            System.out.println("RDSBinlog.handleMessage:删除" + userAwardStatusKey);
-//            redisDao.remove(userAwardStatusKey);
-//        }
-//    }
+    private void handleDeleteUserAward(List<CanalEntry.RowData> rowDatasList) {
+        for (CanalEntry.RowData rowData : rowDatasList) {
+            List<CanalEntry.Column> beforeColumnsList = rowData.getBeforeColumnsList();
+            String userId = "";
+            String awardId = "";
+            for (CanalEntry.Column column : beforeColumnsList) {
+                if (column.getName().equals("userId")) {
+                    userId = column.getValue();
+                }
+                if (column.getName().equals("awardId")) {
+                    awardId = column.getValue();
+                }
+            }
+            if (StringUtils.isBlank(userId) || StringUtils.isBlank(awardId)) {
+                continue;
+            }
+            String userAwardStatusKey = "user_award:status:" + userId + ":" + awardId;
+            redisDao.remove(userAwardStatusKey);
+        }
+    }
 }
