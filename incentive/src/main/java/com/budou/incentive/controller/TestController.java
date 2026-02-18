@@ -3,6 +3,7 @@ package com.budou.incentive.controller;
 import com.budou.incentive.dao.mapper.AwardConfigMapper;
 import com.budou.incentive.dao.mapper.UserAwardMapper;
 import com.budou.incentive.dao.mapper.UserCurrencyMapper;
+import com.budou.incentive.dao.model.UserAward;
 import com.budou.incentive.dao.redis.RedisDao;
 import com.budou.incentive.service.AwardService;
 import com.budou.incentive.service.TransactionService;
@@ -12,6 +13,10 @@ import com.budou.incentive.utils.Result;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import javax.xml.crypto.Data;
+
+import java.util.Date;
 
 import static java.time.LocalTime.now;
 
@@ -49,6 +54,13 @@ public class TestController {
     @Autowired
     private TransactionProducer transactionProducer;
 
+    @RequestMapping("/insert")
+    public Result testInsert(Long userId, Long awardId){
+        System.out.println("开始");
+        userAwardMapper.insert(new UserAward(null, userId, awardId, 0, new Date(), new Date()));
+        System.out.println("结束");
+        return Result.ok(null);
+    }
 
     @RequestMapping(value="/redis/set",method= RequestMethod.GET)
     public boolean setRedisKV(@RequestParam(name = "key") String  key,
@@ -70,5 +82,20 @@ public class TestController {
     public Result sendTransaction(@RequestParam(name = "message") String  message,
                                   @RequestParam(name = "id") String  id){
         return transactionService.sendTransaction(message, id);
+    }
+
+    @RequestMapping("/hello")
+    public String hello(){
+        return "Hello";
+    }
+
+
+
+
+    @RequestMapping("/test1")
+    public String insertOrder(){
+        UserAward userAward = new UserAward(666L, 3L, 1L, 0, new Date(), new Date());
+        Integer i = userAwardMapper.insert(userAward);
+        return String.valueOf(i);
     }
 }

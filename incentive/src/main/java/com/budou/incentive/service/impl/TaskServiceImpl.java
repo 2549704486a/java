@@ -58,7 +58,7 @@ public class TaskServiceImpl implements TaskService {
             System.out.println("TaskServiceImpl.finish:" + e.getMessage());
             return Result.fail("事务执行失败");
         }
-        if ((rows) == 2) {
+        if (rows == 2) {
             System.out.println("TaskServiceImpl.finish:执行成功");
             return Result.ok("任务完成");
         } else {
@@ -87,7 +87,10 @@ public class TaskServiceImpl implements TaskService {
             return Result.fail("积分已领取");
         }
 
-        //如果未领取，执行领取事务
+        /*如果未领取，执行领取事务
+        *为了防止重复调用，除了判断updateTaskStatus返回的row的值，也可以再执行事务之前加锁，
+        *保证当同时有多个重复请求时，只处理一个请求
+         */
         if(status == 0){
             TaskService bean = SpringBeanUtil.getBean(TaskService.class);
             try{

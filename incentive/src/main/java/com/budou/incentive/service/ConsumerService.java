@@ -6,8 +6,7 @@ import com.budou.incentive.dao.model.UserAward;
 import com.budou.incentive.dao.model.UserCurrency;
 
 public interface ConsumerService {
-    void update1(AwardInventorySplit awardInventorySplit, UserCurrency userCurrency,
-                 UserAward userAward, String lockKey, String lockValue);
+    void update1(Long id, Long userId, Long awardId, Integer price, Long splitId);
 
-    void update2(UserCurrency userCurrency, UserAward userAward);
+    void update2(Long id, Long userId, Long awardId, Integer currency);
 }

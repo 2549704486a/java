@@ -28,17 +28,14 @@ public class TransactionProducer {
     //String message: 消息内容。
     public Result sendTransactionMessage(String id, String message) {
         try{
-            System.out.println("TransactionProducer.sendTransactionMessage:正在构造消息...");
             Message<String> strMessage = MessageBuilder.withPayload(message).setHeader(RocketMQHeaders.KEYS, id).build();
             TransactionSendResult result = rocketMQTemplate.sendMessageInTransaction(topic, strMessage, id);
             if (result.getSendStatus() == SendStatus.SEND_OK) {
-                System.out.println("TransactionProducer.sendTransactionMessage:发送事务消息成功!消息ID为" + result.getMsgId());
                 return Result.ok("发送事务消息成功!消息ID为:" + result.getMsgId());
             } else {
                 return Result.build(null, ResultCodeEnum.TRANSACTION_SEND_FAILED);
             }
         } catch (Exception e){
-            System.out.println("TransactionProducer.sendTransactionMessage:发送事务消息时发生异常：" + e);
             return Result.build(null, ResultCodeEnum.TRANSACTION_SEND_FAILED);
         }
     }

@@ -1,5 +1,5 @@
 package com.budou.incentive.dao.mapper;
-
+import java.util.List;
 import com.budou.incentive.dao.model.UserCurrency;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -13,9 +13,13 @@ public interface UserCurrencyMapper {
     @Update("update user_currency set currency = #{currency} where userId = #{userId}")
     int updateCurrency(UserCurrency userCurrency);
 
+    @Update("update user_currency set currency = currency - #{price} where userId = #{userId} and currency >= #{price} ")
+    int deductCurrency(Long userId, Integer price);
+
     @Select("select currency from user_currency where userId = #{userId}")
     Integer selectCurrency(Long userId);
 
     @Update("update user_currency set currency = currency + #{currency} where userId = #{userId}")
     void addCurrency(Long userId, Integer currency);
+
 }

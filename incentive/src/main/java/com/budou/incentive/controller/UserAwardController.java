@@ -1,9 +1,11 @@
 package com.budou.incentive.controller;
 
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.budou.incentive.dao.mapper.UserAwardMapper;
 import com.budou.incentive.dao.model.UserAward;
 import com.budou.incentive.service.UserAwardService;
 import com.budou.incentive.utils.Result;
+import com.budou.incentive.utils.SentinelUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,18 +37,16 @@ public class UserAwardController {
         return userAward;
     }
 
-    //本地事务的执行是在监听器中实现的，没有办法返回Result。如何向用户返回兑换是否成功？
-    @RequestMapping("exchange")
-    public Result exchange(@RequestParam(name = "userId") Long userId,
-                           @RequestParam(name = "awardId") Long awardId) {
-        System.out.println("==========================================");
-        System.out.println("UserAwardController.exchange, userId = " + userId + "awardId = " + awardId);
+    @SentinelResource(value = "exchange", blockHandler = "handleException", blockHandlerClass = SentinelUtil.class)
+    @GetMapping("exchange")
+    public Result<?> exchange(@RequestParam(name = "userId") Long userId,
+                              @RequestParam(name = "awardId") Long awardId) {
         return userAwardService.exchange(userId, awardId);
     }
 
     @GetMapping("result")
-    private Result result(@RequestParam(name = "userId") Long userId,
-                          @RequestParam(name = "awardId") Long awardId){
+    private Result<?> result(@RequestParam(name = "userId") Long userId,
+                             @RequestParam(name = "awardId") Long awardId){
         return userAwardService.result(userId, awardId);
     }
 }

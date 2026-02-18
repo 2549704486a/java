@@ -35,25 +35,12 @@ public class TransactionProducerConfig {
 
     @Autowired
     private RedisDao redisDao;
-
-    //定义一个RocketMQTemplate Bean，用于发送事务消息。
-    @Bean
-    public RocketMQTemplate rocketMqTemplate() {
-        //创建一个RocketMQTemplate实例。
-        RocketMQTemplate rocketMqTemplate = new RocketMQTemplate();
-        //设置事务生产者。
-        rocketMqTemplate.setProducer(transactionalProducer());
-        return rocketMqTemplate;
-    }
     //定义一个TransactionListener Bean，用于处理事务消息的本地事务和事务回查。
     @Bean
     public TransactionListener transactionListener() {
         return new TransactionListener() {
             @Override
             public LocalTransactionState executeLocalTransaction(Message message, Object o) {
-                //打印执行本地事务日志。
-                System.out.println("TransactionListener.executeLocalTransaction:正在执行本地事务");
-
                 //执行本地事务
                 ObjectMapper objectMapper = new ObjectMapper();
                 Map data;
@@ -64,16 +51,36 @@ public class TransactionProducerConfig {
                 }
                 Long userId = Long.valueOf(String.valueOf(data.get("userId")));
                 Long awardId = Long.valueOf(String.valueOf(data.get("awardId")));
-                UserAward userAward = new UserAward(null, userId, awardId, 0, new Date(), new Date());
-                System.out.println("TransactionListener.executeLocalTransaction:正在预分配奖品");
+                Long id = Long.valueOf(String.valueOf(data.get("id")));
+
+                System.out.println(id);
+
+                // 加分布式锁，保证一人一单
+                boolean lock = redisDao.setnx(
+                        "createOrder-" + "awardId:" + awardId + "-userId:" + userId,
+                        Thread.currentThread().getId(),
+                        300L);
+                if(!lock){
+                    return LocalTransactionState.ROLLBACK_MESSAGE;
+                }
+
+                // 写入订单
+                Integer count = userAwardMapper.selectUnhandleOrder(userId, awardId, 0);
+                if(count > 0) {
+                    System.out.println("回滚啦");
+                    return LocalTransactionState.ROLLBACK_MESSAGE;
+                }
+                System.out.println("到这里了");
+                UserAward userAward = new UserAward(id, userId, awardId, 0, new Date(), new Date());
                 int rows = userAwardMapper.insert(userAward);
+                redisDao.remove("createOrder-" + "awardId:" + awardId + "-userId:" + userId);
 
                 //返回事务提交状态。
                 if (rows > 0) {
-                    System.out.println("TransactionListener.executeLocalTransaction:预分配成功");
+                    System.out.println("user:" + userId + "写入成功");
                     return LocalTransactionState.COMMIT_MESSAGE;
                 } else {
-                    System.out.println("TransactionListener.executeLocalTransaction:预分配失败");
+                    System.out.println("user:" + userId + "写入失败");
                     return LocalTransactionState.ROLLBACK_MESSAGE;
                 }
             }
@@ -96,6 +103,7 @@ public class TransactionProducerConfig {
                 Long userId = Long.valueOf(String.valueOf(data.get("userId")));
                 Long awardId = Long.valueOf(String.valueOf(data.get("awardId")));
 
+                //这里只查了redis，其实还要查一下数据库，懒得写了
                 String userAwardStatusKey = "user_award:status:" + userId +":" + awardId;
                 Object status = redisDao.get(userAwardStatusKey);
                 if(status == null){
@@ -109,7 +117,6 @@ public class TransactionProducerConfig {
             }
         };
     }
-
     //定义一个TransactionMQProducer Bean，用于发送事务消息。
     @Bean
     public TransactionMQProducer transactionalProducer() {
@@ -120,5 +127,15 @@ public class TransactionProducerConfig {
         // 设置事务监听器。
         producer.setTransactionListener(transactionListener());
         return producer;
+    }
+
+    //定义一个RocketMQTemplate Bean，用于发送事务消息。
+    @Bean
+    public RocketMQTemplate rocketMqTemplate() {
+        //创建一个RocketMQTemplate实例。
+        RocketMQTemplate rocketMqTemplate = new RocketMQTemplate();
+        //设置事务生产者。
+        rocketMqTemplate.setProducer(transactionalProducer());
+        return rocketMqTemplate;
     }
 }

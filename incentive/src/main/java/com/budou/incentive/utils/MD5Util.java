@@ -1,4 +1,4 @@
-package com.atguigu.utils;
+package com.budou.incentive.utils;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

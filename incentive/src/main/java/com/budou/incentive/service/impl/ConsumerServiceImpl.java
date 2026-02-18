@@ -11,6 +11,8 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+
 /**
  * @program: incentive
  * @description:
@@ -32,31 +34,43 @@ public class ConsumerServiceImpl implements ConsumerService {
     @Autowired
     private InventoryLog inventoryLog;
     @Transactional
-    public void update1(AwardInventorySplit awardInventorySplit, UserCurrency userCurrency,
-                        UserAward userAward, String lockKey, String lockValue) {
-        //执行数据库事务
-        awardInventorySplitMapper.updateInventory(awardInventorySplit);
-//        inventoryLog.insertLog(userAward.getUserId(), userAward.getAwardId(),
-//                awardInventorySplit.getInventory(), awardInventorySplit.getId(),
-//                userAward.getCreateTime());
-        userCurrencyMapper.updateCurrency(userCurrency);
-        userAwardMapper.updateStatus(userAward);
+    public void update1(Long id, Long userId, Long awardId, Integer price, Long splitId) {
 
-        //执行完后，再确认锁是否有效
-//        boolean isLatest = redisDao.get(lockKey).equals(lockValue);
-//
-//        //如果锁失效，直接抛出异常让事务回滚，认为重新消费一次消息的代价是可以接受的
-//        if (isLatest == false) {
-//            throw new RuntimeException("ConsumerServiceImpl.update1:分布式锁失效，主动抛出异常，回滚事务");
-//        } else {
-//            redisLockWithRenewal.releaseLock(lockKey, lockValue);
-//            System.out.println("TransactionConsumer.consumeMessage:兑换成功");
-//        }
+        //扣减分库存
+        AwardInventorySplit awardInventorySplit = new AwardInventorySplit();
+        awardInventorySplit.setSplitId(splitId);
+        awardInventorySplit.setAwardId(awardId);
+
+        //更新商品的兑换状态
+        UserAward userAward = new UserAward();
+        userAward.setId(id);
+        userAward.setUpdateTime(new Date());
+        userAward.setStatus(1);//status=1表示兑换成功
+
+        System.out.println(splitId);
+        int row1 = awardInventorySplitMapper.updateInventory(awardInventorySplit);
+        int row2 = userCurrencyMapper.deductCurrency(userId, price);
+        int row3 = userAwardMapper.updateStatus(userAward);
+        if(row1 == 0 || row2 == 0 || row3 == 0){
+            throw new RuntimeException();
+        }
+
     }
 
     @Transactional
-    public void update2(UserCurrency userCurrency, UserAward userAward){
-        userCurrencyMapper.updateCurrency(userCurrency);
-        userAwardMapper.updateStatus(userAward);
+    public void update2(Long id, Long userId, Long awardId, Integer price) {
+
+        //更新商品的兑换状态
+        UserAward userAward = new UserAward();
+        userAward.setUserId(userId);
+        userAward.setAwardId(awardId);
+        userAward.setUpdateTime(new Date());
+        userAward.setStatus(1);//status=1表示兑换成功
+
+        int row1 = userCurrencyMapper.deductCurrency(userId, price);
+        int row2 = userAwardMapper.updateStatus(userAward);
+        if(row1 == 0 || row2 == 0){
+            throw new RuntimeException();
+        }
     }
 }
