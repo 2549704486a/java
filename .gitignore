@@ -1,0 +1,5 @@
+.idea/
+.qoder/
+__MACOSX/
+*.lnk
+startup-rocketmq.bat

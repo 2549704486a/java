@@ -7,11 +7,13 @@ import com.budou.incentive.dao.model.UserAward;
 import com.budou.incentive.dao.redis.RedisDao;
 import com.budou.incentive.service.ConsumerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -31,12 +33,18 @@ public class TransactionConsumer implements MessageListenerConcurrently {
     @Autowired
     private UserCurrencyMapper userCurrencyMapper;
 
+    @Autowired
+    @Qualifier("awardPriceCache")
+    private Cache<Long, Integer> awardPriceCache;
+
+    @Autowired
+    @Qualifier("awardIsOverSellCache")
+    private Cache<Long, Integer> awardIsOverSellCache;
+
     @Override
-    //ConsumeConcurrentlyContext：1获取当前消费的队列信息2设置消息重试延迟3帮助处理并发消费时的重试策略与消息状态管理。
     public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
         for (MessageExt msg : msgs) {
             try {
-                // 解析数据
                 ObjectMapper objectMapper = new ObjectMapper();
                 Map<String, Object> data = objectMapper.readValue(
                         new String(msg.getBody(), StandardCharsets.UTF_8), Map.class);
@@ -44,42 +52,48 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                 Long awardId = Long.valueOf(String.valueOf(data.get("awardId")));
                 Long id = Long.valueOf(String.valueOf(data.get("id")));
 
-                // 从 redis、mysql 查询商品的 price、isOverSell，带有兜底与缓存回写
-                String awardConfigPriceKey = "award_config:price:" + awardId;
-                Integer price = (Integer) redisDao.get(awardConfigPriceKey);
-                if (price == null) {
-                    price = awardConfigMapper.selectPrice(awardId);
-                    if (price != null) {
-                        redisDao.set(awardConfigPriceKey, price);
-                    } else {
-                        exchangeFail(id);
-                        return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                Integer price = awardPriceCache.get(awardId, key -> {
+                    String awardConfigPriceKey = "award_config:price:" + key;
+                    Integer redisPrice = (Integer) redisDao.get(awardConfigPriceKey);
+                    if (redisPrice != null) {
+                        return redisPrice;
                     }
+                    Integer dbPrice = awardConfigMapper.selectPrice(key);
+                    if (dbPrice != null) {
+                        redisDao.set(awardConfigPriceKey, dbPrice);
+                    }
+                    return dbPrice;
+                });
+                System.out.println(price);
+                if (price == null) {
+                    exchangeFail(id);
+                    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
                 }
 
-                String awardConfigIsOverSellKey = "award_config:isOverSell:" + awardId;
-                Integer isOverSell = (Integer) redisDao.get(awardConfigIsOverSellKey);
-                if (isOverSell == null) {
-                    isOverSell = awardConfigMapper.selectIsOverSell(awardId);
-                    if (isOverSell != null) {
-                        redisDao.set(awardConfigIsOverSellKey, isOverSell);
-                    } else {
-                        // 默认视为不允许超卖，更安全
-                        isOverSell = 0;
+                Integer isOverSell = awardIsOverSellCache.get(awardId, key -> {
+                    String awardConfigIsOverSellKey = "award_config:isOverSell:" + key;
+                    Integer redisIsOverSell = (Integer) redisDao.get(awardConfigIsOverSellKey);
+                    if (redisIsOverSell != null) {
+                        return redisIsOverSell;
                     }
-                }
+                    Integer dbIsOverSell = awardConfigMapper.selectIsOverSell(key);
+                    if (dbIsOverSell != null) {
+                        redisDao.set(awardConfigIsOverSellKey, dbIsOverSell);
+                    }
+                    return dbIsOverSell != null ? dbIsOverSell : 0;
+                });
 
                 if (isOverSell == 0) {
-                    // 不允许超卖：使用分片库存
                     String awardInventorySplitKey = "award_inventory_split:" + awardId;
                     Long size = redisDao.getHashSize(awardInventorySplitKey);
+                    System.out.println(size);
                     if (size == null || size == 0) {
                         exchangeFail(id);
                         return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
                     }
 
-                    // 随机选择分片，加锁
                     Set<String> keys = redisDao.getHashKeys(awardInventorySplitKey);
+                    System.out.println(keys);
                     if (keys == null || keys.isEmpty()) {
                         exchangeFail(id);
                         return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
@@ -96,21 +110,18 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                     }
 
                     try {
-                        // 检查该分片是否有余量
                         Integer splitInventory = (Integer) redisDao.hmGet(awardInventorySplitKey, hashKey);
                         if (splitInventory == null || splitInventory <= 0) {
                             redisDao.hmDel(awardInventorySplitKey, hashKey);
                             Long leftSize = redisDao.getHashSize(awardInventorySplitKey);
+                            System.out.println(leftSize);
                             if (leftSize == null || leftSize == 0) {
-                                // 所有分片都没有库存了，直接标记失败，避免无限重试
                                 exchangeFail(id);
                                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
                             }
-                            // 还有其他分片有库存，稍后重试
                             return ConsumeConcurrentlyStatus.RECONSUME_LATER;
                         }
 
-                        // 更新数据库
                         try {
                             consumerService.update1(
                                     id,
@@ -120,6 +131,7 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                                     Long.valueOf(hashKey.substring(hashKey.indexOf(":") + 1))
                             );
                         } catch (Exception e) {
+                            System.out.println("update1 exception: " + e.getMessage());
                             exchangeFail(id);
                             return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
                         }
@@ -127,11 +139,9 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                         redisDao.remove(lockKey);
                     }
                 } else {
-                    // 允许超卖：仅做积分扣减 + 状态更新，库存由全局库存键控制
                     try {
                         consumerService.update2(id, userId, awardId, price);
 
-                        // 扣减库存，update2 成功了，就扣减库存，无论 decrement 是否成功，都算兑换成功
                         String awardConfigInventoryKey = "award_config:inventory:" + awardId;
                         redisDao.decrement(awardConfigInventoryKey);
                     } catch (Exception e) {
@@ -139,12 +149,10 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                     }
                 }
             } catch (Exception e) {
-                // 解析或业务异常，适度重试
                 return ConsumeConcurrentlyStatus.RECONSUME_LATER;
             }
         }
 
-        //返回 ConsumeConcurrentlyStatus.CONSUME_SUCCESS，表示消息消费成功。
         return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
     }
 

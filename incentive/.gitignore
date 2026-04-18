@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### JMeter Generated Files ###
+jmeter-test/*.jtl
+jmeter-test/report/
+jmeter-test/*-report/

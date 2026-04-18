@@ -33,6 +33,8 @@ public class ConsumerServiceImpl implements ConsumerService {
     private UserAwardMapper userAwardMapper;
     @Autowired
     private InventoryLog inventoryLog;
+    @Autowired
+    private IdempotentMapper idempotentMapper;
     @Transactional
     public void update1(Long id, Long userId, Long awardId, Integer price, Long splitId) {
 
@@ -47,7 +49,9 @@ public class ConsumerServiceImpl implements ConsumerService {
         userAward.setUpdateTime(new Date());
         userAward.setStatus(1);//status=1表示兑换成功
 
-        System.out.println(splitId);
+        String idempotentKey = "userId:" + userId + "-awardId:" + awardId;
+        idempotentMapper.insert(idempotentKey);
+
         int row1 = awardInventorySplitMapper.updateInventory(awardInventorySplit);
         int row2 = userCurrencyMapper.deductCurrency(userId, price);
         int row3 = userAwardMapper.updateStatus(userAward);

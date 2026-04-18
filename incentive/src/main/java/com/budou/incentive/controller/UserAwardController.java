@@ -45,7 +45,7 @@ public class UserAwardController {
     }
 
     @GetMapping("result")
-    private Result<?> result(@RequestParam(name = "userId") Long userId,
+    public Result<?> result(@RequestParam(name = "userId") Long userId,
                              @RequestParam(name = "awardId") Long awardId){
         return userAwardService.result(userId, awardId);
     }

@@ -7,7 +7,9 @@ import com.budou.incentive.service.*;
 import com.budou.incentive.utils.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -34,6 +36,23 @@ public class UserAwardServiceImpl implements UserAwardService {
 
     @Autowired
     private AwardConfigMapper awardConfigMapper;
+
+    // Qualifier 注解用于指定注入哪个 Bean，这里是为了区分不同类型的 Cache Bean。
+    @Autowired
+    @Qualifier("awardPriceCache")
+    private Cache<Long, Integer> awardPriceCache;
+
+    @Autowired
+    @Qualifier("awardEndTimeCache")
+    private Cache<Long, Date> awardEndTimeCache;
+
+    @Autowired
+    @Qualifier("userCurrencyCache")
+    private Cache<Long, Integer> userCurrencyCache;
+
+    @Autowired
+    @Qualifier("idempotentCache")
+    private Cache<String, Integer> idempotentCache;
 
     @Override
     public Result<?> exchange(Long userId, Long awardId) {
@@ -81,30 +100,58 @@ public class UserAwardServiceImpl implements UserAwardService {
             return Result.build(null, ResultCodeEnum.AWARDID_ERROR);
         }
 
-        // 查询用户积分
-        Integer currency = userCurrencyMapper.selectCurrency(userId);
+        Integer currency = userCurrencyCache.get(userId, key -> {
+            String userCurrencyKey = "user:currency:" + key;
+            Integer redisCurrency = (Integer) redisDao.get(userCurrencyKey);
+            if (redisCurrency != null) {
+                return redisCurrency;
+            }
+            Integer dbCurrency = userCurrencyMapper.selectCurrency(key);
+            if (dbCurrency != null) {
+                redisDao.set(userCurrencyKey, dbCurrency);
+            }
+            return dbCurrency;
+        });
         if (currency == null) {
             return Result.build(null, ResultCodeEnum.USERID_ERROR);
         }
 
-        // 查询奖品价格（优先读缓存，缺失时回源 DB）
-        String awardConfigPriceKey = "award_config:price:" + awardId;
-        Integer price = (Integer) redisDao.get(awardConfigPriceKey);
-        if (price == null) {
-            price = awardConfigMapper.selectPrice(awardId);
-            if (price == null) {
-                return Result.build(null, ResultCodeEnum.AWARDID_ERROR);
+        Integer price = awardPriceCache.get(awardId, key -> {
+            String awardConfigPriceKey = "award_config:price:" + key;
+            Integer redisPrice = (Integer) redisDao.get(awardConfigPriceKey);
+            if (redisPrice != null) {
+                return redisPrice;
             }
+            Integer dbPrice = awardConfigMapper.selectPrice(key);
+            if (dbPrice != null) {
+                redisDao.set(awardConfigPriceKey, dbPrice);
+            }
+            return dbPrice;
+        });
+        if (price == null) {
+            return Result.build(null, ResultCodeEnum.AWARDID_ERROR);
         }
 
-        // 查询奖品截止日期（优先读缓存，缺失时回源 DB）
-        String awardConfigEndTimeKey = "award_config:endTime:" + awardId;
-        Date endTime = (Date) redisDao.get(awardConfigEndTimeKey);
-        if (endTime == null) {
-            endTime = awardConfigMapper.selectEndTime(awardId);
-            if (endTime == null) {
-                return Result.build(null, ResultCodeEnum.AWARDID_ERROR);
+        Date endTime = awardEndTimeCache.get(awardId, key -> {
+            String awardConfigEndTimeKey = "award_config:endTime:" + key;
+            Date redisEndTime = (Date) redisDao.get(awardConfigEndTimeKey);
+            if (redisEndTime != null) {
+                return redisEndTime;
             }
+            Date dbEndTime = awardConfigMapper.selectEndTime(key);
+            if (dbEndTime != null) {
+                redisDao.set(awardConfigEndTimeKey, dbEndTime);
+            }
+            return dbEndTime;
+        });
+        if (endTime == null) {
+            return Result.build(null, ResultCodeEnum.AWARDID_ERROR);
+        }
+
+        String awardInventorySplitKey = "award_inventory_split:" + awardId;
+        Long size = redisDao.getHashSize(awardInventorySplitKey);
+        if (size == null || size == 0) {
+            return Result.build(null, ResultCodeEnum.Failed);
         }
 
         Date now = new Date();
@@ -116,34 +163,17 @@ public class UserAwardServiceImpl implements UserAwardService {
             return Result.build(null, ResultCodeEnum.INSUFFICIENT_CURRENCY);
         }
 
-        // 幂等校验：是否已兑换
-        Integer count = idempotentMapper.select("userId:" + userId + "-awardId:" + awardId);
+        String idempotentKey = "userId:" + userId + "-awardId:" + awardId;
+        Integer count = idempotentCache.get(idempotentKey, key -> {
+            Integer dbCount = idempotentMapper.select(key);
+            return dbCount != null ? dbCount : 0;
+        });
         if (count != null && count != 0) {
             return Result.build(null, ResultCodeEnum.AWARD_REDEEMED);
         }
 
         return null;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Override
     public Result<?> insert(Long userId, Long awardId) {

@@ -28,19 +28,19 @@ public class CacheWarmer {
 
     @PostConstruct
     public void warm(){
-        List<AwardInventorySplit> splits = inventorySplitMapper.select(1L);
+        List<AwardInventorySplit> splits = inventorySplitMapper.select(6L);
         for(AwardInventorySplit split : splits){
-            String awardInventorySplitKey = "award_inventory_split:" + 1;
+            String awardInventorySplitKey = "award_inventory_split:" + 6;
             redisDao.hmSet(
                     awardInventorySplitKey,
                     "splitId:" + split.getSplitId(),
                     split.getInventory());
         }
 
-        AwardConfig awardConfig = awardConfigMapper.selectAwardInfo(1L);
-        redisDao.set("award_config:price:" + 1, awardConfig.getPrice());
-        redisDao.set("award_config:isOverSell:" + 1, awardConfig.getIsOverSell());
-        redisDao.set("award_config:inventory:" + 1, awardConfig.getInventory());
-        redisDao.set("award_config:endTime:" + 1,awardConfig.getEndTime());
+        AwardConfig awardConfig = awardConfigMapper.selectAwardInfo(6L);
+        redisDao.set("award_config:price:" + 6, awardConfig.getPrice());
+        redisDao.set("award_config:isOverSell:" + 6, awardConfig.getIsOverSell());
+        redisDao.set("award_config:inventory:" + 6, awardConfig.getInventory());
+        redisDao.set("award_config:endTime:" + 6,awardConfig.getEndTime());
     }
 }

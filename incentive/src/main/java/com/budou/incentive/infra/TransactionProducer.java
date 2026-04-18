@@ -30,12 +30,14 @@ public class TransactionProducer {
         try{
             Message<String> strMessage = MessageBuilder.withPayload(message).setHeader(RocketMQHeaders.KEYS, id).build();
             TransactionSendResult result = rocketMQTemplate.sendMessageInTransaction(topic, strMessage, id);
+            System.out.println("事务消息发送结果: " + result);
             if (result.getSendStatus() == SendStatus.SEND_OK) {
                 return Result.ok("发送事务消息成功!消息ID为:" + result.getMsgId());
             } else {
                 return Result.build(null, ResultCodeEnum.TRANSACTION_SEND_FAILED);
             }
         } catch (Exception e){
+            e.printStackTrace();
             return Result.build(null, ResultCodeEnum.TRANSACTION_SEND_FAILED);
         }
     }

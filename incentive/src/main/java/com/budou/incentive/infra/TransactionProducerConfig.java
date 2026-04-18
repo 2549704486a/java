@@ -41,6 +41,7 @@ public class TransactionProducerConfig {
         return new TransactionListener() {
             @Override
             public LocalTransactionState executeLocalTransaction(Message message, Object o) {
+                System.out.println("执行本地事务，消息ID: " + ", 业务参数: " + o);
                 //执行本地事务
                 ObjectMapper objectMapper = new ObjectMapper();
                 Map<String, Object> data;
