@@ -54,6 +54,9 @@ public class UserAwardServiceImpl implements UserAwardService {
     @Qualifier("idempotentCache")
     private Cache<String, Integer> idempotentCache;
 
+    @Autowired
+    private SeckillObservability seckillObservability;
+
     @Override
     public Result<?> exchange(Long userId, Long awardId) {
         System.out.println("UserAwardServiceImpl.exchange: exchange, userId = " + userId + " awardId = " + awardId);
@@ -72,6 +75,7 @@ public class UserAwardServiceImpl implements UserAwardService {
         data.put("userId", userId);
         data.put("awardId", awardId);
         data.put("id", id);
+        data.put("requestTimeMillis", System.currentTimeMillis());
 
         ObjectMapper objectMapper = new ObjectMapper();
         try {
@@ -80,6 +84,7 @@ public class UserAwardServiceImpl implements UserAwardService {
 
             // 发送成功时，返回“稍后查询结果”的提示，使接口语义更贴近异步兑换
             if (sendResult != null && ResultCodeEnum.SUCCESS.getCode().equals(sendResult.getCode())) {
+                seckillObservability.recordRequestAccepted(id, userId, awardId);
                 return Result.build("Processing,please try again later.", ResultCodeEnum.Query_Later);
             }
             return sendResult;

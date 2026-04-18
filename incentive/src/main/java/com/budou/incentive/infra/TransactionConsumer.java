@@ -6,6 +6,7 @@ import com.budou.incentive.dao.mapper.UserCurrencyMapper;
 import com.budou.incentive.dao.model.UserAward;
 import com.budou.incentive.dao.redis.RedisDao;
 import com.budou.incentive.service.ConsumerService;
+import com.budou.incentive.utils.SeckillObservability;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
@@ -17,10 +18,15 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
-//类实现了 MessageListenerConcurrently 接口，该接口用于处理并发消费的消息。
 public class TransactionConsumer implements MessageListenerConcurrently {
     @Autowired
     private ConsumerService consumerService;
@@ -32,6 +38,8 @@ public class TransactionConsumer implements MessageListenerConcurrently {
     private RedisDao redisDao;
     @Autowired
     private UserCurrencyMapper userCurrencyMapper;
+    @Autowired
+    private SeckillObservability seckillObservability;
 
     @Autowired
     @Qualifier("awardPriceCache")
@@ -44,13 +52,18 @@ public class TransactionConsumer implements MessageListenerConcurrently {
     @Override
     public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
         for (MessageExt msg : msgs) {
+            Long userId = null;
+            Long awardId = null;
+            Long id = null;
+            long requestStartMillis = msg.getBornTimestamp();
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
                 Map<String, Object> data = objectMapper.readValue(
                         new String(msg.getBody(), StandardCharsets.UTF_8), Map.class);
-                Long userId = Long.valueOf(String.valueOf(data.get("userId")));
-                Long awardId = Long.valueOf(String.valueOf(data.get("awardId")));
-                Long id = Long.valueOf(String.valueOf(data.get("id")));
+                userId = Long.valueOf(String.valueOf(data.get("userId")));
+                awardId = Long.valueOf(String.valueOf(data.get("awardId")));
+                id = Long.valueOf(String.valueOf(data.get("id")));
+                requestStartMillis = resolveRequestStartMillis(data, msg);
 
                 Integer price = awardPriceCache.get(awardId, key -> {
                     String awardConfigPriceKey = "award_config:price:" + key;
@@ -66,6 +79,8 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                 });
                 System.out.println(price);
                 if (price == null) {
+                    seckillObservability.recordCompletion(id, userId, awardId, false,
+                            elapsedSince(requestStartMillis), "price-not-found");
                     exchangeFail(id);
                     return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
                 }
@@ -88,6 +103,8 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                     Long size = redisDao.getHashSize(awardInventorySplitKey);
                     System.out.println(size);
                     if (size == null || size == 0) {
+                        seckillObservability.recordCompletion(id, userId, awardId, false,
+                                elapsedSince(requestStartMillis), "split-size-empty");
                         exchangeFail(id);
                         return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
                     }
@@ -95,6 +112,8 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                     Set<String> keys = redisDao.getHashKeys(awardInventorySplitKey);
                     System.out.println(keys);
                     if (keys == null || keys.isEmpty()) {
+                        seckillObservability.recordCompletion(id, userId, awardId, false,
+                                elapsedSince(requestStartMillis), "split-keys-empty");
                         exchangeFail(id);
                         return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
                     }
@@ -106,6 +125,8 @@ public class TransactionConsumer implements MessageListenerConcurrently {
 
                     boolean locked = Boolean.TRUE.equals(redisDao.setnx(lockKey, lockValue, 10L));
                     if (!locked) {
+                        seckillObservability.recordLockFail(id, userId, awardId, hashKey);
+                        seckillObservability.recordReconsumeLater(id, userId, awardId, "lock-failed");
                         return ConsumeConcurrentlyStatus.RECONSUME_LATER;
                     }
 
@@ -116,9 +137,12 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                             Long leftSize = redisDao.getHashSize(awardInventorySplitKey);
                             System.out.println(leftSize);
                             if (leftSize == null || leftSize == 0) {
+                                seckillObservability.recordCompletion(id, userId, awardId, false,
+                                        elapsedSince(requestStartMillis), "split-inventory-empty");
                                 exchangeFail(id);
                                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
                             }
+                            seckillObservability.recordReconsumeLater(id, userId, awardId, "split-empty-retry");
                             return ConsumeConcurrentlyStatus.RECONSUME_LATER;
                         }
 
@@ -130,8 +154,12 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                                     price,
                                     Long.valueOf(hashKey.substring(hashKey.indexOf(":") + 1))
                             );
+                            seckillObservability.recordCompletion(id, userId, awardId, true,
+                                    elapsedSince(requestStartMillis), "consume-success");
                         } catch (Exception e) {
                             System.out.println("update1 exception: " + e.getMessage());
+                            seckillObservability.recordCompletion(id, userId, awardId, false,
+                                    elapsedSince(requestStartMillis), "update1-exception");
                             exchangeFail(id);
                             return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
                         }
@@ -144,11 +172,17 @@ public class TransactionConsumer implements MessageListenerConcurrently {
 
                         String awardConfigInventoryKey = "award_config:inventory:" + awardId;
                         redisDao.decrement(awardConfigInventoryKey);
+                        seckillObservability.recordCompletion(id, userId, awardId, true,
+                                elapsedSince(requestStartMillis), "consume-success-over-sell");
                     } catch (Exception e) {
                         userAwardMapper.updateStatusFail(id);
+                        seckillObservability.recordCompletion(id, userId, awardId, false,
+                                elapsedSince(requestStartMillis), "update2-exception");
                     }
                 }
             } catch (Exception e) {
+                seckillObservability.recordReconsumeLater(id, userId, awardId,
+                        "consume-exception:" + e.getClass().getSimpleName());
                 return ConsumeConcurrentlyStatus.RECONSUME_LATER;
             }
         }
@@ -157,11 +191,26 @@ public class TransactionConsumer implements MessageListenerConcurrently {
     }
 
     private void exchangeFail(Long id) {
-        //更新数据库
         UserAward userAward = new UserAward();
         userAward.setId(id);
         userAward.setUpdateTime(new Date());
-        userAward.setStatus(-1);//status=-1表示兑换失败
+        userAward.setStatus(-1);
         userAwardMapper.updateStatus(userAward);
+    }
+
+    private long resolveRequestStartMillis(Map<String, Object> data, MessageExt msg) {
+        Object requestTimeMillis = data.get("requestTimeMillis");
+        if (requestTimeMillis == null) {
+            return msg.getBornTimestamp();
+        }
+        try {
+            return Long.parseLong(String.valueOf(requestTimeMillis));
+        } catch (NumberFormatException ex) {
+            return msg.getBornTimestamp();
+        }
+    }
+
+    private long elapsedSince(long startMillis) {
+        return Math.max(System.currentTimeMillis() - startMillis, 0L);
     }
 }

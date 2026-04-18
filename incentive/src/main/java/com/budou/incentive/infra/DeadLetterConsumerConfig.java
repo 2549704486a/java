@@ -3,11 +3,13 @@ import jakarta.annotation.Resource;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Bean;
 
 //@Configuration: 注解标明这是一个Spring配置类，用于定义Bean和配置应用程序的相关设置。
 @Configuration
+@ConditionalOnProperty(name = "rocketmq.dead-letter-consumer.enabled", havingValue = "true", matchIfMissing = true)
 public class DeadLetterConsumerConfig {
     @Value("${rocketmq.name-server}")
     private String nameServer;
