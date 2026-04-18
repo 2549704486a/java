@@ -19,10 +19,10 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
@@ -77,7 +77,6 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                     }
                     return dbPrice;
                 });
-                System.out.println(price);
                 if (price == null) {
                     seckillObservability.recordCompletion(id, userId, awardId, false,
                             elapsedSince(requestStartMillis), "price-not-found");
@@ -101,7 +100,6 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                 if (isOverSell == 0) {
                     String awardInventorySplitKey = "award_inventory_split:" + awardId;
                     Long size = redisDao.getHashSize(awardInventorySplitKey);
-                    System.out.println(size);
                     if (size == null || size == 0) {
                         seckillObservability.recordCompletion(id, userId, awardId, false,
                                 elapsedSince(requestStartMillis), "split-size-empty");
@@ -110,7 +108,6 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                     }
 
                     Set<String> keys = redisDao.getHashKeys(awardInventorySplitKey);
-                    System.out.println(keys);
                     if (keys == null || keys.isEmpty()) {
                         seckillObservability.recordCompletion(id, userId, awardId, false,
                                 elapsedSince(requestStartMillis), "split-keys-empty");
@@ -118,54 +115,68 @@ public class TransactionConsumer implements MessageListenerConcurrently {
                         return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
                     }
                     ArrayList<String> keyList = new ArrayList<>(keys);
-                    Random rand = new Random();
-                    String hashKey = keyList.get(rand.nextInt(keyList.size()));
-                    String lockKey = "inventoryLock:award:" + awardId + ":split:" + hashKey;
-                    String lockValue = UUID.randomUUID().toString();
+                    keyList.sort(Comparator.comparingLong(this::extractSplitId));
 
-                    boolean locked = Boolean.TRUE.equals(redisDao.setnx(lockKey, lockValue, 10L));
-                    if (!locked) {
-                        seckillObservability.recordLockFail(id, userId, awardId, hashKey);
-                        seckillObservability.recordReconsumeLater(id, userId, awardId, "lock-failed");
-                        return ConsumeConcurrentlyStatus.RECONSUME_LATER;
-                    }
+                    int preferredIndex = preferredSplitIndex(id, keyList.size());
+                    boolean encounteredLockConflict = false;
 
-                    try {
-                        Integer splitInventory = (Integer) redisDao.hmGet(awardInventorySplitKey, hashKey);
-                        if (splitInventory == null || splitInventory <= 0) {
-                            redisDao.hmDel(awardInventorySplitKey, hashKey);
-                            Long leftSize = redisDao.getHashSize(awardInventorySplitKey);
-                            System.out.println(leftSize);
-                            if (leftSize == null || leftSize == 0) {
-                                seckillObservability.recordCompletion(id, userId, awardId, false,
-                                        elapsedSince(requestStartMillis), "split-inventory-empty");
-                                exchangeFail(id);
-                                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-                            }
-                            seckillObservability.recordReconsumeLater(id, userId, awardId, "split-empty-retry");
-                            return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+                    for (int offset = 0; offset < keyList.size(); offset++) {
+                        String hashKey = keyList.get((preferredIndex + offset) % keyList.size());
+                        String lockKey = "inventoryLock:award:" + awardId + ":split:" + hashKey;
+                        String lockValue = UUID.randomUUID().toString();
+
+                        boolean locked = Boolean.TRUE.equals(redisDao.setnx(lockKey, lockValue, 10L));
+                        if (!locked) {
+                            encounteredLockConflict = true;
+                            seckillObservability.recordLockFail(id, userId, awardId, hashKey);
+                            continue;
                         }
 
                         try {
-                            consumerService.update1(
-                                    id,
-                                    userId,
-                                    awardId,
-                                    price,
-                                    Long.valueOf(hashKey.substring(hashKey.indexOf(":") + 1))
-                            );
-                            seckillObservability.recordCompletion(id, userId, awardId, true,
-                                    elapsedSince(requestStartMillis), "consume-success");
-                        } catch (Exception e) {
-                            System.out.println("update1 exception: " + e.getMessage());
-                            seckillObservability.recordCompletion(id, userId, awardId, false,
-                                    elapsedSince(requestStartMillis), "update1-exception");
-                            exchangeFail(id);
-                            return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                            Integer splitInventory = (Integer) redisDao.hmGet(awardInventorySplitKey, hashKey);
+                            if (splitInventory == null || splitInventory <= 0) {
+                                redisDao.hmDel(awardInventorySplitKey, hashKey);
+                                continue;
+                            }
+
+                            try {
+                                consumerService.update1(
+                                        id,
+                                        userId,
+                                        awardId,
+                                        price,
+                                        extractSplitId(hashKey)
+                                );
+                                seckillObservability.recordCompletion(id, userId, awardId, true,
+                                        elapsedSince(requestStartMillis), "consume-success");
+                                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                            } catch (Exception e) {
+                                System.out.println("update1 exception: " + e.getMessage());
+                                seckillObservability.recordCompletion(id, userId, awardId, false,
+                                        elapsedSince(requestStartMillis), "update1-exception");
+                                exchangeFail(id);
+                                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                            }
+                        } finally {
+                            redisDao.remove(lockKey);
                         }
-                    } finally {
-                        redisDao.remove(lockKey);
                     }
+
+                    Long leftSize = redisDao.getHashSize(awardInventorySplitKey);
+                    if (leftSize == null || leftSize == 0) {
+                        seckillObservability.recordCompletion(id, userId, awardId, false,
+                                elapsedSince(requestStartMillis), "split-inventory-empty");
+                        exchangeFail(id);
+                        return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                    }
+
+                    seckillObservability.recordReconsumeLater(
+                            id,
+                            userId,
+                            awardId,
+                            encounteredLockConflict ? "all-splits-locked" : "no-split-available"
+                    );
+                    return ConsumeConcurrentlyStatus.RECONSUME_LATER;
                 } else {
                     try {
                         consumerService.update2(id, userId, awardId, price);
@@ -212,5 +223,20 @@ public class TransactionConsumer implements MessageListenerConcurrently {
 
     private long elapsedSince(long startMillis) {
         return Math.max(System.currentTimeMillis() - startMillis, 0L);
+    }
+
+    private int preferredSplitIndex(Long orderId, int splitCount) {
+        if (splitCount <= 0) {
+            return 0;
+        }
+        return Math.floorMod(Long.hashCode(orderId), splitCount);
+    }
+
+    private long extractSplitId(String hashKey) {
+        int separator = hashKey.indexOf(':');
+        if (separator < 0 || separator == hashKey.length() - 1) {
+            throw new IllegalArgumentException("Unexpected split key: " + hashKey);
+        }
+        return Long.parseLong(hashKey.substring(separator + 1));
     }
 }
