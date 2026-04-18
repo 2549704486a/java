@@ -9,6 +9,9 @@ import java.util.List;
 public class CacheWarmProperties {
     private boolean enabled = true;
     private List<Long> awardIds = new ArrayList<>(List.of(6L));
+    private boolean userCurrencyEnabled = true;
+    private Long userCurrencyMinUserId = 1L;
+    private Long userCurrencyMaxUserId = 10000L;
 
     public boolean isEnabled() {
         return enabled;
@@ -24,5 +27,29 @@ public class CacheWarmProperties {
 
     public void setAwardIds(List<Long> awardIds) {
         this.awardIds = awardIds;
+    }
+
+    public boolean isUserCurrencyEnabled() {
+        return userCurrencyEnabled;
+    }
+
+    public void setUserCurrencyEnabled(boolean userCurrencyEnabled) {
+        this.userCurrencyEnabled = userCurrencyEnabled;
+    }
+
+    public Long getUserCurrencyMinUserId() {
+        return userCurrencyMinUserId;
+    }
+
+    public void setUserCurrencyMinUserId(Long userCurrencyMinUserId) {
+        this.userCurrencyMinUserId = userCurrencyMinUserId;
+    }
+
+    public Long getUserCurrencyMaxUserId() {
+        return userCurrencyMaxUserId;
+    }
+
+    public void setUserCurrencyMaxUserId(Long userCurrencyMaxUserId) {
+        this.userCurrencyMaxUserId = userCurrencyMaxUserId;
     }
 }

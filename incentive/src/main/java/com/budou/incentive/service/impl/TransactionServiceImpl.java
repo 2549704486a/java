@@ -1,21 +1,15 @@
 package com.budou.incentive.service.impl;
 
-import com.budou.incentive.dao.model.FinishTaskRecord;
-import com.budou.incentive.service.TransactionService;
 import com.budou.incentive.infra.TransactionProducer;
+import com.budou.incentive.service.TransactionService;
 import com.budou.incentive.utils.Result;
 import com.budou.incentive.utils.ResultCodeEnum;
-import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-/**
- * @program: incentive-事务消息
- * @description:
- * @author: 阿伟
- * @create: 2024-09-29 21:33
- **/
 @Service
+@Slf4j
 public class TransactionServiceImpl implements TransactionService {
 
     @Autowired
@@ -23,11 +17,10 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public Result sendTransaction(String message, String id) {
-        try{
-            System.out.println("TransactionServiceImpl.sendTransaction：正在发送事务消息...");
+        try {
             return transactionProducer.sendTransactionMessage(id, message);
-        }catch (Exception e){
-            System.out.println(e);
+        } catch (Exception e) {
+            log.warn("发送事务消息失败, id={}", id, e);
             return Result.build(null, ResultCodeEnum.TRANSACTION_SEND_FAILED);
         }
     }

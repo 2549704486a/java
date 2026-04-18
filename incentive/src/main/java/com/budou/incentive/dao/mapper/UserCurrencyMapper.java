@@ -2,6 +2,7 @@ package com.budou.incentive.dao.mapper;
 import java.util.List;
 import com.budou.incentive.dao.model.UserCurrency;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
@@ -18,6 +19,9 @@ public interface UserCurrencyMapper {
 
     @Select("select currency from user_currency where userId = #{userId}")
     Integer selectCurrency(Long userId);
+
+    @Select("select userId, currency from user_currency where userId between #{minUserId} and #{maxUserId}")
+    List<UserCurrency> selectRange(@Param("minUserId") Long minUserId, @Param("maxUserId") Long maxUserId);
 
     @Update("update user_currency set currency = currency + #{currency} where userId = #{userId}")
     void addCurrency(Long userId, Integer currency);
