@@ -3,6 +3,7 @@ import com.alibaba.otter.canal.client.CanalConnector;
 import com.alibaba.otter.canal.client.CanalConnectors;
 import com.alibaba.otter.canal.protocol.CanalEntry;
 import com.alibaba.otter.canal.protocol.Message;
+import com.budou.incentive.config.CanalClientProperties;
 import com.budou.incentive.dao.redis.RedisDao;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -10,7 +11,9 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+
 import java.net.InetSocketAddress;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -26,12 +29,16 @@ import java.util.*;
  */
 @Slf4j  // Lombok注解，自动创建日志对象log
 @Component  // Spring注解，标记为Spring组件，会被自动扫描和注册
+@ConditionalOnProperty(prefix = "canal.client", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class RDSBinlog {
     // 用于存储错误信息，避免重复打印相同错误
-    private Map<String, String> errorMap = new HashMap<>();
+    private final Map<String, String> errorMap = new HashMap<>();
 
     @Autowired  // 自动注入RedisDao，用于操作Redis
     private RedisDao redisDao;
+
+    @Autowired
+    private CanalClientProperties canalClientProperties;
 
     /**
      * 在Bean初始化完成后自动调用
@@ -39,26 +46,21 @@ public class RDSBinlog {
      */
     @PostConstruct
     private void initThread() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        initConnect();  // 尝试初始化Canal连接
-                    } catch (Exception e) {
-                        String key = "canal_connection_error";
-                        if (!hasSameError(key, e.getMessage())) {
-                            log.error("canal连接出错: {}", e);  // 只有当错误信息变化时才记录日志
-                        }
-                    }
-                    try {
-                        Thread.sleep(10000);  // 连接失败后休眠10秒再重试
-                    } catch (InterruptedException e) {
-                        // 忽略中断异常
+        Thread canalThread = new Thread(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    initConnect();  // 尝试初始化Canal连接
+                } catch (Exception e) {
+                    String key = "canal_connection_error";
+                    if (!hasSameError(key, e.getMessage())) {
+                        log.error("canal连接出错: {}", e);  // 只有当错误信息变化时才记录日志
                     }
                 }
+                sleepQuietly(canalClientProperties.getRetryIntervalMs());  // 连接失败后休眠再重试
             }
-        }).start();  // 启动线程
+        }, "canal-sync-thread");
+        canalThread.setDaemon(true);
+        canalThread.start();  // 启动线程
     }
 
     /**
@@ -68,22 +70,18 @@ public class RDSBinlog {
      * 持续从Canal获取数据，并调用处理方法
      */
     private void initConnect() {
-        // Canal服务器连接参数设置
-        String canalIp = "localhost";
-        int canalPort = 11111;
-        String canalDestination = "example";
-        String canalUsername = "canal";
-        String canalPassword = "canal";
         // 创建连接器，连接到Canal服务器
-        CanalConnector connector = CanalConnectors.newSingleConnector(new InetSocketAddress(canalIp,
-                canalPort), canalDestination, canalUsername, canalPassword);
+        CanalConnector connector = CanalConnectors.newSingleConnector(
+                new InetSocketAddress(canalClientProperties.getHost(), canalClientProperties.getPort()),
+                canalClientProperties.getDestination(),
+                canalClientProperties.getUsername(),
+                canalClientProperties.getPassword());
 
-        // 每次批量获取的消息条数
-        int batchSize = 200;
+        int batchSize = canalClientProperties.getBatchSize();
 
         try {
             connector.connect();  // 连接到Canal服务器
-            connector.subscribe(".*\\.*");  // 订阅所有数据库和表的变更信息（使用正则表达式）
+            connector.subscribe(canalClientProperties.getSubscribePattern());  // 订阅所有数据库和表的变更信息
             connector.rollback();  // 回滚到未进行ack的位置，确保不遗漏数据
             /**
              * 情况1：没有使用rollback
@@ -116,11 +114,7 @@ public class RDSBinlog {
 
                 // 判断是否获取到数据
                 if (batchId == -1 || size == 0) {
-                    try {
-                        Thread.sleep(2000);  // 未获取到数据时休眠2秒
-                    } catch (InterruptedException e) {
-                        log.error("InterruptedException", e);
-                    }
+                    sleepQuietly(canalClientProperties.getIdleDelayMs());  // 未获取到数据时休眠
                 } else {
                     try {
                         // 有数据时进行处理
@@ -139,11 +133,7 @@ public class RDSBinlog {
                         }
 
                         // 出错后休眠10秒再继续
-                        try {
-                            Thread.sleep(10000);
-                        } catch (InterruptedException ex) {
-                            ex.printStackTrace();
-                        }
+                        sleepQuietly(canalClientProperties.getRetryIntervalMs());
                         continue;
                     }
                 }
@@ -153,6 +143,15 @@ public class RDSBinlog {
             log.error("==========error", e);
         } finally {
             connector.disconnect();  // 确保连接关闭
+        }
+    }
+
+    private void sleepQuietly(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("canal线程被中断");
         }
     }
 
