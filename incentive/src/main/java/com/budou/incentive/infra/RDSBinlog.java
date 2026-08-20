@@ -473,6 +473,15 @@ public class RDSBinlog {
                     }
                     redisDao.set(awardConfigEndTimeKey, endTime);
                 }
+                if (column.getName().equals("startTime")) {
+                    String awardConfigStartTimeKey = "award_config:startTime:" + awardId;
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    try {
+                        redisDao.set(awardConfigStartTimeKey, formatter.parse(column.getValue()));
+                    } catch (ParseException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
                 if (column.getName().equals("price")) {
                     // 更新价格
                     String awardConfigPriceKey =  "award_config:price:" + awardId;

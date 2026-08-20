@@ -4,3 +4,13 @@ __MACOSX/
 *.lnk
 startup-rocketmq.bat
 ops/output/
+agent-service/.venv/
+agent-service/.env
+agent-service/__pycache__/
+agent-service/**/__pycache__/
+agent-service/logs/
+.local-runtime/
+*.pyc
+ops/codecache-proof/*.class
+ops/codecache-proof/output_*/
+ops/codecache-proof/proof_*/

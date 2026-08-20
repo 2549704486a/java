@@ -1,0 +1,156 @@
+from __future__ import annotations
+
+import logging
+import time
+from collections.abc import Callable
+
+import httpx
+
+from app.models import ToolEnvelope
+
+
+TRANSIENT_STATUS_CODES = {408, 429, 500, 502, 503, 504}
+logger = logging.getLogger(__name__)
+
+
+class BusinessApiError(RuntimeError):
+    def __init__(self, code: str, message: str, retryable: bool) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.retryable = retryable
+
+    def as_envelope(self) -> ToolEnvelope:
+        return ToolEnvelope(
+            success=False,
+            code=self.code,
+            data=None,
+            message=self.message,
+            retryable=self.retryable,
+        )
+
+
+class BusinessApiClient:
+    """只通过 Java 业务接口获取事实，不直连数据库和中间件。"""
+
+    def __init__(
+        self,
+        base_url: str,
+        timeout_seconds: float = 3.0,
+        max_retries: int = 2,
+        client: httpx.Client | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
+        self._client = client or httpx.Client(base_url=base_url.rstrip("/"))
+        self._owns_client = client is None
+        self._timeout_seconds = timeout_seconds
+        self._max_retries = max(0, max_retries)
+        self._sleep = sleep
+
+    def close(self) -> None:
+        if self._owns_client:
+            self._client.close()
+
+    def __enter__(self) -> "BusinessApiClient":
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self.close()
+
+    def get_user_points(self, user_id: int) -> ToolEnvelope:
+        return self._get(f"/agent/query/users/{user_id}/points")
+
+    def list_available_tasks(self, user_id: int) -> ToolEnvelope:
+        return self._get(f"/agent/query/users/{user_id}/tasks")
+
+    def get_award_detail(self, award_id: int) -> ToolEnvelope:
+        return self._get(f"/agent/query/awards/{award_id}")
+
+    def list_awards(self, user_id: int, redeemable_only: bool = False) -> ToolEnvelope:
+        return self._get(
+            f"/agent/query/users/{user_id}/awards",
+            params={"redeemableOnly": str(redeemable_only).lower()},
+        )
+
+    def check_exchange_eligibility(self, user_id: int, award_id: int) -> ToolEnvelope:
+        return self._get(
+            f"/agent/query/users/{user_id}/awards/{award_id}/eligibility"
+        )
+
+    def _get(self, path: str, params: dict[str, str] | None = None) -> ToolEnvelope:
+        last_error: BusinessApiError | None = None
+        for attempt in range(self._max_retries + 1):
+            started = time.perf_counter()
+            try:
+                response = self._client.get(
+                    path, params=params, timeout=self._timeout_seconds
+                )
+            except (httpx.TimeoutException, httpx.TransportError) as exc:
+                elapsed_ms = (time.perf_counter() - started) * 1000
+                logger.warning(
+                    "business_api_error path=%s attempt=%s error=%s elapsed_ms=%.2f",
+                    path,
+                    attempt + 1,
+                    exc.__class__.__name__,
+                    elapsed_ms,
+                )
+                last_error = BusinessApiError(
+                    "BUSINESS_API_UNAVAILABLE",
+                    f"业务查询服务暂时不可用：{exc.__class__.__name__}",
+                    True,
+                )
+                if attempt < self._max_retries:
+                    self._backoff(attempt)
+                    continue
+                raise last_error from exc
+
+            if response.status_code in TRANSIENT_STATUS_CODES:
+                elapsed_ms = (time.perf_counter() - started) * 1000
+                logger.warning(
+                    "business_api_transient path=%s attempt=%s http_status=%s elapsed_ms=%.2f",
+                    path,
+                    attempt + 1,
+                    response.status_code,
+                    elapsed_ms,
+                )
+                last_error = BusinessApiError(
+                    "BUSINESS_API_TRANSIENT_ERROR",
+                    f"业务查询服务暂时异常，HTTP {response.status_code}",
+                    True,
+                )
+                if attempt < self._max_retries:
+                    self._backoff(attempt)
+                    continue
+                raise last_error
+
+            if response.is_error:
+                raise BusinessApiError(
+                    "BUSINESS_API_HTTP_ERROR",
+                    f"业务查询失败，HTTP {response.status_code}",
+                    False,
+                )
+
+            try:
+                envelope = ToolEnvelope.model_validate(response.json())
+                logger.info(
+                    "business_api_call path=%s attempt=%s http_status=%s code=%s elapsed_ms=%.2f",
+                    path,
+                    attempt + 1,
+                    response.status_code,
+                    envelope.code,
+                    (time.perf_counter() - started) * 1000,
+                )
+                return envelope
+            except (ValueError, TypeError) as exc:
+                raise BusinessApiError(
+                    "INVALID_BUSINESS_RESPONSE",
+                    "业务查询服务返回了无法识别的数据",
+                    False,
+                ) from exc
+
+        if last_error is not None:
+            raise last_error
+        raise BusinessApiError("UNKNOWN_ERROR", "未知业务查询错误", False)
+
+    def _backoff(self, attempt: int) -> None:
+        self._sleep(0.2 * (2**attempt))

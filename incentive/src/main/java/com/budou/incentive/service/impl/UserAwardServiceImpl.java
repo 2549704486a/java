@@ -49,6 +49,10 @@ public class UserAwardServiceImpl implements UserAwardService {
     private Cache<Long, Date> awardEndTimeCache;
 
     @Autowired
+    @Qualifier("awardStartTimeCache")
+    private Cache<Long, Date> awardStartTimeCache;
+
+    @Autowired
     @Qualifier("userCurrencyCache")
     private Cache<Long, Integer> userCurrencyCache;
 
@@ -64,11 +68,13 @@ public class UserAwardServiceImpl implements UserAwardService {
 
     @Override
     public Result<?> exchange(Long userId, Long awardId) {
+        // 第 1 步：只做受理前校验，此时不扣库存和积分。
         Result<?> validateResult = validateExchange(userId, awardId);
         if (validateResult != null) {
             return validateResult;
         }
 
+        // 第 2 步：生成业务订单号，并组装后续异步处理所需的最小上下文。
         Map<String, Object> data = new HashMap<>();
         Long id = redisDao.nextId(String.valueOf(awardId));
         data.put("userId", userId);
@@ -78,6 +84,7 @@ public class UserAwardServiceImpl implements UserAwardService {
 
         try {
             String json = objectMapper.writeValueAsString(data);
+            // 第 3 步：发送事务消息。半消息发送成功且本地事务未回滚，才视为受理成功。
             Result<?> sendResult = transactionService.sendTransaction(json, String.valueOf(UUID.randomUUID()));
             if (sendResult != null && ResultCodeEnum.SUCCESS.getCode().equals(sendResult.getCode())) {
                 seckillObservability.recordRequestAccepted(id, userId, awardId);
@@ -91,6 +98,7 @@ public class UserAwardServiceImpl implements UserAwardService {
     }
 
     private Result<?> validateExchange(Long userId, Long awardId) {
+        // 按“参数 -> 订单状态 -> 奖品 -> 库存 -> 积分 -> 幂等记录”逐层校验并尽早返回。
         if (userId == null || userId <= 0) {
             return Result.build(null, ResultCodeEnum.USERID_ERROR);
         }
@@ -100,6 +108,7 @@ public class UserAwardServiceImpl implements UserAwardService {
 
         Integer cachedStatus = getUserAwardStatus(userId, awardId);
         if (cachedStatus != null) {
+            // status=0 表示等待消费者处理，status=1 表示兑换成功。
             if (cachedStatus == 0) {
                 return Result.build("Processing,please try again later.", ResultCodeEnum.Query_Later);
             }
@@ -113,12 +122,16 @@ public class UserAwardServiceImpl implements UserAwardService {
             return Result.build(null, ResultCodeEnum.AWARDID_ERROR);
         }
 
+        Date startTime = awardStartTimeCache.get(awardId, this::loadAwardStartTime);
         Date endTime = awardEndTimeCache.get(awardId, this::loadAwardEndTime);
         if (endTime == null) {
             return Result.build(null, ResultCodeEnum.AWARDID_ERROR);
         }
 
         Date now = new Date();
+        if (startTime != null && now.before(startTime)) {
+            return Result.build(null, ResultCodeEnum.AWARD_NOT_STARTED);
+        }
         if (now.after(endTime)) {
             return Result.build(null, ResultCodeEnum.AWARD_EXPIRE);
         }
@@ -138,6 +151,7 @@ public class UserAwardServiceImpl implements UserAwardService {
         }
 
         String idempotentKey = buildIdempotentKey(userId, awardId);
+        // 本地缓存只保存“已经兑换”的正向结果；未命中时仍以数据库唯一幂等键为准。
         Integer cachedIdempotent = idempotentCache.getIfPresent(idempotentKey);
         if (cachedIdempotent != null && cachedIdempotent != 0) {
             return Result.build(null, ResultCodeEnum.AWARD_REDEEMED);
@@ -191,6 +205,19 @@ public class UserAwardServiceImpl implements UserAwardService {
         return dbEndTime;
     }
 
+    private Date loadAwardStartTime(Long awardId) {
+        String awardConfigStartTimeKey = "award_config:startTime:" + awardId;
+        Date redisStartTime = (Date) redisDao.get(awardConfigStartTimeKey);
+        if (redisStartTime != null) {
+            return redisStartTime;
+        }
+        Date dbStartTime = awardConfigMapper.selectStartTime(awardId);
+        if (dbStartTime != null) {
+            redisDao.set(awardConfigStartTimeKey, dbStartTime);
+        }
+        return dbStartTime;
+    }
+
     private Integer loadAwardInventory(Long awardId) {
         String awardConfigInventoryKey = SeckillRedisKeys.buildAwardInventoryKey(awardId);
         Integer redisInventory = (Integer) redisDao.get(awardConfigInventoryKey);
@@ -239,6 +266,7 @@ public class UserAwardServiceImpl implements UserAwardService {
 
     @Override
     public Result<?> result(Long userId, Long awardId) {
+        // 结果查询优先读 Redis，未命中再回源数据库并回填缓存。
         String statusKey = buildStatusKey(userId, awardId);
         Integer status = getUserAwardStatus(userId, awardId);
         if (status == null) {

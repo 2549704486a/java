@@ -32,7 +32,7 @@ public class ConsumerServiceImpl implements ConsumerService {
     private IdempotentMapper idempotentMapper;
     @Transactional
     public void update1(Long id, Long userId, Long awardId, Integer price, Long splitId) {
-
+        // 普通奖品的最终一致性事务：幂等占位、扣分片库存、扣积分、完成订单同时成功或回滚。
         //扣减分库存
         AwardInventorySplit awardInventorySplit = new AwardInventorySplit();
         awardInventorySplit.setSplitId(splitId);
@@ -45,6 +45,7 @@ public class ConsumerServiceImpl implements ConsumerService {
         userAward.setStatus(1);//status=1表示兑换成功
 
         String idempotentKey = "userId:" + userId + "-awardId:" + awardId;
+        // 唯一键冲突表示该用户和奖品已经处理过，事务会回滚并由消费者按幂等结果处理。
         idempotentMapper.insert(idempotentKey);
 
         int row1 = awardInventorySplitMapper.updateInventory(awardInventorySplit);
@@ -66,9 +67,10 @@ public class ConsumerServiceImpl implements ConsumerService {
 
     @Transactional
     public void update2(Long id, Long userId, Long awardId, Integer price) {
-
+        // 允许超卖时不扣分片库存，但扣积分和完成当前订单仍处于同一个数据库事务中。
         //更新商品的兑换状态
         UserAward userAward = new UserAward();
+        userAward.setId(id);
         userAward.setUserId(userId);
         userAward.setAwardId(awardId);
         userAward.setUpdateTime(new Date());

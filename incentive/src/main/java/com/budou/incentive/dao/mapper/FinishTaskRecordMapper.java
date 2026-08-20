@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.util.List;
+
 @Mapper
 public interface FinishTaskRecordMapper {
     @Select("select status from finish_task_record where userId = #{userId} and taskId = #{taskId}")
@@ -17,4 +19,7 @@ public interface FinishTaskRecordMapper {
     @Insert("insert into finish_task_record (userId, taskId, status, finishTime)" +
             "values (#{userId}, #{taskId}, #{status}, #{finishTime})")
     int insertFinishTask(FinishTaskRecord finishTaskRecord);
+
+    @Select("select * from finish_task_record where userId = #{userId}")
+    List<FinishTaskRecord> selectUserTaskRecords(Long userId);
 }

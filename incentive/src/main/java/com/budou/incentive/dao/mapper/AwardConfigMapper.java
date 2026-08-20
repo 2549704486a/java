@@ -3,10 +3,12 @@ package com.budou.incentive.dao.mapper;
 import com.budou.incentive.dao.model.AwardConfig;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.Date;
+import java.util.List;
 
 @Mapper
 public interface AwardConfigMapper {
@@ -24,6 +26,9 @@ public interface AwardConfigMapper {
     @Select("select endTime from award_config where awardId = #{awardId}")
     Date selectEndTime(Long awardId);
 
+    @Select("select startTime from award_config where awardId = #{awardId}")
+    Date selectStartTime(Long awardId);
+
     @Select("select price from award_config where awardId = #{awardId}")
     Integer selectPrice(Long awardId);
 
@@ -35,4 +40,10 @@ public interface AwardConfigMapper {
 
     @Update("update award_config set inventory = #{inventory} where awardId = #{awardId}")
     void updateInventory(AwardConfig awardConfig);
+
+    @Select("select * from award_config " +
+            "where (startTime is null or startTime <= #{now}) " +
+            "and (endTime is null or endTime >= #{now}) " +
+            "and inventory > 0 order by price asc, awardId asc")
+    List<AwardConfig> selectActiveAwards(@Param("now") Date now);
 }

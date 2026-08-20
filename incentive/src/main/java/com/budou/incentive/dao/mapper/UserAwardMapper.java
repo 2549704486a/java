@@ -13,15 +13,15 @@ public interface UserAwardMapper {
             " values(#{id}, #{userId},#{awardId},#{status},#{createTime},#{updateTime})")
     int insert(UserAward userAward);
 
-    @Update("update user_award set status = #{status}, updateTime = #{updateTime}" +
+    @Update("update user_award set status = #{status}, updateTime = #{updateTime} " +
             "where id = #{id}")
     int updateStatus(UserAward userAward);
 
     @Select("select status from user_award where userId=#{userId} and awardId = #{awardId}")
     Integer selectStatus(Long userId, Long awardId);
 
-    @Select("select count(*) from user_award where userId=#{userId} and awardId = #{awardId} and status = #{status}")
-    Integer selectUnhandleOrder(Long userId, Long awardId, Integer status);
+    @Select("select status from user_award where id = #{id}")
+    Integer selectStatusById(Long id);
 
     @Delete("delete from user_award where userId = #{userId} and awardId = #{awardId}")
     Integer delete(Long userId, Long awardId);

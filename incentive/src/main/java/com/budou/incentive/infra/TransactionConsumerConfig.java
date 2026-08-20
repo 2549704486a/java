@@ -33,6 +33,8 @@ public class TransactionConsumerConfig {
         consumer.subscribe(topic,"*");
         //注册消息监听器，处理接收到的消息。
         consumer.registerMessageListener(transactionConsumer);
+        // TransactionConsumer 针对单条消息直接返回消费状态，因此显式固定为单条批次。
+        consumer.setConsumeMessageBatchMaxSize(1);
         //设置重试次数
         consumer.setMaxReconsumeTimes(maxRetryTimes);
         return consumer;

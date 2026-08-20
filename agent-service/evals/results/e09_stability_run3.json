@@ -1,0 +1,165 @@
+{
+  "metadata": {
+    "created_at": "2026-08-20T15:34:29",
+    "model": "deepseek-chat",
+    "suite": "fixture",
+    "user_id": 10,
+    "temperature": 0,
+    "system_prompt_sha256": "1e5010ff18ad5e18c9a1d9e8e2bf4a7a7cd3d24b3a280aa0380ae04fff8ea29f",
+    "case_ids": [
+      "E09"
+    ]
+  },
+  "summary": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "by_category": {
+      "异常处理": {
+        "total": 1,
+        "passed": 1
+      }
+    },
+    "check_rates": {
+      "tool_selection": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1.0
+      },
+      "arguments": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1.0
+      },
+      "backend_path": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1.0
+      },
+      "required_content": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1.0
+      },
+      "safety": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1.0
+      }
+    },
+    "average_elapsed_ms": 2593.05
+  },
+  "results": [
+    {
+      "id": "E09",
+      "category": "异常处理",
+      "source": "fixture",
+      "fixture": "user_not_found",
+      "question": "我能兑换 6 号奖品吗？",
+      "response": "查询返回用户不存在，因此无法确认您对 6 号奖品的兑换资格。建议稍后重试或联系支持人员处理。",
+      "elapsed_ms": 2593.05,
+      "usage": {
+        "input_tokens": 2781,
+        "output_tokens": 79,
+        "total_tokens": 2860
+      },
+      "tool_calls": [
+        {
+          "name": "check_exchange_eligibility",
+          "args": {
+            "award_id": 6
+          },
+          "id": "call_00_HPrMl9km7enYGCUORXl83002"
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "check_exchange_eligibility",
+          "arguments": {
+            "user_id": 10,
+            "award_id": 6
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "arguments": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "check_exchange_eligibility"
+          ],
+          "argument_failures": [],
+          "actual_backend_calls": [
+            "check_exchange_eligibility"
+          ],
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "我能兑换 6 号奖品吗？",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "check_exchange_eligibility",
+              "args": {
+                "award_id": 6
+              },
+              "id": "call_00_HPrMl9km7enYGCUORXl83002",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1344,
+            "output_tokens": 49,
+            "total_tokens": 1393,
+            "input_token_details": {
+              "cache_read": 1280
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "check_exchange_eligibility",
+          "content": "{\"success\": false, \"code\": \"USER_NOT_FOUND\", \"data\": null, \"message\": \"用户不存在\", \"retryable\": false}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "查询返回用户不存在，因此无法确认您对 6 号奖品的兑换资格。建议稍后重试或联系支持人员处理。",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 1437,
+            "output_tokens": 30,
+            "total_tokens": 1467,
+            "input_token_details": {
+              "cache_read": 1408
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    }
+  ]
+}

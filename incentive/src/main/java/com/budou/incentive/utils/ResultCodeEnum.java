@@ -11,7 +11,8 @@ public enum ResultCodeEnum {
     INSUFFICIENT_CURRENCY(506, "insufficientCurrency"),
     TRANSACTION_SEND_FAILED(507, "transactionSendFailed"),
     AWARD_EXPIRE(508, "awardExpire"),
-    Failed(509, "Failed");
+    Failed(509, "Failed"),
+    AWARD_NOT_STARTED(510, "awardNotStarted");
 
     private Integer code;
     private String message;

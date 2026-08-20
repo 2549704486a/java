@@ -1,0 +1,255 @@
+{
+  "metadata": {
+    "created_at": "2026-08-20T15:31:07",
+    "model": "deepseek-chat",
+    "suite": "live",
+    "user_id": 10,
+    "temperature": 0,
+    "system_prompt_sha256": "a22cfc4b07651d0081bb2496e79f928b47b5cbf2d03a3e8533aa7075f0e81513",
+    "case_ids": [
+      "L01",
+      "L02"
+    ]
+  },
+  "summary": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "by_category": {
+      "真实集成": {
+        "total": 2,
+        "passed": 2
+      }
+    },
+    "check_rates": {
+      "tool_selection": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1.0
+      },
+      "arguments": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1.0
+      },
+      "backend_path": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1.0
+      },
+      "required_content": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1.0
+      },
+      "safety": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1.0
+      }
+    },
+    "average_elapsed_ms": 5927.4
+  },
+  "results": [
+    {
+      "id": "L01",
+      "category": "真实集成",
+      "source": "live",
+      "fixture": null,
+      "question": "我有多少积分？",
+      "response": "你当前有 **9,996,650 积分**。",
+      "elapsed_ms": 8182.42,
+      "usage": {
+        "input_tokens": 2513,
+        "output_tokens": 41,
+        "total_tokens": 2554
+      },
+      "tool_calls": [
+        {
+          "name": "get_user_points",
+          "args": {},
+          "id": "call_00_joevXddmDsLFANxshtVq5705"
+        }
+      ],
+      "backend_calls": [],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "arguments": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "get_user_points"
+          ],
+          "argument_failures": [],
+          "actual_backend_calls": [],
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "我有多少积分？",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "get_user_points",
+              "args": {},
+              "id": "call_00_joevXddmDsLFANxshtVq5705",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1214,
+            "output_tokens": 28,
+            "total_tokens": 1242,
+            "input_token_details": {
+              "cache_read": 1152
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "get_user_points",
+          "content": "{\"success\": true, \"code\": \"POINTS_FOUND\", \"data\": {\"userId\": 10, \"points\": 9996650}, \"message\": \"积分查询成功\", \"retryable\": false}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "你当前有 **9,996,650 积分**。",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 1299,
+            "output_tokens": 13,
+            "total_tokens": 1312,
+            "input_token_details": {
+              "cache_read": 1152
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "L02",
+      "category": "真实集成",
+      "source": "live",
+      "fixture": null,
+      "question": "我想兑换 6 号奖品，积分不够应该做哪些任务？",
+      "response": "根据查询结果，你当前积分已经足够兑换6号奖品，无需再做任务。\n\n**结论：可以直接兑换**\n\n- 目标奖品：6号奖品「手表」\n- 当前积分：9,996,650\n- 所需积分：200\n- 积分缺口：0（已满足条件）\n\n推荐动作：前往兑换页面直接操作即可，无需额外做任务攒积分。",
+      "elapsed_ms": 3672.38,
+      "usage": {
+        "input_tokens": 2676,
+        "output_tokens": 178,
+        "total_tokens": 2854
+      },
+      "tool_calls": [
+        {
+          "name": "plan_points_for_award",
+          "args": {
+            "award_id": 6,
+            "excluded_task_ids": []
+          },
+          "id": "call_00_Bto3ilb4vgAaBdbf9iFT0121"
+        }
+      ],
+      "backend_calls": [],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "arguments": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "plan_points_for_award"
+          ],
+          "argument_failures": [],
+          "actual_backend_calls": [],
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "我想兑换 6 号奖品，积分不够应该做哪些任务？",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "用户询问6号奖品需要做哪些任务来攒积分，这属于\"询问攒分方案\"，应直接调用 plan_points_for_award。",
+          "tool_calls": [
+            {
+              "name": "plan_points_for_award",
+              "args": {
+                "award_id": 6,
+                "excluded_task_ids": []
+              },
+              "id": "call_00_Bto3ilb4vgAaBdbf9iFT0121",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1225,
+            "output_tokens": 97,
+            "total_tokens": 1322,
+            "input_token_details": {
+              "cache_read": 1152
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "plan_points_for_award",
+          "content": "{\"status\": \"READY_TO_EXCHANGE\", \"reason_code\": \"ELIGIBLE\", \"message\": \"当前积分和奖品条件均满足，可以前往兑换页面操作\", \"user_id\": 10, \"award_id\": 6, \"award_name\": \"手表\", \"current_points\": 9996650, \"required_points\": 200, \"points_gap\": 0, \"recommended_points\": 0, \"projected_points\": 9996650, \"remaining_gap\": 0, \"recommended_tasks\": []}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "根据查询结果，你当前积分已经足够兑换6号奖品，无需再做任务。\n\n**结论：可以直接兑换**\n\n- 目标奖品：6号奖品「手表」\n- 当前积分：9,996,650\n- 所需积分：200\n- 积分缺口：0（已满足条件）\n\n推荐动作：前往兑换页面直接操作即可，无需额外做任务攒积分。",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 1451,
+            "output_tokens": 81,
+            "total_tokens": 1532,
+            "input_token_details": {
+              "cache_read": 1152
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    }
+  ]
+}

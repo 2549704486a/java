@@ -41,12 +41,14 @@ public class UserAwardController {
     @GetMapping("exchange")
     public Result<?> exchange(@RequestParam(name = "userId") Long userId,
                               @RequestParam(name = "awardId") Long awardId) {
+        // 兑换链路入口：这里只负责受理请求，扣库存、扣积分和状态落库由事务消息消费者异步完成。
         return userAwardService.exchange(userId, awardId);
     }
 
     @GetMapping("result")
     public Result<?> result(@RequestParam(name = "userId") Long userId,
                              @RequestParam(name = "awardId") Long awardId){
+        // 用户收到“处理中”后轮询该接口，查询异步兑换的最终状态。
         return userAwardService.result(userId, awardId);
     }
 }

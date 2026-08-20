@@ -47,6 +47,10 @@ public class CacheWarmer {
     private Cache<Long, Date> awardEndTimeCache;
 
     @Autowired
+    @Qualifier("awardStartTimeCache")
+    private Cache<Long, Date> awardStartTimeCache;
+
+    @Autowired
     @Qualifier("userCurrencyCache")
     private Cache<Long, Integer> userCurrencyCache;
 
@@ -81,6 +85,10 @@ public class CacheWarmer {
         redisDao.set("award_config:inventory:" + awardId, awardConfig.getInventory());
         redisDao.set("award_config:endTime:" + awardId, awardConfig.getEndTime());
         awardPriceCache.put(awardId, awardConfig.getPrice());
+        if (awardConfig.getStartTime() != null) {
+            redisDao.set("award_config:startTime:" + awardId, awardConfig.getStartTime());
+            awardStartTimeCache.put(awardId, awardConfig.getStartTime());
+        }
         awardEndTimeCache.put(awardId, awardConfig.getEndTime());
     }
 

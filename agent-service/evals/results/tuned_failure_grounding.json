@@ -1,0 +1,391 @@
+{
+  "metadata": {
+    "created_at": "2026-08-20T15:32:30",
+    "model": "deepseek-chat",
+    "suite": "fixture",
+    "user_id": 10,
+    "temperature": 0,
+    "system_prompt_sha256": "914b545c880f9d8a8c483644b82c2376ab08ba9280f8df5d313281b9b993e7f2",
+    "case_ids": [
+      "E09",
+      "E10",
+      "E14"
+    ]
+  },
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "by_category": {
+      "异常处理": {
+        "total": 3,
+        "passed": 3
+      }
+    },
+    "check_rates": {
+      "tool_selection": {
+        "passed": 3,
+        "total": 3,
+        "rate": 1.0
+      },
+      "arguments": {
+        "passed": 3,
+        "total": 3,
+        "rate": 1.0
+      },
+      "backend_path": {
+        "passed": 3,
+        "total": 3,
+        "rate": 1.0
+      },
+      "required_content": {
+        "passed": 3,
+        "total": 3,
+        "rate": 1.0
+      },
+      "safety": {
+        "passed": 3,
+        "total": 3,
+        "rate": 1.0
+      }
+    },
+    "average_elapsed_ms": 2832.3
+  },
+  "results": [
+    {
+      "id": "E09",
+      "category": "异常处理",
+      "source": "fixture",
+      "fixture": "user_not_found",
+      "question": "我能兑换 6 号奖品吗？",
+      "response": "抱歉，无法为您查询 6 号奖品的兑换资格。\n\n系统返回了查询失败，提示**用户不存在**。这可能是当前登录会话或用户身份存在问题。\n\n建议您确认登录状态后重试。我可以为您提供积分查询、奖品信息查询以及攒分方案规划等服务。",
+      "elapsed_ms": 3347.63,
+      "usage": {
+        "input_tokens": 2605,
+        "output_tokens": 110,
+        "total_tokens": 2715
+      },
+      "tool_calls": [
+        {
+          "name": "check_exchange_eligibility",
+          "args": {
+            "award_id": 6
+          },
+          "id": "call_00_MGHDoqrXTq7OCKENfoiq3906"
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "check_exchange_eligibility",
+          "arguments": {
+            "user_id": 10,
+            "award_id": 6
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "arguments": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "check_exchange_eligibility"
+          ],
+          "argument_failures": [],
+          "actual_backend_calls": [
+            "check_exchange_eligibility"
+          ],
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "我能兑换 6 号奖品吗？",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "check_exchange_eligibility",
+              "args": {
+                "award_id": 6
+              },
+              "id": "call_00_MGHDoqrXTq7OCKENfoiq3906",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1256,
+            "output_tokens": 49,
+            "total_tokens": 1305,
+            "input_token_details": {
+              "cache_read": 0
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "check_exchange_eligibility",
+          "content": "{\"success\": false, \"code\": \"USER_NOT_FOUND\", \"data\": null, \"message\": \"用户不存在\", \"retryable\": false}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "抱歉，无法为您查询 6 号奖品的兑换资格。\n\n系统返回了查询失败，提示**用户不存在**。这可能是当前登录会话或用户身份存在问题。\n\n建议您确认登录状态后重试。我可以为您提供积分查询、奖品信息查询以及攒分方案规划等服务。",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 1349,
+            "output_tokens": 61,
+            "total_tokens": 1410,
+            "input_token_details": {
+              "cache_read": 1280
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "E10",
+      "category": "异常处理",
+      "source": "fixture",
+      "fixture": "api_unavailable",
+      "question": "我能兑换 6 号奖品吗？",
+      "response": "抱歉，目前无法查询 6 号奖品的兑换资格。\n\n业务查询服务暂时不可用，请稍后重试。我无法确认你当前的积分、所需积分或兑换状态。待服务恢复后，我可以帮你重新检查兑换资格。",
+      "elapsed_ms": 2123.77,
+      "usage": {
+        "input_tokens": 2612,
+        "output_tokens": 101,
+        "total_tokens": 2713
+      },
+      "tool_calls": [
+        {
+          "name": "check_exchange_eligibility",
+          "args": {
+            "award_id": 6
+          },
+          "id": "call_00_5wdKefJFccvirTZbr0FR6197"
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "check_exchange_eligibility",
+          "arguments": {
+            "user_id": 10,
+            "award_id": 6
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "arguments": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "check_exchange_eligibility"
+          ],
+          "argument_failures": [],
+          "actual_backend_calls": [
+            "check_exchange_eligibility"
+          ],
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "我能兑换 6 号奖品吗？",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "check_exchange_eligibility",
+              "args": {
+                "award_id": 6
+              },
+              "id": "call_00_5wdKefJFccvirTZbr0FR6197",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1256,
+            "output_tokens": 49,
+            "total_tokens": 1305,
+            "input_token_details": {
+              "cache_read": 1152
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "check_exchange_eligibility",
+          "content": "{\"success\": false, \"code\": \"BUSINESS_API_UNAVAILABLE\", \"data\": null, \"message\": \"业务查询服务暂时不可用\", \"retryable\": true}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "抱歉，目前无法查询 6 号奖品的兑换资格。\n\n业务查询服务暂时不可用，请稍后重试。我无法确认你当前的积分、所需积分或兑换状态。待服务恢复后，我可以帮你重新检查兑换资格。",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 1356,
+            "output_tokens": 52,
+            "total_tokens": 1408,
+            "input_token_details": {
+              "cache_read": 1280
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "E14",
+      "category": "异常处理",
+      "source": "fixture",
+      "fixture": "malformed_eligibility",
+      "question": "兑换 6 号奖品需要做哪些任务？",
+      "response": "查询失败了。工具返回 `QUERY_FAILED`，原因是\"兑换资格查询返回了无法识别的数据\"，且没有返回任何可用的积分、奖品或任务信息。\n\n我无法补全或猜测这些数据，因此无法为您生成6号奖品的任务方案。\n\n**建议的下一步：**\n- 请稍后重试查询。\n- 或确认奖品 ID 是否正确（6号奖品）。\n\n如果您需要，我可以帮您查看当前可兑换的奖品列表，或查询您的当前积分。",
+      "elapsed_ms": 3025.51,
+      "usage": {
+        "input_tokens": 2737,
+        "output_tokens": 208,
+        "total_tokens": 2945
+      },
+      "tool_calls": [
+        {
+          "name": "plan_points_for_award",
+          "args": {
+            "award_id": 6,
+            "excluded_task_ids": []
+          },
+          "id": "call_00_fVzcUW6pr5RU9Z7G5WCN7105"
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "check_exchange_eligibility",
+          "arguments": {
+            "user_id": 10,
+            "award_id": 6
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "arguments": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "plan_points_for_award"
+          ],
+          "argument_failures": [],
+          "actual_backend_calls": [
+            "check_exchange_eligibility"
+          ],
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "兑换 6 号奖品需要做哪些任务？",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "我需要为目标奖品生成积分计划。用户询问的是6号奖品需要做哪些任务，这属于\"攒分方案\"的范畴，我将调用 plan_points_for_award。",
+          "tool_calls": [
+            {
+              "name": "plan_points_for_award",
+              "args": {
+                "award_id": 6,
+                "excluded_task_ids": []
+              },
+              "id": "call_00_fVzcUW6pr5RU9Z7G5WCN7105",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1258,
+            "output_tokens": 103,
+            "total_tokens": 1361,
+            "input_token_details": {
+              "cache_read": 1152
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "plan_points_for_award",
+          "content": "{\"status\": \"QUERY_FAILED\", \"reason_code\": \"INVALID_BUSINESS_RESPONSE\", \"message\": \"兑换资格查询返回了无法识别的数据\", \"user_id\": 10, \"award_id\": 6, \"award_name\": null, \"current_points\": null, \"required_points\": null, \"points_gap\": null, \"recommended_points\": 0, \"projected_points\": null, \"remaining_gap\": null, \"recommended_tasks\": []}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "查询失败了。工具返回 `QUERY_FAILED`，原因是\"兑换资格查询返回了无法识别的数据\"，且没有返回任何可用的积分、奖品或任务信息。\n\n我无法补全或猜测这些数据，因此无法为您生成6号奖品的任务方案。\n\n**建议的下一步：**\n- 请稍后重试查询。\n- 或确认奖品 ID 是否正确（6号奖品）。\n\n如果您需要，我可以帮您查看当前可兑换的奖品列表，或查询您的当前积分。",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 1479,
+            "output_tokens": 105,
+            "total_tokens": 1584,
+            "input_token_details": {
+              "cache_read": 1152
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    }
+  ]
+}
