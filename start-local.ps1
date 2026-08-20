@@ -4,7 +4,8 @@ param(
     [string]$Action = 'Start',
     [switch]$Rebuild,
     [switch]$SkipDashboard,
-    [switch]$SkipApp
+    [switch]$SkipApp,
+    [switch]$SkipAgent
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,6 +31,18 @@ $DashboardJar = Join-Path $DashboardRoot 'rocketmq-dashboard-2.0.1-SNAPSHOT.jar'
 
 $AppRoot = Join-Path $ProjectRoot 'incentive'
 $AppJar = Join-Path $AppRoot 'target\incentive-0.0.1-SNAPSHOT.jar'
+$AgentRoot = Join-Path $ProjectRoot 'agent-service'
+$AgentPython = Join-Path $AgentRoot '.venv\Scripts\python.exe'
+$AgentEnv = Join-Path $AgentRoot '.env'
+$AgentPort = 8090
+if (Test-Path -LiteralPath $AgentEnv) {
+    $agentPortLine = Get-Content -LiteralPath $AgentEnv |
+        Where-Object { $_ -match '^\s*AGENT_PORT\s*=\s*\d+\s*$' } |
+        Select-Object -Last 1
+    if ($null -ne $agentPortLine -and $agentPortLine -match '=\s*(\d+)\s*$') {
+        $AgentPort = [int]$Matches[1]
+    }
+}
 
 function Write-Step([string]$Message) {
     Write-Host "`n==> $Message" -ForegroundColor Cyan
@@ -292,6 +305,29 @@ function Start-App {
     Wait-TcpPort -Name 'Spring Boot application' -Port 8088 -TimeoutSeconds 120 | Out-Null
 }
 
+function Start-Agent {
+    if ($SkipAgent) {
+        Write-Host '[SKIP] Agent HTTP service was disabled by -SkipAgent.'
+        return
+    }
+    if (Test-TcpPort $AgentPort) {
+        Write-Host "[SKIP] Agent HTTP service is already listening on $AgentPort."
+        return
+    }
+
+    Write-Step 'Starting Agent HTTP service'
+    Assert-Path $AgentPython 'Agent Python virtual environment'
+    Assert-Path $AgentEnv 'Agent .env config'
+    $processArgs = @{
+        Name = 'agent-service'
+        FilePath = $AgentPython
+        ArgumentList = @('-m', 'app.server')
+        WorkingDirectory = $AgentRoot
+    }
+    Start-LoggedProcess @processArgs
+    Wait-TcpPort -Name 'Agent HTTP service' -Port $AgentPort -TimeoutSeconds 45 | Out-Null
+}
+
 function Show-Status {
     $services = @(
         [pscustomobject]@{ Name = 'MySQL'; Port = 3306; Required = $true },
@@ -300,7 +336,8 @@ function Show-Status {
         [pscustomobject]@{ Name = 'RocketMQ Broker'; Port = 10911; Required = $true },
         [pscustomobject]@{ Name = 'Canal'; Port = 11111; Required = $true },
         [pscustomobject]@{ Name = 'RocketMQ Dashboard'; Port = 8080; Required = $false },
-        [pscustomobject]@{ Name = 'Spring Boot application'; Port = 8088; Required = $true }
+        [pscustomobject]@{ Name = 'Spring Boot application'; Port = 8088; Required = $true },
+        [pscustomobject]@{ Name = 'Agent HTTP service'; Port = $AgentPort; Required = (-not $SkipAgent) }
     )
     $services | ForEach-Object {
         $state = 'DOWN'
@@ -329,6 +366,7 @@ try {
     Start-Canal
     Start-Dashboard
     Start-App
+    Start-Agent
     Write-Step 'Local environment startup completed'
     Show-Status
 }

@@ -8,6 +8,7 @@
 - 使用 5 个只读查询 Tool 和 1 个组合 Skill。
 - `plan_points_for_award` 使用确定性代码计算积分缺口和任务组合。
 - 启动时发现并校验 `skills/*/SKILL.md`，Tool 描述、Skill 版本和哈希来自声明文件。
+- 提供 FastAPI HTTP 接口，支持请求校验、请求 ID、错误脱敏和有界 Agent 缓存。
 - Tool 层只对 GET 请求的瞬时网络错误做有限重试。
 - 不直连 MySQL、Redis、RocketMQ，不调用兑换和任务写接口。
 
@@ -77,7 +78,47 @@ Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Too
 .\.venv\Scripts\python.exe -m app.main --user-id 10
 ```
 
-## 5. 测试
+## 5. 运行 HTTP 服务
+
+单独启动：
+
+```powershell
+.\.venv\Scripts\python.exe -m app.server
+```
+
+也可以在项目根目录使用一键脚本，它会在 Java 服务就绪后启动 Agent：
+
+```powershell
+.\start-local.ps1
+```
+
+如果这次不需要 Agent，可以添加 `-SkipAgent`。默认监听 `127.0.0.1:8090`，接口文档位于 `http://127.0.0.1:8090/docs`。
+
+健康检查：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8090/health
+```
+
+调用 Agent：
+
+```powershell
+$body = @{
+    user_id = 10
+    message = '我想兑换 6 号奖品，积分不够该做哪些任务？'
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+    -Method Post `
+    -Uri http://127.0.0.1:8090/v1/chat `
+    -ContentType 'application/json' `
+    -Headers @{ 'X-Request-ID' = 'local-demo-001' } `
+    -Body $body
+```
+
+响应包含 `request_id`、`user_id`、`answer` 和服务端总耗时 `elapsed_ms`。当前缓存的是按用户绑定 Tool 的 Agent 执行图，不保存历史消息，因此 HTTP 接口仍是单轮对话。
+
+## 6. 测试
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
@@ -85,7 +126,7 @@ Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Too
 
 离线测试不需要 Java 服务和模型密钥，覆盖 Skill 发现与声明校验、运行时激活、资格分支、任务选择、任务排除、积分不足和 Tool 瞬时错误重试。
 
-## 6. Agent 评测
+## 7. Agent 评测
 
 固定 Fixture 用例不依赖真实业务状态，真实集成用例需要 Java 服务运行：
 
@@ -100,7 +141,7 @@ Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Too
 .\.venv\Scripts\python.exe -m evals.rescore --input evals\results\原结果.json --output evals\results\重评结果.json
 ```
 
-## 7. 日志与耗时
+## 8. 日志与耗时
 
 默认日志文件：
 
@@ -108,7 +149,7 @@ Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Too
 agent-service/logs/agent-service.log
 ```
 
-日志会记录每次 Java 业务接口的路径、HTTP 状态、业务码、重试次数和耗时，以及积分规划 Skill 的名称、版本、定义哈希和总耗时，不记录 API Key 和完整业务响应。
+日志会记录 HTTP 请求 ID、用户 ID、请求总耗时，每次 Java 业务接口的路径、HTTP 状态、业务码、重试次数和耗时，以及积分规划 Skill 的名称、版本、定义哈希和总耗时，不记录 API Key、用户问题正文和完整业务响应。
 
 Spring Boot 请求日志由一键启动脚本保存到：
 

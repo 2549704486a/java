@@ -3,36 +3,19 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import time
-from pathlib import Path
 
 from dotenv import load_dotenv
 
 from app.agent import build_agent, run_agent
 from app.api_client import BusinessApiClient
 from app.config import Settings
+from app.logging_config import configure_logging
 from app.skills.points_plan import PointsPlanningSkill
 from app.skills.registry import SkillRegistry
 
 
 logger = logging.getLogger(__name__)
-
-
-def configure_logging() -> Path:
-    service_root = Path(__file__).resolve().parents[1]
-    default_log_path = service_root / "logs" / "agent-service.log"
-    log_path = Path(os.getenv("AGENT_LOG_FILE") or default_log_path)
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    level_name = os.getenv("AGENT_LOG_LEVEL", "INFO").upper()
-    level = getattr(logging, level_name, logging.INFO)
-    formatter = logging.Formatter(
-        "%(asctime)s %(levelname)s %(name)s %(message)s"
-    )
-    file_handler = logging.FileHandler(log_path, encoding="utf-8")
-    file_handler.setFormatter(formatter)
-    logging.basicConfig(level=level, handlers=[file_handler], force=True)
-    return log_path
 
 
 def parse_args() -> argparse.Namespace:

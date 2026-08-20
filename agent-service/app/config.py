@@ -13,6 +13,9 @@ class Settings:
     llm_base_url: str | None = None
     llm_model: str = "gpt-4o-mini"
     llm_timeout_seconds: float = 30.0
+    agent_host: str = "127.0.0.1"
+    agent_port: int = 8090
+    agent_cache_size: int = 128
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -30,6 +33,9 @@ class Settings:
             llm_base_url=os.getenv("LLM_BASE_URL") or None,
             llm_model=os.getenv("LLM_MODEL", "gpt-4o-mini"),
             llm_timeout_seconds=float(os.getenv("LLM_TIMEOUT_SECONDS", "30")),
+            agent_host=os.getenv("AGENT_HOST", "127.0.0.1"),
+            agent_port=int(os.getenv("AGENT_PORT", "8090")),
+            agent_cache_size=int(os.getenv("AGENT_CACHE_SIZE", "128")),
         )
 
     def require_llm_api_key(self) -> str:
@@ -38,4 +44,3 @@ class Settings:
                 "缺少 LLM_API_KEY。若只想验证业务规划，可改用 --plan-award-id。"
             )
         return self.llm_api_key
-
