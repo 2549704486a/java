@@ -142,7 +142,7 @@ Invoke-RestMethod `
 .\.venv\Scripts\python.exe -m evals.multiturn_runner
 ```
 
-结果保存在 `evals/results/`，包含最终回答、Tool 调用、参数、后端路径和消息轨迹。修改评分规则后可以对同一模型输出离线重评，避免反复调用模型碰结果：
+结果保存在 `evals/results/`，包含最终回答、模型声明调用、实际 Tool 执行轨迹、参数、结果码、Tool 耗时、后端路径和消息轨迹。汇总区会按 Tool 统计调用次数、执行失败数、平均耗时和最大耗时。修改评分规则后可以对同一模型输出离线重评，避免反复调用模型碰结果：
 
 ```powershell
 .\.venv\Scripts\python.exe -m evals.rescore --input evals\results\原结果.json --output evals\results\重评结果.json
@@ -156,7 +156,9 @@ Invoke-RestMethod `
 agent-service/logs/agent-service.log
 ```
 
-日志会记录 HTTP 请求 ID、用户 ID、请求总耗时，每次 Java 业务接口的路径、HTTP 状态、业务码、重试次数和耗时，以及组合 Skill 的名称、版本、定义哈希和总耗时，不记录 API Key、用户问题正文和完整业务响应。
+日志会记录 HTTP 请求 ID、用户 ID、请求总耗时，每次 Java 业务接口的路径、HTTP 状态、业务码、重试次数和耗时，以及组合 Skill 的名称、版本、定义哈希和总耗时。
+
+每次 Agent 调用还会输出一条 `agent_tool_trace` 结构化日志，以 `request_id` 关联本次实际执行的 Tool/Skill，记录参数、完成状态、业务结果码和耗时。轨迹不记录 API Key、用户问题正文和完整业务响应。
 
 Spring Boot 请求日志由一键启动脚本保存到：
 

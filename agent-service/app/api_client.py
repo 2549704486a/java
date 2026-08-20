@@ -7,6 +7,7 @@ from collections.abc import Callable
 import httpx
 
 from app.models import ToolEnvelope
+from app.trace import current_correlation_id
 
 
 TRANSIENT_STATUS_CODES = {408, 429, 500, 502, 503, 504}
@@ -79,16 +80,23 @@ class BusinessApiClient:
 
     def _get(self, path: str, params: dict[str, str] | None = None) -> ToolEnvelope:
         last_error: BusinessApiError | None = None
+        request_id = current_correlation_id()
+        headers = {"X-Request-ID": request_id} if request_id else None
         for attempt in range(self._max_retries + 1):
             started = time.perf_counter()
             try:
                 response = self._client.get(
-                    path, params=params, timeout=self._timeout_seconds
+                    path,
+                    params=params,
+                    headers=headers,
+                    timeout=self._timeout_seconds,
                 )
             except (httpx.TimeoutException, httpx.TransportError) as exc:
                 elapsed_ms = (time.perf_counter() - started) * 1000
                 logger.warning(
-                    "business_api_error path=%s attempt=%s error=%s elapsed_ms=%.2f",
+                    "business_api_error request_id=%s path=%s attempt=%s "
+                    "error=%s elapsed_ms=%.2f",
+                    request_id or "-",
                     path,
                     attempt + 1,
                     exc.__class__.__name__,
@@ -107,7 +115,9 @@ class BusinessApiClient:
             if response.status_code in TRANSIENT_STATUS_CODES:
                 elapsed_ms = (time.perf_counter() - started) * 1000
                 logger.warning(
-                    "business_api_transient path=%s attempt=%s http_status=%s elapsed_ms=%.2f",
+                    "business_api_transient request_id=%s path=%s attempt=%s "
+                    "http_status=%s elapsed_ms=%.2f",
+                    request_id or "-",
                     path,
                     attempt + 1,
                     response.status_code,
@@ -133,7 +143,9 @@ class BusinessApiClient:
             try:
                 envelope = ToolEnvelope.model_validate(response.json())
                 logger.info(
-                    "business_api_call path=%s attempt=%s http_status=%s code=%s elapsed_ms=%.2f",
+                    "business_api_call request_id=%s path=%s attempt=%s "
+                    "http_status=%s code=%s elapsed_ms=%.2f",
+                    request_id or "-",
                     path,
                     attempt + 1,
                     response.status_code,

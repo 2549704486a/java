@@ -19,6 +19,7 @@
 | `agent-design/11_短期记忆与会话隔离.md` | InMemorySaver、thread_id、会话隔离、串行执行和会话 LRU |
 | `agent-design/12_奖品推荐Skill.md` | 第二个业务 Skill、确定性推荐规则、嵌套数据契约和多 Skill 路由评测 |
 | `agent-design/13_本地演示数据基线.md` | 可重复执行的业务演示数据、关键用户故事、一致性约束和重置顺序 |
+| `agent-design/14_Tool调用链可观测性.md` | 请求级 Tool/Skill 结构化轨迹、结果摘要、耗时统计和轨迹评分 |
 
 这些文档服务于开发、调试和代码评审，可以记录具体路径、接口、状态码和运行命令。
 

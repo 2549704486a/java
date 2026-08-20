@@ -1,0 +1,727 @@
+{
+  "metadata": {
+    "created_at": "2026-08-20T19:52:25",
+    "model": "deepseek-chat",
+    "suite": "fixture",
+    "user_id": 10,
+    "temperature": 0,
+    "system_prompt_sha256": "76bc16334df80c67ac86bf343c95410e0a2eb81b75c49fa264ce3c371dfefd75",
+    "skills": [
+      {
+        "skill_name": "award-recommendation",
+        "skill_version": "1.0.0",
+        "skill_sha256": "dc8966972d6f9f6b171c9128d38615010fde91da3f22e8951da44f23658039ec"
+      },
+      {
+        "skill_name": "points-planning",
+        "skill_version": "1.0.0",
+        "skill_sha256": "b5c48057ec98ee78f4ab4a2405ae0092970aa0422df374c684e1ebaeb84d1885"
+      }
+    ],
+    "case_ids": [
+      "E19",
+      "E20",
+      "E21",
+      "E22"
+    ]
+  },
+  "summary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "by_category": {
+      "多 Skill 路由": {
+        "total": 4,
+        "passed": 4
+      }
+    },
+    "check_rates": {
+      "tool_selection": {
+        "passed": 4,
+        "total": 4,
+        "rate": 1.0
+      },
+      "arguments": {
+        "passed": 4,
+        "total": 4,
+        "rate": 1.0
+      },
+      "tool_execution": {
+        "passed": 4,
+        "total": 4,
+        "rate": 1.0
+      },
+      "backend_path": {
+        "passed": 4,
+        "total": 4,
+        "rate": 1.0
+      },
+      "required_content": {
+        "passed": 4,
+        "total": 4,
+        "rate": 1.0
+      },
+      "safety": {
+        "passed": 4,
+        "total": 4,
+        "rate": 1.0
+      }
+    },
+    "tool_metrics": {
+      "get_award_detail": {
+        "calls": 1,
+        "execution_failures": 0,
+        "average_elapsed_ms": 0.06,
+        "max_elapsed_ms": 0.06
+      },
+      "list_available_tasks": {
+        "calls": 1,
+        "execution_failures": 0,
+        "average_elapsed_ms": 0.45,
+        "max_elapsed_ms": 0.45
+      },
+      "list_awards": {
+        "calls": 1,
+        "execution_failures": 0,
+        "average_elapsed_ms": 0.06,
+        "max_elapsed_ms": 0.06
+      },
+      "plan_points_for_award": {
+        "calls": 1,
+        "execution_failures": 0,
+        "average_elapsed_ms": 0.16,
+        "max_elapsed_ms": 0.16
+      },
+      "recommend_awards": {
+        "calls": 1,
+        "execution_failures": 0,
+        "average_elapsed_ms": 0.15,
+        "max_elapsed_ms": 0.15
+      }
+    },
+    "average_elapsed_ms": 3303.88
+  },
+  "results": [
+    {
+      "id": "E19",
+      "category": "多 Skill 路由",
+      "source": "fixture",
+      "fixture": "insufficient_cover",
+      "question": "我现在还有哪些任务可以做或领取奖励？",
+      "response": "为您查询到当前的任务情况如下：\n\n**已完成待领取奖励的任务：**\n- **浏览奖励**：奖励 60 积分（状态：已完成，待领取）\n\n**尚未完成、可参与的任务：**\n- **每日签到**：奖励 100 积分（可参与）\n- **分享活动**：奖励 80 积分（可参与）\n\n您可以先领取「浏览奖励」的 60 积分，再参与「每日签到」和「分享活动」来继续积累积分。如需查询当前积分或了解可兑换的奖品，随时告诉我。",
+      "elapsed_ms": 3551.1,
+      "usage": {
+        "input_tokens": 3465,
+        "output_tokens": 160,
+        "total_tokens": 3625
+      },
+      "tool_calls": [
+        {
+          "name": "list_available_tasks",
+          "args": {},
+          "id": null
+        }
+      ],
+      "declared_tool_calls": [
+        {
+          "name": "list_available_tasks",
+          "args": {},
+          "id": "call_00_EYtR0LDK8n5P1FrwJgYj7727"
+        }
+      ],
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "list_available_tasks",
+          "arguments": {},
+          "completed": true,
+          "business_success": true,
+          "result_code": "TASKS_FOUND",
+          "elapsed_ms": 0.45,
+          "error_type": null
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "list_available_tasks",
+          "arguments": {
+            "user_id": 10
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "arguments": true,
+          "tool_execution": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "list_available_tasks"
+          ],
+          "argument_failures": [],
+          "tool_execution_failures": [],
+          "actual_backend_calls": [
+            "list_available_tasks"
+          ],
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "我现在还有哪些任务可以做或领取奖励？",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "我来为您查询当前可参与或已完成待领取奖励的任务。",
+          "tool_calls": [
+            {
+              "name": "list_available_tasks",
+              "args": {},
+              "id": "call_00_EYtR0LDK8n5P1FrwJgYj7727",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1643,
+            "output_tokens": 43,
+            "total_tokens": 1686,
+            "input_token_details": {
+              "cache_read": 1536
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "list_available_tasks",
+          "content": "{\"success\": true, \"code\": \"TASKS_FOUND\", \"data\": [{\"taskId\": 1, \"taskName\": \"浏览奖励\", \"rewardPoints\": 60, \"status\": \"COMPLETED_UNCLAIMED\"}, {\"taskId\": 2, \"taskName\": \"每日签到\", \"rewardPoints\": 100, \"status\": \"AVAILABLE\"}, {\"taskId\": 3, \"taskName\": \"分享活动\", \"rewardPoints\": 80, \"status\": \"AVAILABLE\"}], \"message\": \"查询成功\", \"retryable\": false}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "为您查询到当前的任务情况如下：\n\n**已完成待领取奖励的任务：**\n- **浏览奖励**：奖励 60 积分（状态：已完成，待领取）\n\n**尚未完成、可参与的任务：**\n- **每日签到**：奖励 100 积分（可参与）\n- **分享活动**：奖励 80 积分（可参与）\n\n您可以先领取「浏览奖励」的 60 积分，再参与「每日签到」和「分享活动」来继续积累积分。如需查询当前积分或了解可兑换的奖品，随时告诉我。",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 1822,
+            "output_tokens": 117,
+            "total_tokens": 1939,
+            "input_token_details": {
+              "cache_read": 1536
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "E20",
+      "category": "多 Skill 路由",
+      "source": "fixture",
+      "fixture": "eligible",
+      "question": "只查一下 6 号奖品需要多少积分、还有多少库存。",
+      "response": "6 号奖品「手表」信息如下：\n\n- **所需积分**：200 分\n- **当前库存**：100 件\n\n如需了解您当前的积分或兑换资格，请告诉我。",
+      "elapsed_ms": 2060.64,
+      "usage": {
+        "input_tokens": 3427,
+        "output_tokens": 100,
+        "total_tokens": 3527
+      },
+      "tool_calls": [
+        {
+          "name": "get_award_detail",
+          "args": {
+            "award_id": 6
+          },
+          "id": null
+        }
+      ],
+      "declared_tool_calls": [
+        {
+          "name": "get_award_detail",
+          "args": {
+            "award_id": 6
+          },
+          "id": "call_00_b3ThuRfbb1uNeeqxkrrn1777"
+        }
+      ],
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "get_award_detail",
+          "arguments": {
+            "award_id": 6
+          },
+          "completed": true,
+          "business_success": true,
+          "result_code": "AWARD_FOUND",
+          "elapsed_ms": 0.06,
+          "error_type": null
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "get_award_detail",
+          "arguments": {
+            "award_id": 6
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "arguments": true,
+          "tool_execution": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "get_award_detail"
+          ],
+          "argument_failures": [],
+          "tool_execution_failures": [],
+          "actual_backend_calls": [
+            "get_award_detail"
+          ],
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "只查一下 6 号奖品需要多少积分、还有多少库存。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "I'll look up the details for award #6.",
+          "tool_calls": [
+            {
+              "name": "get_award_detail",
+              "args": {
+                "award_id": 6
+              },
+              "id": "call_00_b3ThuRfbb1uNeeqxkrrn1777",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1650,
+            "output_tokens": 58,
+            "total_tokens": 1708,
+            "input_token_details": {
+              "cache_read": 1536
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "get_award_detail",
+          "content": "{\"success\": true, \"code\": \"AWARD_FOUND\", \"data\": {\"awardId\": 6, \"name\": \"手表\", \"requiredPoints\": 200, \"inventory\": 100}, \"message\": \"查询成功\", \"retryable\": false}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "6 号奖品「手表」信息如下：\n\n- **所需积分**：200 分\n- **当前库存**：100 件\n\n如需了解您当前的积分或兑换资格，请告诉我。",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 1777,
+            "output_tokens": 42,
+            "total_tokens": 1819,
+            "input_token_details": {
+              "cache_read": 1536
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "E21",
+      "category": "多 Skill 路由",
+      "source": "fixture",
+      "fixture": "award_recommendation",
+      "question": "别把奖品全列出来，直接挑一个我现在换得起、最值积分的。",
+      "response": "为您推荐当前最值积分的可兑换奖品：\n\n**手表**（奖品 ID：6）\n- 当前积分：**260**\n- 所需积分：**200**\n- 兑换后剩余：**60**\n\n这是当前您能兑换的奖品中所需积分最高的一款，能最大化利用您的积分。库存充足（100 件），可以放心兑换。\n\n需要我帮您查看其他信息或规划吗？",
+      "elapsed_ms": 2845.26,
+      "usage": {
+        "input_tokens": 3476,
+        "output_tokens": 145,
+        "total_tokens": 3621
+      },
+      "tool_calls": [
+        {
+          "name": "recommend_awards",
+          "args": {
+            "limit": 1
+          },
+          "id": null
+        }
+      ],
+      "declared_tool_calls": [
+        {
+          "name": "recommend_awards",
+          "args": {
+            "limit": 1
+          },
+          "id": "call_00_nFdoWfAMSvKaYAQo9Fbl4187"
+        }
+      ],
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "recommend_awards",
+          "arguments": {
+            "limit": 1
+          },
+          "completed": true,
+          "business_success": null,
+          "result_code": "RECOMMENDATIONS_READY",
+          "elapsed_ms": 0.15,
+          "error_type": null
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "get_user_points",
+          "arguments": {
+            "user_id": 10
+          }
+        },
+        {
+          "method": "list_awards",
+          "arguments": {
+            "user_id": 10,
+            "redeemable_only": false
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "arguments": true,
+          "tool_execution": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "recommend_awards"
+          ],
+          "argument_failures": [],
+          "tool_execution_failures": [],
+          "actual_backend_calls": [
+            "get_user_points",
+            "list_awards"
+          ],
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "别把奖品全列出来，直接挑一个我现在换得起、最值积分的。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "我来为您推荐一个当前可兑换、最值积分的奖品。",
+          "tool_calls": [
+            {
+              "name": "recommend_awards",
+              "args": {
+                "limit": 1
+              },
+              "id": "call_00_nFdoWfAMSvKaYAQo9Fbl4187",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1653,
+            "output_tokens": 59,
+            "total_tokens": 1712,
+            "input_token_details": {
+              "cache_read": 1536
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "recommend_awards",
+          "content": "{\"status\": \"RECOMMENDATIONS_READY\", \"reason_code\": \"RECOMMENDATIONS_READY\", \"message\": \"已按所需积分从高到低推荐当前可兑换奖品\", \"user_id\": 10, \"current_points\": 260, \"recommendations\": [{\"award_id\": 6, \"name\": \"手表\", \"required_points\": 200, \"inventory\": 100, \"remaining_points\": 60}]}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "为您推荐当前最值积分的可兑换奖品：\n\n**手表**（奖品 ID：6）\n- 当前积分：**260**\n- 所需积分：**200**\n- 兑换后剩余：**60**\n\n这是当前您能兑换的奖品中所需积分最高的一款，能最大化利用您的积分。库存充足（100 件），可以放心兑换。\n\n需要我帮您查看其他信息或规划吗？",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 1823,
+            "output_tokens": 86,
+            "total_tokens": 1909,
+            "input_token_details": {
+              "cache_read": 1536
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "E22",
+      "category": "多 Skill 路由",
+      "source": "fixture",
+      "fixture": "insufficient_cover",
+      "question": "我想换手表但不知道编号，帮我看看还差多少积分、该做哪些任务。",
+      "response": "我来为你整理手表（奖品 ID 6）的兑换方案。\n\n## 结论\n\n**手表**（奖品 ID 6，需 200 积分）当前**还差 150 积分**，但现有任务可以覆盖缺口，完成推荐任务后即可兑换。\n\n### 当前积分情况\n- 当前积分：**50**\n- 所需积分：**200**\n- 积分缺口：**150**\n\n### 推荐任务方案（可获 160 积分）\n| 任务 | 奖励积分 | 状态 | 操作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 | 可参与 | 完成任务 |\n\n- 完成以上任务预计获得 **160 积分**\n- 完成后预计总积分：**210**（超出所需 10 积分）\n- 剩余缺口：**0** ✅\n\n### 推荐动作\n1. 先**领取「浏览奖励」**的 60 积分（已完成待领取）\n2. 再**完成「每日签到」**获得 100 积分\n3. 积分达到 210 后即可兑换手表\n\n需要我帮你查看其他奖品或进一步规划吗？",
+      "elapsed_ms": 4758.5,
+      "usage": {
+        "input_tokens": 5565,
+        "output_tokens": 399,
+        "total_tokens": 5964
+      },
+      "tool_calls": [
+        {
+          "name": "list_awards",
+          "args": {
+            "redeemable_only": false
+          },
+          "id": null
+        },
+        {
+          "name": "plan_points_for_award",
+          "args": {
+            "award_id": 6,
+            "excluded_task_ids": []
+          },
+          "id": null
+        }
+      ],
+      "declared_tool_calls": [
+        {
+          "name": "list_awards",
+          "args": {},
+          "id": "call_00_1HBh66O19H5vI6T5cs377911"
+        },
+        {
+          "name": "plan_points_for_award",
+          "args": {
+            "award_id": 6,
+            "excluded_task_ids": []
+          },
+          "id": "call_00_dONyGSzYuJ18wf9oAO1g8749"
+        }
+      ],
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "list_awards",
+          "arguments": {
+            "redeemable_only": false
+          },
+          "completed": true,
+          "business_success": true,
+          "result_code": "AWARDS_FOUND",
+          "elapsed_ms": 0.06,
+          "error_type": null
+        },
+        {
+          "sequence": 2,
+          "tool_name": "plan_points_for_award",
+          "arguments": {
+            "award_id": 6,
+            "excluded_task_ids": []
+          },
+          "completed": true,
+          "business_success": null,
+          "result_code": "PLAN_READY",
+          "elapsed_ms": 0.16,
+          "error_type": null
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "list_awards",
+          "arguments": {
+            "user_id": 10,
+            "redeemable_only": false
+          }
+        },
+        {
+          "method": "check_exchange_eligibility",
+          "arguments": {
+            "user_id": 10,
+            "award_id": 6
+          }
+        },
+        {
+          "method": "get_award_detail",
+          "arguments": {
+            "award_id": 6
+          }
+        },
+        {
+          "method": "list_available_tasks",
+          "arguments": {
+            "user_id": 10
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "arguments": true,
+          "tool_execution": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "list_awards",
+            "plan_points_for_award"
+          ],
+          "argument_failures": [],
+          "tool_execution_failures": [],
+          "actual_backend_calls": [
+            "list_awards",
+            "check_exchange_eligibility",
+            "get_award_detail",
+            "list_available_tasks"
+          ],
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "我想换手表但不知道编号，帮我看看还差多少积分、该做哪些任务。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "用户想兑换手表但不知道编号，我需要先查看奖品列表找到手表对应的奖品 ID。\n\n让我先查询奖品列表。",
+          "tool_calls": [
+            {
+              "name": "list_awards",
+              "args": {},
+              "id": "call_00_1HBh66O19H5vI6T5cs377911",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1653,
+            "output_tokens": 52,
+            "total_tokens": 1705,
+            "input_token_details": {
+              "cache_read": 1536
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "list_awards",
+          "content": "{\"success\": true, \"code\": \"AWARDS_FOUND\", \"data\": [{\"award\": {\"awardId\": 6, \"name\": \"手表\", \"requiredPoints\": 200, \"inventory\": 100}, \"redeemable\": false, \"pointsGap\": 150, \"reasonCode\": \"INSUFFICIENT_POINTS\"}], \"message\": \"查询成功\", \"retryable\": false}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "找到了手表，奖品 ID 是 6。现在我来查询兑换资格和积分方案。",
+          "tool_calls": [
+            {
+              "name": "plan_points_for_award",
+              "args": {
+                "award_id": 6,
+                "excluded_task_ids": []
+              },
+              "id": "call_00_dONyGSzYuJ18wf9oAO1g8749",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1810,
+            "output_tokens": 85,
+            "total_tokens": 1895,
+            "input_token_details": {
+              "cache_read": 1664
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "plan_points_for_award",
+          "content": "{\"status\": \"PLAN_READY\", \"reason_code\": \"INSUFFICIENT_POINTS\", \"message\": \"当前可用任务能够覆盖积分缺口\", \"user_id\": 10, \"award_id\": 6, \"award_name\": \"手表\", \"current_points\": 50, \"required_points\": 200, \"points_gap\": 150, \"recommended_points\": 160, \"projected_points\": 210, \"remaining_gap\": 0, \"recommended_tasks\": [{\"task_id\": 1, \"task_name\": \"浏览奖励\", \"reward_points\": 60, \"status\": \"COMPLETED_UNCLAIMED\", \"action\": \"CLAIM_REWARD\"}, {\"task_id\": 2, \"task_name\": \"每日签到\", \"reward_points\": 100, \"status\": \"AVAILABLE\", \"action\": \"COMPLETE_TASK\"}]}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "我来为你整理手表（奖品 ID 6）的兑换方案。\n\n## 结论\n\n**手表**（奖品 ID 6，需 200 积分）当前**还差 150 积分**，但现有任务可以覆盖缺口，完成推荐任务后即可兑换。\n\n### 当前积分情况\n- 当前积分：**50**\n- 所需积分：**200**\n- 积分缺口：**150**\n\n### 推荐任务方案（可获 160 积分）\n| 任务 | 奖励积分 | 状态 | 操作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 | 可参与 | 完成任务 |\n\n- 完成以上任务预计获得 **160 积分**\n- 完成后预计总积分：**210**（超出所需 10 积分）\n- 剩余缺口：**0** ✅\n\n### 推荐动作\n1. 先**领取「浏览奖励」**的 60 积分（已完成待领取）\n2. 再**完成「每日签到」**获得 100 积分\n3. 积分达到 210 后即可兑换手表\n\n需要我帮你查看其他奖品或进一步规划吗？",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 2102,
+            "output_tokens": 262,
+            "total_tokens": 2364,
+            "input_token_details": {
+              "cache_read": 1792
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    }
+  ]
+}

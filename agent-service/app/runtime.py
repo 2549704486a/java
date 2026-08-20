@@ -18,7 +18,7 @@ from app.skills.registry import SkillRegistry
 
 logger = logging.getLogger(__name__)
 AgentBuilder = Callable[[Settings, BusinessApiClient, int, SkillRegistry, Any], Any]
-AgentRunner = Callable[[Any, str, str], str]
+AgentRunner = Callable[[Any, str, str, str | None], str]
 
 
 @dataclass
@@ -62,12 +62,13 @@ class AgentRuntime:
         user_id: int,
         session_id: str,
         message: str,
+        request_id: str | None = None,
     ) -> tuple[str, float]:
         started = time.perf_counter()
         agent = self._agent_for(user_id)
         thread_id, slot = self._acquire_session(user_id, session_id)
         try:
-            answer = self._agent_runner(agent, message, thread_id)
+            answer = self._agent_runner(agent, message, thread_id, request_id)
             return answer, (time.perf_counter() - started) * 1000
         finally:
             slot.lock.release()

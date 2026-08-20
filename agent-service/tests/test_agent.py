@@ -18,7 +18,12 @@ class RunAgentTest(unittest.TestCase):
     def test_passes_thread_id_to_checkpointer_config(self):
         agent = FakeAgent()
 
-        answer = run_agent(agent, "继续规划", "user:10:session:session-a")
+        answer = run_agent(
+            agent,
+            "继续规划",
+            "user:10:session:session-a",
+            "request-001",
+        )
 
         self.assertEqual("ok", answer)
         self.assertEqual(12, agent.config["recursion_limit"])

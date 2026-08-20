@@ -11,7 +11,7 @@ class FakeRuntime:
     def __init__(self, should_fail: bool = False) -> None:
         self.should_fail = should_fail
         self.closed = False
-        self.calls: list[tuple[int, str]] = []
+        self.calls: list[tuple[int, str, str, str | None]] = []
 
     def health(self):
         return {
@@ -24,8 +24,14 @@ class FakeRuntime:
             "skills": [],
         }
 
-    def answer(self, user_id: int, session_id: str, message: str):
-        self.calls.append((user_id, session_id, message))
+    def answer(
+        self,
+        user_id: int,
+        session_id: str,
+        message: str,
+        request_id: str | None = None,
+    ):
+        self.calls.append((user_id, session_id, message, request_id))
         if self.should_fail:
             raise RuntimeError("不应返回给调用方的内部异常")
         return "测试回答", 12.345
@@ -66,7 +72,7 @@ class AgentWebTest(unittest.TestCase):
             response.json(),
         )
         self.assertEqual(
-            [(10, "session-001", "我有多少积分？")],
+            [(10, "session-001", "我有多少积分？", "request-001")],
             runtime.calls,
         )
         self.assertTrue(runtime.closed)

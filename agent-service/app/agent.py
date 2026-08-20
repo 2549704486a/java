@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import logging
+
 from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 
@@ -8,6 +11,10 @@ from app.config import Settings
 from app.prompt import SYSTEM_PROMPT
 from app.skills.registry import SkillRegistry
 from app.tools import build_tools
+from app.trace import capture_tool_trace
+
+
+logger = logging.getLogger(__name__)
 
 
 def build_agent(
@@ -34,14 +41,33 @@ def build_agent(
     )
 
 
-def run_agent(agent, message: str, thread_id: str | None = None) -> str:
+def run_agent(
+    agent,
+    message: str,
+    thread_id: str | None = None,
+    request_id: str | None = None,
+) -> str:
     config = {"recursion_limit": 12}
     if thread_id is not None:
         config["configurable"] = {"thread_id": thread_id}
-    result = agent.invoke(
-        {"messages": [{"role": "user", "content": message}]},
-        config=config,
-    )
+    correlation_id = request_id or thread_id or "cli"
+    with capture_tool_trace(correlation_id) as trace_session:
+        try:
+            result = agent.invoke(
+                {"messages": [{"role": "user", "content": message}]},
+                config=config,
+            )
+        finally:
+            logger.info(
+                "agent_tool_trace request_id=%s thread_id=%s events=%s",
+                request_id or "-",
+                thread_id or "-",
+                json.dumps(
+                    trace_session.as_dicts(),
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ),
+            )
     final_message = result["messages"][-1]
     content = final_message.content
     if isinstance(content, str):

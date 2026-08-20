@@ -35,7 +35,7 @@ class AgentRuntimeTest(unittest.TestCase):
             self.assertIs(checkpointer, actual_checkpointer)
             return {"user_id": user_id}
 
-        def runner(agent, message, thread_id):
+        def runner(agent, message, thread_id, request_id):
             return f"user={agent['user_id']} thread={thread_id} message={message}"
 
         runtime = AgentRuntime(
@@ -82,7 +82,7 @@ class AgentRuntimeTest(unittest.TestCase):
         def builder(settings, client, user_id, skill_registry, checkpointer):
             return {"user_id": user_id}
 
-        def runner(agent, message, thread_id):
+        def runner(agent, message, thread_id, request_id):
             thread_ids.append(thread_id)
             return "ok"
 

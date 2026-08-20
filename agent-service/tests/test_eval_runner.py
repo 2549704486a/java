@@ -56,7 +56,34 @@ class EvalRunnerTest(unittest.TestCase):
         self.assertFalse(evaluation["checks"]["tool_selection"])
         self.assertFalse(evaluation["checks"]["arguments"])
 
+    def test_fails_when_selected_tool_did_not_complete(self):
+        case = {
+            "required_tools": ["get_user_points"],
+            "allowed_tools": ["get_user_points"],
+        }
+        execution_trace = [
+            {
+                "tool_name": "get_user_points",
+                "completed": False,
+                "error_type": "RuntimeError",
+            }
+        ]
+
+        evaluation = evaluate_case(
+            case,
+            "查询失败。",
+            [{"name": "get_user_points", "args": {}}],
+            [],
+            execution_trace,
+        )
+
+        self.assertFalse(evaluation["passed"])
+        self.assertFalse(evaluation["checks"]["tool_execution"])
+        self.assertEqual(
+            ["get_user_points"],
+            evaluation["details"]["tool_execution_failures"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
-

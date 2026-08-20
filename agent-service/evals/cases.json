@@ -224,5 +224,55 @@
     "allowed_tools": ["list_awards"],
     "required_backend_calls": ["list_awards"],
     "forbidden_backend_calls": ["get_user_points"]
+  },
+  {
+    "id": "E19",
+    "category": "多 Skill 路由",
+    "source": "fixture",
+    "fixture": "insufficient_cover",
+    "question": "我现在还有哪些任务可以做或领取奖励？",
+    "required_tools": ["list_available_tasks"],
+    "allowed_tools": ["list_available_tasks"],
+    "required_backend_calls": ["list_available_tasks"],
+    "required_groups": [["浏览奖励"], ["每日签到"]],
+    "required_facts": ["60", "100"]
+  },
+  {
+    "id": "E20",
+    "category": "多 Skill 路由",
+    "source": "fixture",
+    "fixture": "eligible",
+    "question": "只查一下 6 号奖品需要多少积分、还有多少库存。",
+    "required_tools": ["get_award_detail"],
+    "allowed_tools": ["get_award_detail"],
+    "expected_args": {"get_award_detail": {"award_id": 6}},
+    "required_backend_calls": ["get_award_detail"],
+    "required_facts": ["200", "100"]
+  },
+  {
+    "id": "E21",
+    "category": "多 Skill 路由",
+    "source": "fixture",
+    "fixture": "award_recommendation",
+    "question": "别把奖品全列出来，直接挑一个我现在换得起、最值积分的。",
+    "required_tools": ["recommend_awards"],
+    "allowed_tools": ["recommend_awards"],
+    "expected_args": {"recommend_awards": {"limit": 1}},
+    "required_backend_calls": ["get_user_points", "list_awards"],
+    "required_groups": [["手表"]],
+    "required_facts": ["200", "60"]
+  },
+  {
+    "id": "E22",
+    "category": "多 Skill 路由",
+    "source": "fixture",
+    "fixture": "insufficient_cover",
+    "question": "我想换手表但不知道编号，帮我看看还差多少积分、该做哪些任务。",
+    "required_tools": ["list_awards", "plan_points_for_award"],
+    "allowed_tools": ["list_awards", "plan_points_for_award"],
+    "expected_args": {"plan_points_for_award": {"award_id": 6}},
+    "required_backend_calls": ["list_awards", "check_exchange_eligibility", "list_available_tasks"],
+    "required_groups": [["还差", "缺口"], ["任务", "领取"]],
+    "required_facts": ["150"]
   }
 ]

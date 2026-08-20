@@ -112,6 +112,7 @@ def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> Fas
                 payload.user_id,
                 session_id,
                 payload.message,
+                request_id,
             )
         except Exception:
             logger.exception(

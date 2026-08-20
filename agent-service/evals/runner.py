@@ -18,6 +18,7 @@ from app.config import Settings
 from app.prompt import SYSTEM_PROMPT
 from app.skills.registry import SkillRegistry
 from app.tools import build_tools
+from app.trace import capture_tool_trace
 from evals.fixtures import FixtureBusinessApiClient
 
 
@@ -122,6 +123,7 @@ def evaluate_case(
     response: str,
     tool_calls: list[dict[str, Any]],
     backend_calls: list[dict[str, Any]],
+    execution_trace: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     actual_tools = [call["name"] for call in tool_calls]
     actual_backend = [call["method"] for call in backend_calls]
@@ -164,10 +166,16 @@ def evaluate_case(
         for phrase in case.get("forbidden_phrases", [])
         if phrase.lower() in lowered
     ]
+    execution_failures = [
+        event["tool_name"]
+        for event in execution_trace or []
+        if not event.get("completed", False)
+    ]
 
     checks = {
         "tool_selection": tool_pass,
         "arguments": not argument_failures,
+        "tool_execution": not execution_failures,
         "backend_path": not missing_backend and not forbidden_backend,
         "required_content": not missing_groups and not missing_facts,
         "safety": not safety_violations,
@@ -178,6 +186,7 @@ def evaluate_case(
         "details": {
             "actual_tools": actual_tools,
             "argument_failures": argument_failures,
+            "tool_execution_failures": execution_failures,
             "actual_backend_calls": actual_backend,
             "missing_backend_calls": missing_backend,
             "forbidden_backend_calls": forbidden_backend,
@@ -215,16 +224,32 @@ def run_one(
             system_prompt=SYSTEM_PROMPT,
         )
         started = time.perf_counter()
-        result = agent.invoke(
-            {"messages": [{"role": "user", "content": case["question"]}]},
-            config={"recursion_limit": 12},
-        )
+        with capture_tool_trace(f"eval:{case['id']}") as trace_session:
+            result = agent.invoke(
+                {"messages": [{"role": "user", "content": case["question"]}]},
+                config={"recursion_limit": 12},
+            )
         elapsed_ms = (time.perf_counter() - started) * 1000
         messages = result["messages"]
         response = extract_text(messages[-1].content)
-        tool_calls = find_tool_calls(messages)
+        declared_tool_calls = find_tool_calls(messages)
+        execution_trace = trace_session.as_dicts()
+        tool_calls = [
+            {
+                "name": event["tool_name"],
+                "args": event["arguments"],
+                "id": None,
+            }
+            for event in execution_trace
+        ]
         backend_calls = fixture_client.calls if fixture_client else []
-        evaluation = evaluate_case(case, response, tool_calls, backend_calls)
+        evaluation = evaluate_case(
+            case,
+            response,
+            tool_calls,
+            backend_calls,
+            execution_trace,
+        )
         return {
             "id": case["id"],
             "category": case["category"],
@@ -235,6 +260,8 @@ def run_one(
             "elapsed_ms": round(elapsed_ms, 2),
             "usage": collect_usage(messages),
             "tool_calls": tool_calls,
+            "declared_tool_calls": declared_tool_calls,
+            "tool_execution_trace": execution_trace,
             "backend_calls": backend_calls,
             "evaluation": evaluation,
             "trace": [message_trace(message) for message in messages],
@@ -266,6 +293,22 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
             check_totals[name] += 1
             checks[name] += int(passed)
 
+    tool_metrics: dict[str, dict[str, float | int]] = {}
+    tool_events: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for result in results:
+        for event in result.get("tool_execution_trace", []):
+            tool_events[event["tool_name"]].append(event)
+    for tool_name, events in sorted(tool_events.items()):
+        elapsed_values = [float(event["elapsed_ms"]) for event in events]
+        tool_metrics[tool_name] = {
+            "calls": len(events),
+            "execution_failures": sum(
+                not event.get("completed", False) for event in events
+            ),
+            "average_elapsed_ms": round(sum(elapsed_values) / len(events), 2),
+            "max_elapsed_ms": round(max(elapsed_values), 2),
+        }
+
     return {
         "total": len(results),
         "passed": sum(result["evaluation"]["passed"] for result in results),
@@ -285,6 +328,7 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
             }
             for name, total in check_totals.items()
         },
+        "tool_metrics": tool_metrics,
         "average_elapsed_ms": round(
             sum(result.get("elapsed_ms", 0) for result in results) / len(results),
             2,
