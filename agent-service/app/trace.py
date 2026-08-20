@@ -76,11 +76,13 @@ _ACTIVE_TRACE: ContextVar[ToolTraceSession | None] = ContextVar(
 
 @contextmanager
 def capture_tool_trace(correlation_id: str) -> Iterator[ToolTraceSession]:
+    # 将轨迹会话绑定到当前请求上下文，后续 Tool 无需逐层传递 session 参数。
     session = ToolTraceSession(correlation_id)
     token = _ACTIVE_TRACE.set(session)
     try:
         yield session
     finally:
+        # 请求结束后恢复原上下文，避免线程复用时把轨迹串到下一次请求。
         _ACTIVE_TRACE.reset(token)
 
 
@@ -94,6 +96,7 @@ def execute_traced(
     arguments: dict[str, Any],
     operation: Callable[[], T],
 ) -> T:
+    # 所有 Tool/Skill 都从这个统一入口执行，保证耗时和结果字段口径一致。
     started = time.perf_counter()
     session = _ACTIVE_TRACE.get()
     try:
@@ -109,6 +112,7 @@ def execute_traced(
                 elapsed_ms=(time.perf_counter() - started) * 1000,
                 error_type=exc.__class__.__name__,
             )
+        # 轨迹只负责观察，不改变原有异常处理语义。
         raise
 
     if session is not None:
@@ -125,6 +129,7 @@ def execute_traced(
 
 
 def _summarize_result(result: Any) -> tuple[bool | None, str | None]:
+    # 轨迹只保留可统计摘要，不复制完整业务数据，避免日志过大或泄露敏感字段。
     payload = result
     model_dump = getattr(result, "model_dump", None)
     if callable(model_dump):

@@ -97,6 +97,7 @@ def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> Fas
         request: Request,
         x_request_id: str | None = Header(default=None),
     ):
+        # 优先沿用网关传入的请求 ID，否则生成一个，作为整条调用链的关联键。
         request_id = normalize_request_id(x_request_id)
         session_id = payload.session_id or uuid.uuid4().hex
         logger.info(

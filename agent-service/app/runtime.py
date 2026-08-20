@@ -68,6 +68,7 @@ class AgentRuntime:
         agent = self._agent_for(user_id)
         thread_id, slot = self._acquire_session(user_id, session_id)
         try:
+            # thread_id 隔离会话记忆；request_id 只串联本次请求的日志与轨迹。
             answer = self._agent_runner(agent, message, thread_id, request_id)
             return answer, (time.perf_counter() - started) * 1000
         finally:

@@ -56,10 +56,12 @@ def build_tools(
     recommendation_skill = AwardRecommendationSkill(client)
 
     def safe_result(tool_name: str, arguments: dict, callable_):
+        # 基础 Tool 统一完成：调用业务接口、规范化业务错误、写入执行轨迹。
         def execute() -> dict:
             try:
                 return callable_().model_dump(mode="json")
             except BusinessApiError as exc:
+                # 可预期的业务接口异常转成结构化结果，供模型决定如何回复用户。
                 return exc.as_envelope().model_dump(mode="json")
 
         return execute_traced(tool_name, arguments, execute)
@@ -119,6 +121,7 @@ def build_tools(
         }
 
         def execute() -> dict:
+            # Skill 激活时加载清单与正文，再执行由多个业务查询组成的确定性流程。
             started = time.perf_counter()
             active_definition = registry.activate(points_manifest.name)
             plan = points_skill.plan(user_id=user_id, **arguments)
@@ -142,6 +145,7 @@ def build_tools(
         arguments = {"limit": limit}
 
         def execute() -> dict:
+            # 外层轨迹把整个 Skill 视为一次 Agent 工具调用，便于统计端到端耗时。
             started = time.perf_counter()
             active_definition = registry.activate(recommendation_manifest.name)
             recommendation = recommendation_skill.recommend(user_id, limit)

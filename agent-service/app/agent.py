@@ -51,6 +51,7 @@ def run_agent(
     if thread_id is not None:
         config["configurable"] = {"thread_id": thread_id}
     correlation_id = request_id or thread_id or "cli"
+    # 一次 Agent 请求对应一个轨迹会话，期间执行的 Tool/Skill 会自动写入该会话。
     with capture_tool_trace(correlation_id) as trace_session:
         try:
             result = agent.invoke(
@@ -58,6 +59,7 @@ def run_agent(
                 config=config,
             )
         finally:
+            # 即使模型或工具抛出异常，也保留已经发生的调用，便于还原失败现场。
             logger.info(
                 "agent_tool_trace request_id=%s thread_id=%s events=%s",
                 request_id or "-",

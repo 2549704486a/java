@@ -80,6 +80,7 @@ class BusinessApiClient:
 
     def _get(self, path: str, params: dict[str, str] | None = None) -> ToolEnvelope:
         last_error: BusinessApiError | None = None
+        # 从当前轨迹上下文取请求 ID，透传给 Java 服务，无需修改每个查询方法签名。
         request_id = current_correlation_id()
         headers = {"X-Request-ID": request_id} if request_id else None
         for attempt in range(self._max_retries + 1):

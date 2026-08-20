@@ -232,7 +232,9 @@ def run_one(
         elapsed_ms = (time.perf_counter() - started) * 1000
         messages = result["messages"]
         response = extract_text(messages[-1].content)
+        # 声明轨迹表示模型“想调用什么”，主要用于排查模型决策过程。
         declared_tool_calls = find_tool_calls(messages)
+        # 执行轨迹表示代码“实际执行了什么”，评测以它作为工具调用事实。
         execution_trace = trace_session.as_dicts()
         tool_calls = [
             {
