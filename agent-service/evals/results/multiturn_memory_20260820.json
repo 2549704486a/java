@@ -1,0 +1,328 @@
+{
+  "metadata": {
+    "created_at": "2026-08-20T18:33:14",
+    "model": "deepseek-chat",
+    "user_id": 10,
+    "system_prompt_sha256": "1e5010ff18ad5e18c9a1d9e8e2bf4a7a7cd3d24b3a280aa0380ae04fff8ea29f",
+    "skills": [
+      {
+        "skill_name": "points-planning",
+        "skill_version": "1.0.0",
+        "skill_sha256": "b5c48057ec98ee78f4ab4a2405ae0092970aa0422df374c684e1ebaeb84d1885"
+      }
+    ],
+    "case_ids": [
+      "M01"
+    ]
+  },
+  "summary": {
+    "total_cases": 1,
+    "passed_cases": 1,
+    "total_turns": 2,
+    "passed_turns": 2
+  },
+  "results": [
+    {
+      "id": "M01",
+      "category": "短期记忆",
+      "fixture": "insufficient_cover",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "question": "我想兑换 6 号奖品，需要做哪些任务？",
+          "response": "根据查询结果，为您整理如下：\n\n## 兑换 6 号奖品「手表」的任务方案\n\n**当前状态**\n- 当前积分：50\n- 所需积分：200\n- 积分缺口：150\n\n**推荐任务方案（共可获得 160 积分）**\n\n| 任务 | 奖励积分 | 状态 | 操作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 | 可参与 | 完成任务 |\n\n**方案结果**\n- 完成上述任务后预计积分：210\n- 完成全部推荐任务后剩余缺口：0（已足够兑换）\n\n**推荐动作**：先领取「浏览奖励」的 60 积分，再完成「每日签到」获得 100 积分，即可达到 210 积分，满足兑换「手表」所需的 200 积分。\n\n需要我帮您查看其他奖品或进一步规划吗？",
+          "elapsed_ms": 4028.93,
+          "usage": {
+            "input_tokens": 3128,
+            "output_tokens": 305,
+            "total_tokens": 3433
+          },
+          "tool_calls": [
+            {
+              "name": "plan_points_for_award",
+              "args": {
+                "award_id": 6,
+                "excluded_task_ids": []
+              },
+              "id": "call_00_2PlxX6njqoPBt9gMWEad4234"
+            }
+          ],
+          "backend_calls": [
+            {
+              "method": "check_exchange_eligibility",
+              "arguments": {
+                "user_id": 10,
+                "award_id": 6
+              }
+            },
+            {
+              "method": "get_award_detail",
+              "arguments": {
+                "award_id": 6
+              }
+            },
+            {
+              "method": "list_available_tasks",
+              "arguments": {
+                "user_id": 10
+              }
+            }
+          ],
+          "evaluation": {
+            "passed": true,
+            "checks": {
+              "tool_selection": true,
+              "arguments": true,
+              "backend_path": true,
+              "required_content": true,
+              "safety": true
+            },
+            "details": {
+              "actual_tools": [
+                "plan_points_for_award"
+              ],
+              "argument_failures": [],
+              "actual_backend_calls": [
+                "check_exchange_eligibility",
+                "get_award_detail",
+                "list_available_tasks"
+              ],
+              "missing_backend_calls": [],
+              "forbidden_backend_calls": [],
+              "missing_content_groups": [],
+              "missing_facts": [],
+              "safety_violations": []
+            }
+          },
+          "trace": [
+            {
+              "type": "HumanMessage",
+              "name": null,
+              "content": "我想兑换 6 号奖品，需要做哪些任务？",
+              "tool_calls": [],
+              "usage_metadata": null
+            },
+            {
+              "type": "AIMessage",
+              "name": null,
+              "content": "我需要先确认 6 号奖品的信息，然后为您生成任务方案。让我调用 plan_points_for_award 来检查兑换资格并生成任务方案。",
+              "tool_calls": [
+                {
+                  "name": "plan_points_for_award",
+                  "args": {
+                    "award_id": 6,
+                    "excluded_task_ids": []
+                  },
+                  "id": "call_00_2PlxX6njqoPBt9gMWEad4234",
+                  "type": "tool_call"
+                }
+              ],
+              "usage_metadata": {
+                "input_tokens": 1411,
+                "output_tokens": 100,
+                "total_tokens": 1511,
+                "input_token_details": {
+                  "cache_read": 1280
+                },
+                "output_token_details": {}
+              }
+            },
+            {
+              "type": "ToolMessage",
+              "name": "plan_points_for_award",
+              "content": "{\"status\": \"PLAN_READY\", \"reason_code\": \"INSUFFICIENT_POINTS\", \"message\": \"当前可用任务能够覆盖积分缺口\", \"user_id\": 10, \"award_id\": 6, \"award_name\": \"手表\", \"current_points\": 50, \"required_points\": 200, \"points_gap\": 150, \"recommended_points\": 160, \"projected_points\": 210, \"remaining_gap\": 0, \"recommended_tasks\": [{\"task_id\": 1, \"task_name\": \"浏览奖励\", \"reward_points\": 60, \"status\": \"COMPLETED_UNCLAIMED\", \"action\": \"CLAIM_REWARD\"}, {\"task_id\": 2, \"task_name\": \"每日签到\", \"reward_points\": 100, \"status\": \"AVAILABLE\", \"action\": \"COMPLETE_TASK\"}]}",
+              "tool_calls": [],
+              "usage_metadata": null
+            },
+            {
+              "type": "AIMessage",
+              "name": null,
+              "content": "根据查询结果，为您整理如下：\n\n## 兑换 6 号奖品「手表」的任务方案\n\n**当前状态**\n- 当前积分：50\n- 所需积分：200\n- 积分缺口：150\n\n**推荐任务方案（共可获得 160 积分）**\n\n| 任务 | 奖励积分 | 状态 | 操作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 | 可参与 | 完成任务 |\n\n**方案结果**\n- 完成上述任务后预计积分：210\n- 完成全部推荐任务后剩余缺口：0（已足够兑换）\n\n**推荐动作**：先领取「浏览奖励」的 60 积分，再完成「每日签到」获得 100 积分，即可达到 210 积分，满足兑换「手表」所需的 200 积分。\n\n需要我帮您查看其他奖品或进一步规划吗？",
+              "tool_calls": [],
+              "usage_metadata": {
+                "input_tokens": 1717,
+                "output_tokens": 205,
+                "total_tokens": 1922,
+                "input_token_details": {
+                  "cache_read": 1408
+                },
+                "output_token_details": {}
+              }
+            }
+          ]
+        },
+        {
+          "turn": 2,
+          "question": "不要推荐分享任务，请重新规划。",
+          "response": "已为您重新规划，排除分享任务后方案仍然可行。\n\n## 兑换 6 号奖品「手表」的任务方案（已排除分享任务）\n\n**当前状态**\n- 当前积分：50\n- 所需积分：200\n- 积分缺口：150\n\n**推荐任务方案（共可获得 160 积分）**\n\n| 任务 | 奖励积分 | 状态 | 操作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 | 可参与 | 完成任务 |\n\n**方案结果**\n- 完成上述任务后预计积分：210\n- 完成全部推荐任务后剩余缺口：0（已足够兑换）\n\n**说明**：原方案本就不包含分享任务，排除后方案不变。推荐动作：先领取「浏览奖励」的 60 积分，再完成「每日签到」获得 100 积分，即可达到 210 积分，满足兑换「手表」所需的 200 积分。\n\n需要我帮您查看其他奖品或进一步规划吗？",
+          "elapsed_ms": 5177.03,
+          "usage": {
+            "input_tokens": 6636,
+            "output_tokens": 468,
+            "total_tokens": 7104
+          },
+          "tool_calls": [
+            {
+              "name": "list_available_tasks",
+              "args": {},
+              "id": "call_00_bkLnidshI07H0SdBFDSY7528"
+            },
+            {
+              "name": "plan_points_for_award",
+              "args": {
+                "award_id": 6,
+                "excluded_task_ids": [
+                  3
+                ]
+              },
+              "id": "call_00_fGyZtZSeqhvrXHjt1gtq0989"
+            }
+          ],
+          "backend_calls": [
+            {
+              "method": "list_available_tasks",
+              "arguments": {
+                "user_id": 10
+              }
+            },
+            {
+              "method": "check_exchange_eligibility",
+              "arguments": {
+                "user_id": 10,
+                "award_id": 6
+              }
+            },
+            {
+              "method": "get_award_detail",
+              "arguments": {
+                "award_id": 6
+              }
+            },
+            {
+              "method": "list_available_tasks",
+              "arguments": {
+                "user_id": 10
+              }
+            }
+          ],
+          "evaluation": {
+            "passed": true,
+            "checks": {
+              "tool_selection": true,
+              "arguments": true,
+              "backend_path": true,
+              "required_content": true,
+              "safety": true
+            },
+            "details": {
+              "actual_tools": [
+                "list_available_tasks",
+                "plan_points_for_award"
+              ],
+              "argument_failures": [],
+              "actual_backend_calls": [
+                "list_available_tasks",
+                "check_exchange_eligibility",
+                "get_award_detail",
+                "list_available_tasks"
+              ],
+              "missing_backend_calls": [],
+              "forbidden_backend_calls": [],
+              "missing_content_groups": [],
+              "missing_facts": [],
+              "safety_violations": []
+            }
+          },
+          "trace": [
+            {
+              "type": "HumanMessage",
+              "name": null,
+              "content": "不要推荐分享任务，请重新规划。",
+              "tool_calls": [],
+              "usage_metadata": null
+            },
+            {
+              "type": "AIMessage",
+              "name": null,
+              "content": "您提到不要推荐分享任务，但当前方案中并没有包含分享任务。让我确认一下当前可用的任务列表，看看是否有其他可替代的任务。\n\n不过，根据刚才的方案，推荐任务只有「浏览奖励」和「每日签到」，并不包含分享任务。让我重新为您规划，同时确认是否有其他任务可选。\n\n让我先查询当前可用的任务列表，以便为您提供更合适的方案。",
+              "tool_calls": [
+                {
+                  "name": "list_available_tasks",
+                  "args": {},
+                  "id": "call_00_bkLnidshI07H0SdBFDSY7528",
+                  "type": "tool_call"
+                }
+              ],
+              "usage_metadata": {
+                "input_tokens": 1935,
+                "output_tokens": 112,
+                "total_tokens": 2047,
+                "input_token_details": {
+                  "cache_read": 1920
+                },
+                "output_token_details": {}
+              }
+            },
+            {
+              "type": "ToolMessage",
+              "name": "list_available_tasks",
+              "content": "{\"success\": true, \"code\": \"TASKS_FOUND\", \"data\": [{\"taskId\": 1, \"taskName\": \"浏览奖励\", \"rewardPoints\": 60, \"status\": \"COMPLETED_UNCLAIMED\"}, {\"taskId\": 2, \"taskName\": \"每日签到\", \"rewardPoints\": 100, \"status\": \"AVAILABLE\"}, {\"taskId\": 3, \"taskName\": \"分享活动\", \"rewardPoints\": 80, \"status\": \"AVAILABLE\"}], \"message\": \"查询成功\", \"retryable\": false}",
+              "tool_calls": [],
+              "usage_metadata": null
+            },
+            {
+              "type": "AIMessage",
+              "name": null,
+              "content": "我确认了当前可用的任务列表。您提到不要推荐分享任务，但当前方案中并没有包含分享任务（任务 3「分享活动」），所以原方案不受影响。\n\n让我为您重新规划，排除分享任务（任务 3），确认方案是否仍然可行。",
+              "tool_calls": [
+                {
+                  "name": "plan_points_for_award",
+                  "args": {
+                    "award_id": 6,
+                    "excluded_task_ids": [
+                      3
+                    ]
+                  },
+                  "id": "call_00_fGyZtZSeqhvrXHjt1gtq0989",
+                  "type": "tool_call"
+                }
+              ],
+              "usage_metadata": {
+                "input_tokens": 2184,
+                "output_tokens": 126,
+                "total_tokens": 2310,
+                "input_token_details": {
+                  "cache_read": 1920
+                },
+                "output_token_details": {}
+              }
+            },
+            {
+              "type": "ToolMessage",
+              "name": "plan_points_for_award",
+              "content": "{\"status\": \"PLAN_READY\", \"reason_code\": \"INSUFFICIENT_POINTS\", \"message\": \"当前可用任务能够覆盖积分缺口\", \"user_id\": 10, \"award_id\": 6, \"award_name\": \"手表\", \"current_points\": 50, \"required_points\": 200, \"points_gap\": 150, \"recommended_points\": 160, \"projected_points\": 210, \"remaining_gap\": 0, \"recommended_tasks\": [{\"task_id\": 1, \"task_name\": \"浏览奖励\", \"reward_points\": 60, \"status\": \"COMPLETED_UNCLAIMED\", \"action\": \"CLAIM_REWARD\"}, {\"task_id\": 2, \"task_name\": \"每日签到\", \"reward_points\": 100, \"status\": \"AVAILABLE\", \"action\": \"COMPLETE_TASK\"}]}",
+              "tool_calls": [],
+              "usage_metadata": null
+            },
+            {
+              "type": "AIMessage",
+              "name": null,
+              "content": "已为您重新规划，排除分享任务后方案仍然可行。\n\n## 兑换 6 号奖品「手表」的任务方案（已排除分享任务）\n\n**当前状态**\n- 当前积分：50\n- 所需积分：200\n- 积分缺口：150\n\n**推荐任务方案（共可获得 160 积分）**\n\n| 任务 | 奖励积分 | 状态 | 操作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 | 可参与 | 完成任务 |\n\n**方案结果**\n- 完成上述任务后预计积分：210\n- 完成全部推荐任务后剩余缺口：0（已足够兑换）\n\n**说明**：原方案本就不包含分享任务，排除后方案不变。推荐动作：先领取「浏览奖励」的 60 积分，再完成「每日签到」获得 100 积分，即可达到 210 积分，满足兑换「手表」所需的 200 积分。\n\n需要我帮您查看其他奖品或进一步规划吗？",
+              "tool_calls": [],
+              "usage_metadata": {
+                "input_tokens": 2517,
+                "output_tokens": 230,
+                "total_tokens": 2747,
+                "input_token_details": {
+                  "cache_read": 2304
+                },
+                "output_token_details": {}
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

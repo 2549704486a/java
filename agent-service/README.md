@@ -105,6 +105,7 @@ Invoke-RestMethod http://127.0.0.1:8090/health
 ```powershell
 $body = @{
     user_id = 10
+    session_id = 'local-session-001'
     message = '我想兑换 6 号奖品，积分不够该做哪些任务？'
 } | ConvertTo-Json
 
@@ -116,7 +117,9 @@ Invoke-RestMethod `
     -Body $body
 ```
 
-响应包含 `request_id`、`user_id`、`answer` 和服务端总耗时 `elapsed_ms`。当前缓存的是按用户绑定 Tool 的 Agent 执行图，不保存历史消息，因此 HTTP 接口仍是单轮对话。
+响应包含 `request_id`、`session_id`、`user_id`、`answer` 和服务端总耗时 `elapsed_ms`。首次不传 `session_id` 时服务会生成并返回；后续请求携带同一个 `session_id` 即可延续对话。
+
+短期记忆只保存在当前进程内，并按 `user_id + session_id` 隔离。服务重启或会话被 LRU 淘汰后，历史消息不会保留。
 
 ## 6. 测试
 
@@ -133,6 +136,7 @@ Invoke-RestMethod `
 ```powershell
 .\.venv\Scripts\python.exe -m evals.runner --suite fixture
 .\.venv\Scripts\python.exe -m evals.runner --suite live --user-id 10
+.\.venv\Scripts\python.exe -m evals.multiturn_runner
 ```
 
 结果保存在 `evals/results/`，包含最终回答、Tool 调用、参数、后端路径和消息轨迹。修改评分规则后可以对同一模型输出离线重评，避免反复调用模型碰结果：

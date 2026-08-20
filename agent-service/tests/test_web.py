@@ -19,11 +19,13 @@ class FakeRuntime:
             "model": "test-model",
             "cached_agents": 0,
             "agent_cache_size": 2,
+            "cached_sessions": 0,
+            "session_cache_size": 2,
             "skills": [],
         }
 
-    def answer(self, user_id: int, message: str):
-        self.calls.append((user_id, message))
+    def answer(self, user_id: int, session_id: str, message: str):
+        self.calls.append((user_id, session_id, message))
         if self.should_fail:
             raise RuntimeError("不应返回给调用方的内部异常")
         return "测试回答", 12.345
@@ -42,7 +44,11 @@ class AgentWebTest(unittest.TestCase):
             response = client.post(
                 "/v1/chat",
                 headers={"X-Request-ID": "request-001"},
-                json={"user_id": 10, "message": "  我有多少积分？  "},
+                json={
+                    "user_id": 10,
+                    "session_id": "session-001",
+                    "message": "  我有多少积分？  ",
+                },
             )
 
         self.assertEqual(200, health.status_code)
@@ -52,13 +58,17 @@ class AgentWebTest(unittest.TestCase):
         self.assertEqual(
             {
                 "request_id": "request-001",
+                "session_id": "session-001",
                 "user_id": 10,
                 "answer": "测试回答",
                 "elapsed_ms": 12.35,
             },
             response.json(),
         )
-        self.assertEqual([(10, "我有多少积分？")], runtime.calls)
+        self.assertEqual(
+            [(10, "session-001", "我有多少积分？")],
+            runtime.calls,
+        )
         self.assertTrue(runtime.closed)
 
     def test_rejects_invalid_request_before_runtime_call(self):
@@ -72,9 +82,18 @@ class AgentWebTest(unittest.TestCase):
             blank_message = client.post(
                 "/v1/chat", json={"user_id": 10, "message": "   "}
             )
+            invalid_session = client.post(
+                "/v1/chat",
+                json={
+                    "user_id": 10,
+                    "session_id": "invalid session",
+                    "message": "查询积分",
+                },
+            )
 
         self.assertEqual(422, invalid_user.status_code)
         self.assertEqual(422, blank_message.status_code)
+        self.assertEqual(422, invalid_session.status_code)
         self.assertEqual([], runtime.calls)
 
     def test_returns_sanitized_error_and_generated_request_id(self):
@@ -94,6 +113,7 @@ class AgentWebTest(unittest.TestCase):
         self.assertEqual("AGENT_SERVICE_UNAVAILABLE", body["code"])
         self.assertNotIn("内部异常", body["message"])
         self.assertEqual(32, len(body["request_id"]))
+        self.assertEqual(32, len(body["session_id"]))
         self.assertEqual(body["request_id"], response.headers["X-Request-ID"])
 
 

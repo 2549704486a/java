@@ -16,6 +16,7 @@
 | `agent-design/08_Agent评测体系升级.md` | 从固定回归走向盲测、重复试验、混合评分和线上反馈闭环的升级方案 |
 | `agent-design/09_Skill运行时标准化.md` | SKILL.md 的运行时注册、契约校验、渐进披露和版本追踪 |
 | `agent-design/10_Agent服务化.md` | FastAPI 接口、多用户身份隔离、有界 Agent 缓存、生命周期和请求追踪 |
+| `agent-design/11_短期记忆与会话隔离.md` | InMemorySaver、thread_id、会话隔离、串行执行和会话 LRU |
 
 这些文档服务于开发、调试和代码评审，可以记录具体路径、接口、状态码和运行命令。
 

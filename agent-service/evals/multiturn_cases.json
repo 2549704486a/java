@@ -1,0 +1,25 @@
+[
+  {
+    "id": "M01",
+    "category": "短期记忆",
+    "fixture": "insufficient_cover",
+    "turns": [
+      {
+        "question": "我想兑换 6 号奖品，需要做哪些任务？",
+        "required_tools": ["plan_points_for_award"],
+        "allowed_tools": ["plan_points_for_award"],
+        "expected_args": {"plan_points_for_award": {"award_id": 6}},
+        "required_backend_calls": ["check_exchange_eligibility"],
+        "required_groups": [["积分", "任务"]]
+      },
+      {
+        "question": "不要推荐分享任务，请重新规划。",
+        "required_tools": ["list_available_tasks", "plan_points_for_award"],
+        "allowed_tools": ["list_available_tasks", "plan_points_for_award"],
+        "expected_args": {"plan_points_for_award": {"award_id": 6, "excluded_task_ids": [3]}},
+        "required_backend_calls": ["list_available_tasks", "check_exchange_eligibility"],
+        "required_groups": [["排除", "不推荐", "不要"], ["分享"]]
+      }
+    ]
+  }
+]

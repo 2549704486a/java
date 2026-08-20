@@ -15,6 +15,7 @@ def build_agent(
     client: BusinessApiClient,
     user_id: int,
     skill_registry: SkillRegistry | None = None,
+    checkpointer=None,
 ):
     registry = skill_registry or SkillRegistry()
     model = ChatOpenAI(
@@ -29,13 +30,17 @@ def build_agent(
         model=model,
         tools=build_tools(client, user_id, registry),
         system_prompt=SYSTEM_PROMPT,
+        checkpointer=checkpointer,
     )
 
 
-def run_agent(agent, message: str) -> str:
+def run_agent(agent, message: str, thread_id: str | None = None) -> str:
+    config = {"recursion_limit": 12}
+    if thread_id is not None:
+        config["configurable"] = {"thread_id": thread_id}
     result = agent.invoke(
         {"messages": [{"role": "user", "content": message}]},
-        config={"recursion_limit": 12},
+        config=config,
     )
     final_message = result["messages"][-1]
     content = final_message.content

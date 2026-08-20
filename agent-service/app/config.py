@@ -16,6 +16,7 @@ class Settings:
     agent_host: str = "127.0.0.1"
     agent_port: int = 8090
     agent_cache_size: int = 128
+    agent_session_cache_size: int = 1024
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -36,6 +37,9 @@ class Settings:
             agent_host=os.getenv("AGENT_HOST", "127.0.0.1"),
             agent_port=int(os.getenv("AGENT_PORT", "8090")),
             agent_cache_size=int(os.getenv("AGENT_CACHE_SIZE", "128")),
+            agent_session_cache_size=int(
+                os.getenv("AGENT_SESSION_CACHE_SIZE", "1024")
+            ),
         )
 
     def require_llm_api_key(self) -> str:

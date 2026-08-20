@@ -24,6 +24,7 @@ RuntimeFactory = Callable[[], AgentRuntime]
 class ChatRequest(BaseModel):
     user_id: int = Field(gt=0)
     message: str = Field(min_length=1, max_length=2000)
+    session_id: str | None = Field(default=None, max_length=128)
 
     @field_validator("message")
     @classmethod
@@ -33,9 +34,20 @@ class ChatRequest(BaseModel):
             raise ValueError("message 不能为空")
         return stripped
 
+    @field_validator("session_id")
+    @classmethod
+    def validate_session_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        if not REQUEST_ID_PATTERN.fullmatch(stripped):
+            raise ValueError("session_id 格式不合法")
+        return stripped
+
 
 class ChatResponse(BaseModel):
     request_id: str
+    session_id: str
     user_id: int
     answer: str
     elapsed_ms: float
@@ -43,6 +55,7 @@ class ChatResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     request_id: str
+    session_id: str
     code: str
     message: str
 
@@ -85,15 +98,19 @@ def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> Fas
         x_request_id: str | None = Header(default=None),
     ):
         request_id = normalize_request_id(x_request_id)
+        session_id = payload.session_id or uuid.uuid4().hex
         logger.info(
-            "agent_request_started request_id=%s user_id=%s message_length=%s",
+            "agent_request_started request_id=%s session_id=%s user_id=%s "
+            "message_length=%s",
             request_id,
+            session_id,
             payload.user_id,
             len(payload.message),
         )
         try:
             answer, elapsed_ms = request.app.state.runtime.answer(
                 payload.user_id,
+                session_id,
                 payload.message,
             )
         except Exception:
@@ -104,6 +121,7 @@ def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> Fas
             )
             error = ErrorResponse(
                 request_id=request_id,
+                session_id=session_id,
                 code="AGENT_SERVICE_UNAVAILABLE",
                 message="Agent 服务暂时不可用，请稍后重试",
             )
@@ -114,13 +132,16 @@ def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> Fas
             )
 
         logger.info(
-            "agent_request_completed request_id=%s user_id=%s elapsed_ms=%.2f",
+            "agent_request_completed request_id=%s session_id=%s user_id=%s "
+            "elapsed_ms=%.2f",
             request_id,
+            session_id,
             payload.user_id,
             elapsed_ms,
         )
         response = ChatResponse(
             request_id=request_id,
+            session_id=session_id,
             user_id=payload.user_id,
             answer=answer,
             elapsed_ms=round(elapsed_ms, 2),
