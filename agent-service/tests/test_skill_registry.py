@@ -55,6 +55,14 @@ class SkillRegistryTest(unittest.TestCase):
         self.assertIn("生成任务积分方案", manifest.description)
         self.assertIn("## 执行步骤", definition.instructions)
         self.assertEqual(64, len(manifest.sha256))
+        self.assertEqual(
+            {"award-recommendation", "points-planning"},
+            {item.name for item in registry.manifests()},
+        )
+
+        recommendation = registry.require_manifest("award-recommendation")
+        self.assertIn("推荐", recommendation.description)
+        self.assertEqual("1.0.0", recommendation.version)
 
     def test_tool_description_comes_from_manifest_and_activation_is_traced(self):
         registry = SkillRegistry()

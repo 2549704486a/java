@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from langchain.tools import tool
 
 from app.api_client import BusinessApiClient, BusinessApiError
+from app.skills.award_recommendation import AwardRecommendationSkill
 from app.skills.points_plan import PointsPlanningSkill
 from app.skills.registry import SkillRegistry
 
@@ -33,6 +34,15 @@ class PlanPointsInput(BaseModel):
     )
 
 
+class RecommendAwardsInput(BaseModel):
+    limit: int = Field(
+        default=3,
+        ge=1,
+        le=5,
+        description="推荐奖品数量，用户说推荐一个时传 1",
+    )
+
+
 def build_tools(
     client: BusinessApiClient,
     user_id: int,
@@ -40,7 +50,9 @@ def build_tools(
 ):
     registry = skill_registry or SkillRegistry()
     points_manifest = registry.require_manifest("points-planning")
-    skill = PointsPlanningSkill(client)
+    recommendation_manifest = registry.require_manifest("award-recommendation")
+    points_skill = PointsPlanningSkill(client)
+    recommendation_skill = AwardRecommendationSkill(client)
 
     def safe_result(callable_):
         try:
@@ -85,7 +97,7 @@ def build_tools(
     ) -> dict:
         started = time.perf_counter()
         active_definition = registry.activate(points_manifest.name)
-        plan = skill.plan(
+        plan = points_skill.plan(
             user_id=user_id,
             award_id=award_id,
             excluded_task_ids=excluded_task_ids or [],
@@ -99,6 +111,24 @@ def build_tools(
         )
         return plan.model_dump(mode="json")
 
+    @tool(
+        args_schema=RecommendAwardsInput,
+        description=recommendation_manifest.tool_description,
+        extras=recommendation_manifest.trace_metadata(),
+    )
+    def recommend_awards(limit: int = 3) -> dict:
+        started = time.perf_counter()
+        active_definition = registry.activate(recommendation_manifest.name)
+        recommendation = recommendation_skill.recommend(user_id, limit)
+        logger.info(
+            "skill_complete name=%s version=%s status=%s elapsed_ms=%.2f",
+            active_definition.manifest.name,
+            active_definition.manifest.version,
+            recommendation.status,
+            (time.perf_counter() - started) * 1000,
+        )
+        return recommendation.model_dump(mode="json")
+
     return [
         get_user_points,
         list_available_tasks,
@@ -106,4 +136,5 @@ def build_tools(
         list_awards,
         check_exchange_eligibility,
         plan_points_for_award,
+        recommend_awards,
     ]

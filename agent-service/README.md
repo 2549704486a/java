@@ -5,8 +5,9 @@
 ## 1. 当前能力
 
 - 通过 LangChain `create_agent` 运行 Function Calling 循环。
-- 使用 5 个只读查询 Tool 和 1 个组合 Skill。
+- 使用 5 个基础查询 Tool 和 2 个只读组合 Skill。
 - `plan_points_for_award` 使用确定性代码计算积分缺口和任务组合。
+- `recommend_awards` 使用确定性代码过滤并排序当前真正可兑换的奖品。
 - 启动时发现并校验 `skills/*/SKILL.md`，Tool 描述、Skill 版本和哈希来自声明文件。
 - 提供 FastAPI HTTP 接口，支持请求校验、请求 ID、错误脱敏和有界 Agent 缓存。
 - Tool 层只对 GET 请求的瞬时网络错误做有限重试。
@@ -60,6 +61,7 @@ LLM_MODEL=服务商提供的模型名
 
 ```powershell
 .\.venv\Scripts\python.exe -m app.main --user-id 10 --plan-award-id 6
+.\.venv\Scripts\python.exe -m app.main --user-id 10 --recommend-awards 3
 ```
 
 Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Tool 元数据提供给模型。调用 `plan_points_for_award` 时，运行时激活完整 Skill 定义并记录版本与 SHA-256；积分计算仍由 `app/skills/points_plan.py` 的确定性代码完成，不让模型按说明文字自行计算。
@@ -103,16 +105,17 @@ Invoke-RestMethod http://127.0.0.1:8090/health
 调用 Agent：
 
 ```powershell
-$body = @{
+$json = @{
     user_id = 10
     session_id = 'local-session-001'
     message = '我想兑换 6 号奖品，积分不够该做哪些任务？'
 } | ConvertTo-Json
+$body = [Text.Encoding]::UTF8.GetBytes($json)
 
 Invoke-RestMethod `
     -Method Post `
     -Uri http://127.0.0.1:8090/v1/chat `
-    -ContentType 'application/json' `
+    -ContentType 'application/json; charset=utf-8' `
     -Headers @{ 'X-Request-ID' = 'local-demo-001' } `
     -Body $body
 ```
@@ -153,7 +156,7 @@ Invoke-RestMethod `
 agent-service/logs/agent-service.log
 ```
 
-日志会记录 HTTP 请求 ID、用户 ID、请求总耗时，每次 Java 业务接口的路径、HTTP 状态、业务码、重试次数和耗时，以及积分规划 Skill 的名称、版本、定义哈希和总耗时，不记录 API Key、用户问题正文和完整业务响应。
+日志会记录 HTTP 请求 ID、用户 ID、请求总耗时，每次 Java 业务接口的路径、HTTP 状态、业务码、重试次数和耗时，以及组合 Skill 的名称、版本、定义哈希和总耗时，不记录 API Key、用户问题正文和完整业务响应。
 
 Spring Boot 请求日志由一键启动脚本保存到：
 

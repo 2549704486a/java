@@ -13,6 +13,13 @@ class ToolEnvelope(BaseModel):
     retryable: bool = False
 
 
+class UserPointsData(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    user_id: int = Field(alias="userId")
+    points: int = Field(ge=0)
+
+
 class EligibilityData(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -33,6 +40,36 @@ class AwardData(BaseModel):
     name: str
     required_points: int = Field(alias="requiredPoints")
     inventory: int
+
+
+class AwardOptionData(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    award: AwardData
+    redeemable: bool
+    points_gap: int = Field(alias="pointsGap", ge=0)
+    reason_code: str = Field(alias="reasonCode")
+
+
+class RecommendedAward(BaseModel):
+    award_id: int
+    name: str
+    required_points: int
+    inventory: int
+    remaining_points: int
+
+
+class AwardRecommendation(BaseModel):
+    status: Literal[
+        "RECOMMENDATIONS_READY",
+        "NO_REDEEMABLE_AWARDS",
+        "QUERY_FAILED",
+    ]
+    reason_code: str
+    message: str
+    user_id: int
+    current_points: int | None = None
+    recommendations: list[RecommendedAward] = Field(default_factory=list)
 
 
 class TaskData(BaseModel):
@@ -73,4 +110,3 @@ class PointsPlan(BaseModel):
     projected_points: int | None = None
     remaining_gap: int | None = None
     recommended_tasks: list[RecommendedTask] = Field(default_factory=list)
-

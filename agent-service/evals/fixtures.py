@@ -149,6 +149,62 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         },
         "tasks": [],
     },
+    "award_recommendation": {
+        "points": 260,
+        "award": BASE_AWARD,
+        "eligibility": {
+            "userId": 10,
+            "awardId": 6,
+            "eligible": True,
+            "reasonCode": "ELIGIBLE",
+            "reason": "满足兑换条件",
+            "currentPoints": 260,
+            "requiredPoints": 200,
+            "pointsGap": 0,
+        },
+        "awards": [
+            {
+                "award": BASE_AWARD,
+                "redeemable": True,
+                "pointsGap": 0,
+                "reasonCode": "ELIGIBLE",
+            },
+            {
+                "award": {
+                    "awardId": 7,
+                    "name": "水杯",
+                    "requiredPoints": 100,
+                    "inventory": 50,
+                },
+                "redeemable": True,
+                "pointsGap": 0,
+                "reasonCode": "ELIGIBLE",
+            },
+            {
+                "award": {
+                    "awardId": 8,
+                    "name": "耳机",
+                    "requiredPoints": 300,
+                    "inventory": 20,
+                },
+                "redeemable": False,
+                "pointsGap": 40,
+                "reasonCode": "INSUFFICIENT_POINTS",
+            },
+            {
+                "award": {
+                    "awardId": 9,
+                    "name": "键盘",
+                    "requiredPoints": 250,
+                    "inventory": 0,
+                },
+                "redeemable": False,
+                "pointsGap": 0,
+                "reasonCode": "OUT_OF_STOCK",
+            },
+        ],
+        "tasks": [],
+    },
 }
 
 
@@ -198,11 +254,20 @@ class FixtureBusinessApiClient:
             "list_awards", user_id=user_id, redeemable_only=redeemable_only
         )
         self._maybe_raise()
-        award = deepcopy(self.scenario["award"])
-        award["redeemable"] = bool(
-            self.scenario.get("eligibility", {}).get("eligible", False)
-        )
-        return _ok("AWARDS_FOUND", [award])
+        awards = self.scenario.get("awards")
+        if awards is None:
+            eligibility = self.scenario.get("eligibility", {})
+            awards = [
+                {
+                    "award": deepcopy(self.scenario["award"]),
+                    "redeemable": bool(eligibility.get("eligible", False)),
+                    "pointsGap": eligibility.get("pointsGap", 0),
+                    "reasonCode": eligibility.get("reasonCode", "UNKNOWN"),
+                }
+            ]
+        if redeemable_only:
+            awards = [award for award in awards if award["redeemable"]]
+        return _ok("AWARDS_FOUND", awards)
 
     def check_exchange_eligibility(
         self, user_id: int, award_id: int
@@ -215,4 +280,3 @@ class FixtureBusinessApiClient:
             code, message = self.scenario["eligibility_error"]
             return _failed(code, message)
         return _ok("ELIGIBILITY_CHECKED", self.scenario["eligibility"])
-

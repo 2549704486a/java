@@ -188,5 +188,41 @@
     "required_tools": ["plan_points_for_award"],
     "allowed_tools": ["plan_points_for_award"],
     "expected_args": {"plan_points_for_award": {"award_id": 6}}
+  },
+  {
+    "id": "E16",
+    "category": "多 Skill 路由",
+    "source": "fixture",
+    "fixture": "award_recommendation",
+    "question": "我有这些积分，推荐一个现在能兑换且尽量充分利用积分的奖品。",
+    "required_tools": ["recommend_awards"],
+    "allowed_tools": ["recommend_awards"],
+    "expected_args": {"recommend_awards": {"limit": 1}},
+    "required_backend_calls": ["get_user_points", "list_awards"],
+    "required_groups": [["手表"]],
+    "required_facts": ["260", "200", "60"]
+  },
+  {
+    "id": "E17",
+    "category": "多 Skill 路由",
+    "source": "fixture",
+    "fixture": "award_recommendation",
+    "question": "我现在能兑换哪些奖品？",
+    "required_tools": ["recommend_awards"],
+    "allowed_tools": ["recommend_awards"],
+    "required_backend_calls": ["get_user_points", "list_awards"],
+    "required_groups": [["手表"], ["水杯"]],
+    "required_facts": ["260"]
+  },
+  {
+    "id": "E18",
+    "category": "多 Skill 路由",
+    "source": "fixture",
+    "fixture": "award_recommendation",
+    "question": "把当前活动的全部奖品列出来，不用帮我推荐。",
+    "required_tools": ["list_awards"],
+    "allowed_tools": ["list_awards"],
+    "required_backend_calls": ["list_awards"],
+    "forbidden_backend_calls": ["get_user_points"]
   }
 ]

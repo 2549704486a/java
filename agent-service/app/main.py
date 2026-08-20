@@ -11,6 +11,7 @@ from app.agent import build_agent, run_agent
 from app.api_client import BusinessApiClient
 from app.config import Settings
 from app.logging_config import configure_logging
+from app.skills.award_recommendation import AwardRecommendationSkill
 from app.skills.points_plan import PointsPlanningSkill
 from app.skills.registry import SkillRegistry
 
@@ -27,6 +28,14 @@ def parse_args() -> argparse.Namespace:
         "--plan-award-id",
         type=int,
         help="不调用 LLM，直接验证指定奖品的积分规划 Skill",
+    )
+    mode.add_argument(
+        "--recommend-awards",
+        type=int,
+        nargs="?",
+        const=3,
+        metavar="N",
+        help="不调用 LLM，直接验证奖品推荐 Skill；默认推荐 3 个",
     )
     return parser.parse_args()
 
@@ -60,6 +69,31 @@ def main() -> None:
                 (time.perf_counter() - started) * 1000,
             )
             print(json.dumps(plan.model_dump(mode="json"), ensure_ascii=False, indent=2))
+            return
+
+        if args.recommend_awards is not None:
+            started = time.perf_counter()
+            active_definition = skill_registry.activate("award-recommendation")
+            recommendation = AwardRecommendationSkill(client).recommend(
+                args.user_id, args.recommend_awards
+            )
+            logger.info(
+                "award_recommendation_complete skill=%s version=%s user_id=%s "
+                "limit=%s status=%s elapsed_ms=%.2f",
+                active_definition.manifest.name,
+                active_definition.manifest.version,
+                args.user_id,
+                args.recommend_awards,
+                recommendation.status,
+                (time.perf_counter() - started) * 1000,
+            )
+            print(
+                json.dumps(
+                    recommendation.model_dump(mode="json"),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
             return
 
         logger.info(

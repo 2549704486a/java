@@ -1,0 +1,409 @@
+{
+  "metadata": {
+    "created_at": "2026-08-20T19:05:23",
+    "model": "deepseek-chat",
+    "suite": "fixture",
+    "user_id": 10,
+    "temperature": 0,
+    "system_prompt_sha256": "76bc16334df80c67ac86bf343c95410e0a2eb81b75c49fa264ce3c371dfefd75",
+    "skills": [
+      {
+        "skill_name": "award-recommendation",
+        "skill_version": "1.0.0",
+        "skill_sha256": "dc8966972d6f9f6b171c9128d38615010fde91da3f22e8951da44f23658039ec"
+      },
+      {
+        "skill_name": "points-planning",
+        "skill_version": "1.0.0",
+        "skill_sha256": "b5c48057ec98ee78f4ab4a2405ae0092970aa0422df374c684e1ebaeb84d1885"
+      }
+    ],
+    "case_ids": [
+      "E16",
+      "E17",
+      "E18"
+    ]
+  },
+  "summary": {
+    "total": 3,
+    "passed": 2,
+    "failed": 1,
+    "by_category": {
+      "多 Skill 路由": {
+        "total": 3,
+        "passed": 2
+      }
+    },
+    "check_rates": {
+      "tool_selection": {
+        "passed": 3,
+        "total": 3,
+        "rate": 1.0
+      },
+      "arguments": {
+        "passed": 2,
+        "total": 3,
+        "rate": 0.6667
+      },
+      "backend_path": {
+        "passed": 3,
+        "total": 3,
+        "rate": 1.0
+      },
+      "required_content": {
+        "passed": 3,
+        "total": 3,
+        "rate": 1.0
+      },
+      "safety": {
+        "passed": 3,
+        "total": 3,
+        "rate": 1.0
+      }
+    },
+    "average_elapsed_ms": 2755.62
+  },
+  "results": [
+    {
+      "id": "E16",
+      "category": "多 Skill 路由",
+      "source": "fixture",
+      "fixture": "award_recommendation",
+      "question": "我有这些积分，推荐一个现在能兑换且尽量充分利用积分的奖品。",
+      "response": "根据你当前的积分情况，为你推荐如下奖品：\n\n**推荐奖品：手表**\n- 当前积分：**260**\n- 所需积分：**200**\n- 兑换后剩余积分：**60**\n\n这款手表是当前可兑换奖品中所需积分最高、最能充分利用你积分的选项，兑换后还能保留 60 积分。需要我帮你规划其他奖品或查询更多信息吗？",
+      "elapsed_ms": 3344.65,
+      "usage": {
+        "input_tokens": 3474,
+        "output_tokens": 146,
+        "total_tokens": 3620
+      },
+      "tool_calls": [
+        {
+          "name": "recommend_awards",
+          "args": {
+            "limit": 1
+          },
+          "id": "call_00_QN6XRXZSTGt5r4J0J8cP8595"
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "get_user_points",
+          "arguments": {
+            "user_id": 10
+          }
+        },
+        {
+          "method": "list_awards",
+          "arguments": {
+            "user_id": 10,
+            "redeemable_only": false
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "arguments": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "recommend_awards"
+          ],
+          "argument_failures": [],
+          "actual_backend_calls": [
+            "get_user_points",
+            "list_awards"
+          ],
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "我有这些积分，推荐一个现在能兑换且尽量充分利用积分的奖品。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "I'll recommend a prize that you can redeem now while making the most of your points.",
+          "tool_calls": [
+            {
+              "name": "recommend_awards",
+              "args": {
+                "limit": 1
+              },
+              "id": "call_00_QN6XRXZSTGt5r4J0J8cP8595",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1650,
+            "output_tokens": 63,
+            "total_tokens": 1713,
+            "input_token_details": {
+              "cache_read": 0
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "recommend_awards",
+          "content": "{\"status\": \"RECOMMENDATIONS_READY\", \"reason_code\": \"RECOMMENDATIONS_READY\", \"message\": \"已按所需积分从高到低推荐当前可兑换奖品\", \"user_id\": 10, \"current_points\": 260, \"recommendations\": [{\"award_id\": 6, \"name\": \"手表\", \"required_points\": 200, \"inventory\": 100, \"remaining_points\": 60}]}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "根据你当前的积分情况，为你推荐如下奖品：\n\n**推荐奖品：手表**\n- 当前积分：**260**\n- 所需积分：**200**\n- 兑换后剩余积分：**60**\n\n这款手表是当前可兑换奖品中所需积分最高、最能充分利用你积分的选项，兑换后还能保留 60 积分。需要我帮你规划其他奖品或查询更多信息吗？",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 1824,
+            "output_tokens": 83,
+            "total_tokens": 1907,
+            "input_token_details": {
+              "cache_read": 1536
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "E17",
+      "category": "多 Skill 路由",
+      "source": "fixture",
+      "fixture": "award_recommendation",
+      "question": "我现在能兑换哪些奖品？",
+      "response": "根据您当前的积分情况，以下是您现在可以兑换的奖品：\n\n**当前积分：260 分**\n\n| 奖品 | 所需积分 | 兑换后剩余 |\n|------|---------|-----------|\n| 🕐 手表 | 200 分 | 60 分 |\n| 🥤 水杯 | 100 分 | 160 分 |\n\n**推荐动作：**\n- 若想充分利用积分，**手表**（200 分）是当前最高价值的可兑换奖品，兑换后还剩 60 分。\n- 若想保留更多积分，**水杯**（100 分）兑换后还剩 160 分。\n\n请问您对哪个奖品感兴趣？我可以帮您进一步确认兑换资格或规划积分方案。",
+      "elapsed_ms": 2318.77,
+      "usage": {
+        "input_tokens": 3457,
+        "output_tokens": 185,
+        "total_tokens": 3642
+      },
+      "tool_calls": [
+        {
+          "name": "recommend_awards",
+          "args": {},
+          "id": "call_00_yX0W77dHfimjMtgNpAhI5597"
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "get_user_points",
+          "arguments": {
+            "user_id": 10
+          }
+        },
+        {
+          "method": "list_awards",
+          "arguments": {
+            "user_id": 10,
+            "redeemable_only": false
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "arguments": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "recommend_awards"
+          ],
+          "argument_failures": [],
+          "actual_backend_calls": [
+            "get_user_points",
+            "list_awards"
+          ],
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "我现在能兑换哪些奖品？",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "recommend_awards",
+              "args": {},
+              "id": "call_00_yX0W77dHfimjMtgNpAhI5597",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1640,
+            "output_tokens": 29,
+            "total_tokens": 1669,
+            "input_token_details": {
+              "cache_read": 1536
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "recommend_awards",
+          "content": "{\"status\": \"RECOMMENDATIONS_READY\", \"reason_code\": \"RECOMMENDATIONS_READY\", \"message\": \"已按所需积分从高到低推荐当前可兑换奖品\", \"user_id\": 10, \"current_points\": 260, \"recommendations\": [{\"award_id\": 6, \"name\": \"手表\", \"required_points\": 200, \"inventory\": 100, \"remaining_points\": 60}, {\"award_id\": 7, \"name\": \"水杯\", \"required_points\": 100, \"inventory\": 50, \"remaining_points\": 160}]}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "根据您当前的积分情况，以下是您现在可以兑换的奖品：\n\n**当前积分：260 分**\n\n| 奖品 | 所需积分 | 兑换后剩余 |\n|------|---------|-----------|\n| 🕐 手表 | 200 分 | 60 分 |\n| 🥤 水杯 | 100 分 | 160 分 |\n\n**推荐动作：**\n- 若想充分利用积分，**手表**（200 分）是当前最高价值的可兑换奖品，兑换后还剩 60 分。\n- 若想保留更多积分，**水杯**（100 分）兑换后还剩 160 分。\n\n请问您对哪个奖品感兴趣？我可以帮您进一步确认兑换资格或规划积分方案。",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 1817,
+            "output_tokens": 156,
+            "total_tokens": 1973,
+            "input_token_details": {
+              "cache_read": 1536
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "E18",
+      "category": "多 Skill 路由",
+      "source": "fixture",
+      "fixture": "award_recommendation",
+      "question": "把当前活动的全部奖品列出来，不用帮我推荐。",
+      "response": "以下是当前活动的全部奖品列表：\n\n| 奖品 ID | 奖品名称 | 所需积分 | 库存 | 当前状态 |\n|---------|---------|---------|------|---------|\n| 6 | 手表 | 200 | 100 | ✅ 可兑换 |\n| 7 | 水杯 | 100 | 50 | ✅ 可兑换 |\n| 8 | 耳机 | 300 | 20 | ❌ 积分不足（差 40 分） |\n| 9 | 键盘 | 250 | 0 | ❌ 已无库存 |\n\n如需了解某个奖品的更多详情或兑换方案，随时告诉我。",
+      "elapsed_ms": 2603.43,
+      "usage": {
+        "input_tokens": 3595,
+        "output_tokens": 163,
+        "total_tokens": 3758
+      },
+      "tool_calls": [
+        {
+          "name": "list_awards",
+          "args": {},
+          "id": "call_00_CVNHNGUnx4m8W5kSa6B71660"
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "list_awards",
+          "arguments": {
+            "user_id": 10,
+            "redeemable_only": false
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": false,
+        "checks": {
+          "tool_selection": true,
+          "arguments": false,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "list_awards"
+          ],
+          "argument_failures": [
+            "list_awards"
+          ],
+          "actual_backend_calls": [
+            "list_awards"
+          ],
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "把当前活动的全部奖品列出来，不用帮我推荐。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "list_awards",
+              "args": {},
+              "id": "call_00_CVNHNGUnx4m8W5kSa6B71660",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 1646,
+            "output_tokens": 28,
+            "total_tokens": 1674,
+            "input_token_details": {
+              "cache_read": 1536
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "list_awards",
+          "content": "{\"success\": true, \"code\": \"AWARDS_FOUND\", \"data\": [{\"award\": {\"awardId\": 6, \"name\": \"手表\", \"requiredPoints\": 200, \"inventory\": 100}, \"redeemable\": true, \"pointsGap\": 0, \"reasonCode\": \"ELIGIBLE\"}, {\"award\": {\"awardId\": 7, \"name\": \"水杯\", \"requiredPoints\": 100, \"inventory\": 50}, \"redeemable\": true, \"pointsGap\": 0, \"reasonCode\": \"ELIGIBLE\"}, {\"award\": {\"awardId\": 8, \"name\": \"耳机\", \"requiredPoints\": 300, \"inventory\": 20}, \"redeemable\": false, \"pointsGap\": 40, \"reasonCode\": \"INSUFFICIENT_POINTS\"}, {\"award\": {\"awardId\": 9, \"name\": \"键盘\", \"requiredPoints\": 250, \"inventory\": 0}, \"redeemable\": false, \"pointsGap\": 0, \"reasonCode\": \"OUT_OF_STOCK\"}], \"message\": \"查询成功\", \"retryable\": false}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "以下是当前活动的全部奖品列表：\n\n| 奖品 ID | 奖品名称 | 所需积分 | 库存 | 当前状态 |\n|---------|---------|---------|------|---------|\n| 6 | 手表 | 200 | 100 | ✅ 可兑换 |\n| 7 | 水杯 | 100 | 50 | ✅ 可兑换 |\n| 8 | 耳机 | 300 | 20 | ❌ 积分不足（差 40 分） |\n| 9 | 键盘 | 250 | 0 | ❌ 已无库存 |\n\n如需了解某个奖品的更多详情或兑换方案，随时告诉我。",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 1949,
+            "output_tokens": 135,
+            "total_tokens": 2084,
+            "input_token_details": {
+              "cache_read": 1536
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    }
+  ]
+}

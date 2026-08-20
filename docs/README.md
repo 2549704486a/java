@@ -17,6 +17,7 @@
 | `agent-design/09_Skill运行时标准化.md` | SKILL.md 的运行时注册、契约校验、渐进披露和版本追踪 |
 | `agent-design/10_Agent服务化.md` | FastAPI 接口、多用户身份隔离、有界 Agent 缓存、生命周期和请求追踪 |
 | `agent-design/11_短期记忆与会话隔离.md` | InMemorySaver、thread_id、会话隔离、串行执行和会话 LRU |
+| `agent-design/12_奖品推荐Skill.md` | 第二个业务 Skill、确定性推荐规则、嵌套数据契约和多 Skill 路由评测 |
 
 这些文档服务于开发、调试和代码评审，可以记录具体路径、接口、状态码和运行命令。
 
