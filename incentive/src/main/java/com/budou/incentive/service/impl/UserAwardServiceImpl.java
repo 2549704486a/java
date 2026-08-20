@@ -21,6 +21,7 @@ import java.util.UUID;
 @Service
 @Slf4j
 public class UserAwardServiceImpl implements UserAwardService {
+
     @Autowired
     private TransactionService transactionService;
 
@@ -48,10 +49,6 @@ public class UserAwardServiceImpl implements UserAwardService {
     private Cache<Long, Date> awardEndTimeCache;
 
     @Autowired
-    @Qualifier("awardInventoryCache")
-    private Cache<Long, Integer> awardInventoryCache;
-
-    @Autowired
     @Qualifier("userCurrencyCache")
     private Cache<Long, Integer> userCurrencyCache;
 
@@ -77,7 +74,7 @@ public class UserAwardServiceImpl implements UserAwardService {
         data.put("userId", userId);
         data.put("awardId", awardId);
         data.put("id", id);
-        data.put("requestTimeMillis", System.currentTimeMillis());
+        data.put("messageTimeMillis", System.currentTimeMillis());
 
         try {
             String json = objectMapper.writeValueAsString(data);
@@ -126,7 +123,7 @@ public class UserAwardServiceImpl implements UserAwardService {
             return Result.build(null, ResultCodeEnum.AWARD_EXPIRE);
         }
 
-        Integer inventory = awardInventoryCache.get(awardId, this::loadAwardInventory);
+        Integer inventory = loadAwardInventory(awardId);
         if (inventory == null || inventory <= 0) {
             return Result.build(null, ResultCodeEnum.Failed);
         }
@@ -141,11 +138,14 @@ public class UserAwardServiceImpl implements UserAwardService {
         }
 
         String idempotentKey = buildIdempotentKey(userId, awardId);
-        Integer count = idempotentCache.get(idempotentKey, key -> {
-            Integer dbCount = idempotentMapper.select(key);
-            return dbCount != null ? dbCount : 0;
-        });
+        Integer cachedIdempotent = idempotentCache.getIfPresent(idempotentKey);
+        if (cachedIdempotent != null && cachedIdempotent != 0) {
+            return Result.build(null, ResultCodeEnum.AWARD_REDEEMED);
+        }
+
+        Integer count = idempotentMapper.select(idempotentKey);
         if (count != null && count != 0) {
+            idempotentCache.put(idempotentKey, count);
             return Result.build(null, ResultCodeEnum.AWARD_REDEEMED);
         }
 
@@ -192,7 +192,7 @@ public class UserAwardServiceImpl implements UserAwardService {
     }
 
     private Integer loadAwardInventory(Long awardId) {
-        String awardConfigInventoryKey = "award_config:inventory:" + awardId;
+        String awardConfigInventoryKey = SeckillRedisKeys.buildAwardInventoryKey(awardId);
         Integer redisInventory = (Integer) redisDao.get(awardConfigInventoryKey);
         if (redisInventory != null) {
             return redisInventory;
@@ -220,11 +220,11 @@ public class UserAwardServiceImpl implements UserAwardService {
     }
 
     private String buildStatusKey(Long userId, Long awardId) {
-        return "user_award:status:" + userId + ":" + awardId;
+        return SeckillRedisKeys.buildStatusKey(userId, awardId);
     }
 
     private String buildIdempotentKey(Long userId, Long awardId) {
-        return "userId:" + userId + "-awardId:" + awardId;
+        return SeckillRedisKeys.buildIdempotentKey(userId, awardId);
     }
 
     @Override

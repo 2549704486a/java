@@ -27,10 +27,6 @@ public class DeadLetterConsumer implements MessageListenerConcurrently {
     @Override
     public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
         for (MessageExt msg : msgs) {
-            System.out.println("TransactionConsumer.consumeMessage:开始消费死信消息...");
-            System.out.println("Received message: " + new String(msg.getBody()));
-
-            System.out.println("TransactionConsumer.consumeMessage:开始解析死信消息...");
             ObjectMapper objectMapper = new ObjectMapper();
             Map<String, Object> data;
             try {
@@ -41,23 +37,23 @@ public class DeadLetterConsumer implements MessageListenerConcurrently {
             Long userId = Long.valueOf(String.valueOf(data.get("userId")));
             Long awardId = Long.valueOf(String.valueOf(data.get("awardId")));
             Long id = Long.valueOf(String.valueOf(data.get("id")));
-            long requestStartMillis = resolveRequestStartMillis(data, msg);
+            long messageStartMillis = resolveMessageStartMillis(data, msg);
             Date updateTime = new Date();
 
             userAwardMapper.updateStatus(new UserAward(id, userId, awardId, -1, null, updateTime));
             seckillObservability.recordDeadLetter(id, userId, awardId,
-                    Math.max(System.currentTimeMillis() - requestStartMillis, 0L));
+                    Math.max(System.currentTimeMillis() - messageStartMillis, 0L));
         }
         return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
     }
 
-    private long resolveRequestStartMillis(Map<String, Object> data, MessageExt msg) {
-        Object requestTimeMillis = data.get("requestTimeMillis");
-        if (requestTimeMillis == null) {
+    private long resolveMessageStartMillis(Map<String, Object> data, MessageExt msg) {
+        Object messageTimeMillis = data.get("messageTimeMillis");
+        if (messageTimeMillis == null) {
             return msg.getBornTimestamp();
         }
         try {
-            return Long.parseLong(String.valueOf(requestTimeMillis));
+            return Long.parseLong(String.valueOf(messageTimeMillis));
         } catch (NumberFormatException ex) {
             return msg.getBornTimestamp();
         }

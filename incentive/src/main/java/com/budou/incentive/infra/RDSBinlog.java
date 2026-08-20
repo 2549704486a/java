@@ -285,23 +285,33 @@ public class RDSBinlog {
      */
     private void handleUpdateAwardInventorySplit(List<CanalEntry.RowData> rowDatasList) {
         for(CanalEntry.RowData rowData : rowDatasList){
-            // 获取更新后的列数据
+            // 获取更新前后的列数据，同步维护分片库存和总库存缓存
             List<CanalEntry.Column> afterColumnsList = rowData.getAfterColumnsList();
+            List<CanalEntry.Column> beforeColumnsList = rowData.getBeforeColumnsList();
             String awardInventorySplitKey = "";  // Redis缓存键：奖品库存分配
+            String awardConfigInventoryKey = "";
             String hashKey = "";  // Redis哈希字段
             Integer inventory = 0;  // 库存数量
+            Integer beforeInventory = null;
 
             // 遍历所有列获取需要的数据
             for(CanalEntry.Column column : afterColumnsList){
                 if(column.getName().equals("awardId")){
                     // 构建Redis缓存键
                     awardInventorySplitKey = "award_inventory_split:" + column.getValue();
+                    awardConfigInventoryKey = "award_config:inventory:" + column.getValue();
                 }
                 if(column.getName().equals("inventory")){
                     inventory = Integer.valueOf(column.getValue());  // 获取库存数量
                 }
                 if(column.getName().equals("splitId")){
                     hashKey = "splitId:" +  column.getValue();  // 构建哈希字段
+                }
+            }
+
+            for(CanalEntry.Column column : beforeColumnsList){
+                if(column.getName().equals("inventory")){
+                    beforeInventory = Integer.valueOf(column.getValue());
                 }
             }
 
@@ -313,7 +323,41 @@ public class RDSBinlog {
                 // 库存不为0时设置哈希字段
                 redisDao.hmSet(awardInventorySplitKey, hashKey, inventory);
             }
+
+            syncAwardInventorySummary(awardConfigInventoryKey, awardInventorySplitKey, beforeInventory, inventory);
         }
+    }
+
+    private void syncAwardInventorySummary(String awardConfigInventoryKey,
+                                           String awardInventorySplitKey,
+                                           Integer beforeInventory,
+                                           Integer afterInventory) {
+        if (StringUtils.isBlank(awardConfigInventoryKey) || StringUtils.isBlank(awardInventorySplitKey)) {
+            return;
+        }
+
+        Integer totalInventory = null;
+        if (beforeInventory != null) {
+            Object currentInventory = redisDao.get(awardConfigInventoryKey);
+            if (currentInventory instanceof Number) {
+                int delta = afterInventory - beforeInventory;
+                totalInventory = ((Number) currentInventory).intValue() + delta;
+            }
+        }
+
+        if (totalInventory == null) {
+            totalInventory = 0;
+            List<Object> splitInventories = redisDao.hmValues(awardInventorySplitKey);
+            for (Object splitInventory : splitInventories) {
+                if (splitInventory instanceof Number) {
+                    totalInventory += ((Number) splitInventory).intValue();
+                } else if (splitInventory != null) {
+                    totalInventory += Integer.parseInt(splitInventory.toString());
+                }
+            }
+        }
+
+        redisDao.set(awardConfigInventoryKey, totalInventory);
     }
 
     /**

@@ -3,6 +3,7 @@ package com.budou.incentive.infra;
 import com.budou.incentive.dao.mapper.UserAwardMapper;
 import com.budou.incentive.dao.model.UserAward;
 import com.budou.incentive.dao.redis.RedisDao;
+import com.budou.incentive.utils.SeckillRedisKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +55,6 @@ public class TransactionProducerConfig {
                 Long userId = Long.valueOf(String.valueOf(data.get("userId")));
                 Long awardId = Long.valueOf(String.valueOf(data.get("awardId")));
                 Long id = Long.valueOf(String.valueOf(data.get("id")));
-
                 String lockKey = "createOrder:award:" + awardId + ":user:" + userId;
                 boolean lock = redisDao.setnx(lockKey, Thread.currentThread().getId(), 300L);
                 if (!lock) {
@@ -91,7 +91,6 @@ public class TransactionProducerConfig {
                 }
                 Long userId = Long.valueOf(String.valueOf(data.get("userId")));
                 Long awardId = Long.valueOf(String.valueOf(data.get("awardId")));
-
                 Integer count = userAwardMapper.selectUnhandleOrder(userId, awardId, 0);
                 if (count != null && count > 0) {
                     return LocalTransactionState.COMMIT_MESSAGE;
@@ -117,6 +116,7 @@ public class TransactionProducerConfig {
     }
 
     private String buildStatusKey(Long userId, Long awardId) {
-        return "user_award:status:" + userId + ":" + awardId;
+        return SeckillRedisKeys.buildStatusKey(userId, awardId);
     }
+
 }

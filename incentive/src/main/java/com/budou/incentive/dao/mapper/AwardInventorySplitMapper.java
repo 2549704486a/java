@@ -14,6 +14,7 @@ public interface AwardInventorySplitMapper {
     List<AwardInventorySplit> select(Long awardId);
 
     @Update("update award_inventory_split set inventory = (inventory - 1) " +
-            "where splitId = #{splitId} and awardId = #{awardId}")
+            "where splitId = #{splitId} and awardId = #{awardId} and inventory > 0")
     int updateInventory(AwardInventorySplit awardInventorySplit);
+
 }

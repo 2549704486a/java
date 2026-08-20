@@ -43,11 +43,11 @@ public class RedisDao {
     //执行lua脚本
     public Boolean executeScript(String script, List<String> keys, Object... args) {
         //构造RedisScript对象
-        RedisScript<Integer> redisScript = new DefaultRedisScript<>(script, Integer.class);
+        RedisScript<Long> redisScript = new DefaultRedisScript<>(script, Long.class);
         //执行lua脚本
-        Integer result = (Integer) redisTemplate.execute(redisScript, keys, args);
+        Long result = (Long) redisTemplate.execute(redisScript, keys, args);
 
-        return result == 1 ? true : false;
+        return result != null && result == 1L;
     }
 
     //设置一个键的值
@@ -149,6 +149,11 @@ public class RedisDao {
     public Object hmGet(String key, Object hashKey) {
         HashOperations<String, Object, Object> hash = redisTemplate.opsForHash();
         return hash.get(key, hashKey);
+    }
+
+    public List<Object> hmValues(String key) {
+        HashOperations<String, Object, Object> hash = redisTemplate.opsForHash();
+        return hash.values(key);
     }
 
     public void hmDel(String key, Object hashKey) {

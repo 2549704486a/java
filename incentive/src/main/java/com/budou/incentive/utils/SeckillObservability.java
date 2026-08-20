@@ -5,6 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -16,85 +20,97 @@ public class SeckillObservability {
     private final LongAdder requestAcceptedCount = new LongAdder();
     private final LongAdder lockFailCount = new LongAdder();
     private final LongAdder reconsumeLaterCount = new LongAdder();
+    private final LongAdder delayedRetryScheduledCount = new LongAdder();
     private final LongAdder completionSuccessCount = new LongAdder();
     private final LongAdder completionFailCount = new LongAdder();
     private final LongAdder deadLetterCount = new LongAdder();
-    private final LongAdder completionLatencyCount = new LongAdder();
     private final LongAdder completionLatencyTotalMs = new LongAdder();
-    private final LongAdder completionOver1sCount = new LongAdder();
-    private final LongAdder completionOver5sCount = new LongAdder();
-    private final LongAdder completionOver30sCount = new LongAdder();
     private final AtomicLong maxCompletionLatencyMs = new AtomicLong();
+    private final ConcurrentLinkedQueue<Long> completionLatencySamples = new ConcurrentLinkedQueue<>();
 
     public void recordRequestAccepted(Long orderId, Long userId, Long awardId) {
         requestAcceptedCount.increment();
-        log.debug("SECKILL_METRICS request accepted orderId={} userId={} awardId={}", orderId, userId, awardId);
     }
 
     public void recordLockFail(Long orderId, Long userId, Long awardId, String splitKey) {
         lockFailCount.increment();
-        log.debug("SECKILL_METRICS lock failed orderId={} userId={} awardId={} splitKey={}",
-                orderId, userId, awardId, splitKey);
     }
 
     public void recordReconsumeLater(Long orderId, Long userId, Long awardId, String reason) {
         reconsumeLaterCount.increment();
-        log.debug("SECKILL_METRICS reconsume later orderId={} userId={} awardId={} reason={}",
-                orderId, userId, awardId, reason);
     }
 
-    public void recordCompletion(Long orderId, Long userId, Long awardId, boolean success,
-                                 long latencyMs, String outcome) {
+    public void recordDelayedRetryScheduled(Long orderId, Long userId, Long awardId,
+                                            int retryCount, int delayLevel, String reason) {
+        delayedRetryScheduledCount.increment();
+    }
+
+    public void recordMessageCompletion(Long orderId, Long userId, Long awardId, boolean success,
+                                        long latencyMs, String outcome) {
+        long nonNegativeLatency = Math.max(latencyMs, 0L);
         if (success) {
             completionSuccessCount.increment();
         } else {
             completionFailCount.increment();
         }
-        recordLatency(latencyMs);
-        if (latencyMs >= 5000) {
-            log.warn("SECKILL_METRICS slow completion orderId={} userId={} awardId={} success={} latencyMs={} outcome={}",
-                    orderId, userId, awardId, success, latencyMs, outcome);
-        }
+        completionLatencyTotalMs.add(nonNegativeLatency);
+        maxCompletionLatencyMs.accumulateAndGet(nonNegativeLatency, Math::max);
+        completionLatencySamples.add(nonNegativeLatency);
     }
 
     public void recordDeadLetter(Long orderId, Long userId, Long awardId, long latencyMs) {
         deadLetterCount.increment();
-        recordCompletion(orderId, userId, awardId, false, latencyMs, "dead-letter");
-    }
-
-    private void recordLatency(long latencyMs) {
-        long nonNegativeLatency = Math.max(latencyMs, 0L);
-        completionLatencyCount.increment();
-        completionLatencyTotalMs.add(nonNegativeLatency);
-        maxCompletionLatencyMs.accumulateAndGet(nonNegativeLatency, Math::max);
-        if (nonNegativeLatency >= 1000) {
-            completionOver1sCount.increment();
-        }
-        if (nonNegativeLatency >= 5000) {
-            completionOver5sCount.increment();
-        }
-        if (nonNegativeLatency >= 30000) {
-            completionOver30sCount.increment();
-        }
+        recordMessageCompletion(orderId, userId, awardId, false, latencyMs, "dead-letter");
     }
 
     @Scheduled(fixedRate = 30000)
     public void logSnapshot() {
-        long latencyCount = completionLatencyCount.sum();
-        double avgLatencyMs = latencyCount == 0 ? 0.0 : (double) completionLatencyTotalMs.sum() / latencyCount;
+        long accepted = requestAcceptedCount.sumThenReset();
+        long lockFailed = lockFailCount.sumThenReset();
+        long reconsumeLater = reconsumeLaterCount.sumThenReset();
+        long delayedRetry = delayedRetryScheduledCount.sumThenReset();
+        long success = completionSuccessCount.sumThenReset();
+        long fail = completionFailCount.sumThenReset();
+        long deadLetter = deadLetterCount.sumThenReset();
+        long totalLatencyMs = completionLatencyTotalMs.sumThenReset();
+        long maxLatencyMs = maxCompletionLatencyMs.getAndSet(0L);
+
+        List<Long> samples = drainLatencySamples();
+        long completed = success + fail;
+        double avgLatencyMs = completed == 0 ? 0D : (double) totalLatencyMs / completed;
+
         log.info(
-                "SECKILL_METRICS snapshot requestAccepted={} success={} fail={} deadLetter={} lockFail={} reconsumeLater={} completionAvgMs={} completionMaxMs={} completionOver1s={} completionOver5s={} completionOver30s={}",
-                requestAcceptedCount.sum(),
-                completionSuccessCount.sum(),
-                completionFailCount.sum(),
-                deadLetterCount.sum(),
-                lockFailCount.sum(),
-                reconsumeLaterCount.sum(),
+                "SECKILL_HEALTH windowSeconds=30 accepted={} success={} fail={} lockFail={} delayedRetry={} reconsumeLater={} deadLetter={} completionAvgMs={} completionMedianMs={} completionP95Ms={} completionMaxMs={}",
+                accepted,
+                success,
+                fail,
+                lockFailed,
+                delayedRetry,
+                reconsumeLater,
+                deadLetter,
                 String.format("%.2f", avgLatencyMs),
-                maxCompletionLatencyMs.get(),
-                completionOver1sCount.sum(),
-                completionOver5sCount.sum(),
-                completionOver30sCount.sum()
+                percentile(samples, 50),
+                percentile(samples, 95),
+                maxLatencyMs
         );
+    }
+
+    private List<Long> drainLatencySamples() {
+        List<Long> samples = new ArrayList<>();
+        Long value;
+        while ((value = completionLatencySamples.poll()) != null) {
+            samples.add(value);
+        }
+        Collections.sort(samples);
+        return samples;
+    }
+
+    private long percentile(List<Long> sortedValues, int percent) {
+        if (sortedValues.isEmpty()) {
+            return 0L;
+        }
+        int index = (int) Math.ceil(sortedValues.size() * percent / 100.0) - 1;
+        index = Math.max(0, Math.min(index, sortedValues.size() - 1));
+        return sortedValues.get(index);
     }
 }

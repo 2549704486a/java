@@ -37,4 +37,15 @@ public class TransactionProducer {
             return Result.build(null, ResultCodeEnum.TRANSACTION_SEND_FAILED);
         }
     }
+    public boolean sendDelayMessage(String id, String message, int delayLevel) {
+        try {
+            Message<String> strMessage = MessageBuilder.withPayload(message)
+                    .setHeader(RocketMQHeaders.KEYS, id)
+                    .build();
+            return rocketMQTemplate.syncSend(topic, strMessage, 5000L, delayLevel).getSendStatus() == SendStatus.SEND_OK;
+        } catch (Exception e) {
+            log.warn("delayed retry message send failed id={} delayLevel={}", id, delayLevel, e);
+            return false;
+        }
+    }
 }

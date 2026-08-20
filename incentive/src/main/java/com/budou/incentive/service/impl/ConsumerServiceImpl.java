@@ -2,10 +2,7 @@ package com.budou.incentive.service.impl;
 
 import com.budou.incentive.dao.mapper.*;
 import com.budou.incentive.dao.model.AwardInventorySplit;
-import com.budou.incentive.dao.model.FinishTaskRecord;
 import com.budou.incentive.dao.model.UserAward;
-import com.budou.incentive.dao.model.UserCurrency;
-import com.budou.incentive.dao.redis.RedisDao;
 import com.budou.incentive.service.ConsumerService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +18,6 @@ import java.util.Date;
  **/
 @Service
 public class ConsumerServiceImpl implements ConsumerService {
-    @Autowired
-    private RedisDao redisDao;
     @Autowired
     private AwardConfigMapper awardConfigMapper;
     @Autowired
@@ -53,10 +48,18 @@ public class ConsumerServiceImpl implements ConsumerService {
         idempotentMapper.insert(idempotentKey);
 
         int row1 = awardInventorySplitMapper.updateInventory(awardInventorySplit);
+        if(row1 == 0){
+            throw new IllegalStateException("split-inventory-empty");
+        }
+
         int row2 = userCurrencyMapper.deductCurrency(userId, price);
+        if(row2 == 0){
+            throw new IllegalStateException("currency-not-enough");
+        }
+
         int row3 = userAwardMapper.updateStatus(userAward);
-        if(row1 == 0 || row2 == 0 || row3 == 0){
-            throw new RuntimeException();
+        if(row3 == 0){
+            throw new IllegalStateException("user-award-status-update-failed");
         }
 
     }
@@ -77,4 +80,5 @@ public class ConsumerServiceImpl implements ConsumerService {
             throw new RuntimeException();
         }
     }
+
 }

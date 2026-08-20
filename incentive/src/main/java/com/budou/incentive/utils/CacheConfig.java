@@ -30,14 +30,6 @@ public class CacheConfig {
     }
 
     @Bean
-    public Cache<Long, Integer> awardInventoryCache() {
-        return Caffeine.newBuilder()
-                .maximumSize(1000)
-                .expireAfterWrite(1, TimeUnit.SECONDS)
-                .build();
-    }
-
-    @Bean
     public Cache<Long, Integer> awardIsOverSellCache() {
         return Caffeine.newBuilder()
                 .maximumSize(1000)
@@ -61,4 +53,5 @@ public class CacheConfig {
                 .expireAfterWrite(24, TimeUnit.HOURS)
                 .build();
     }
+
 }
