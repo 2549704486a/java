@@ -7,6 +7,7 @@
 - 通过 LangChain `create_agent` 运行 Function Calling 循环。
 - 使用 5 个只读查询 Tool 和 1 个组合 Skill。
 - `plan_points_for_award` 使用确定性代码计算积分缺口和任务组合。
+- 启动时发现并校验 `skills/*/SKILL.md`，Tool 描述、Skill 版本和哈希来自声明文件。
 - Tool 层只对 GET 请求的瞬时网络错误做有限重试。
 - 不直连 MySQL、Redis、RocketMQ，不调用兑换和任务写接口。
 
@@ -60,6 +61,8 @@ LLM_MODEL=服务商提供的模型名
 .\.venv\Scripts\python.exe -m app.main --user-id 10 --plan-award-id 6
 ```
 
+Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Tool 元数据提供给模型。调用 `plan_points_for_award` 时，运行时激活完整 Skill 定义并记录版本与 SHA-256；积分计算仍由 `app/skills/points_plan.py` 的确定性代码完成，不让模型按说明文字自行计算。
+
 ## 4. 运行 Agent
 
 单次提问：
@@ -80,7 +83,7 @@ LLM_MODEL=服务商提供的模型名
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-离线测试不需要 Java 服务和模型密钥，覆盖资格分支、任务选择、任务排除、积分不足和 Tool 瞬时错误重试。
+离线测试不需要 Java 服务和模型密钥，覆盖 Skill 发现与声明校验、运行时激活、资格分支、任务选择、任务排除、积分不足和 Tool 瞬时错误重试。
 
 ## 6. Agent 评测
 
@@ -105,7 +108,7 @@ LLM_MODEL=服务商提供的模型名
 agent-service/logs/agent-service.log
 ```
 
-日志会记录每次 Java 业务接口的路径、HTTP 状态、业务码、重试次数和耗时，以及积分规划 Skill 的总耗时，不记录 API Key 和完整业务响应。
+日志会记录每次 Java 业务接口的路径、HTTP 状态、业务码、重试次数和耗时，以及积分规划 Skill 的名称、版本、定义哈希和总耗时，不记录 API Key 和完整业务响应。
 
 Spring Boot 请求日志由一键启动脚本保存到：
 

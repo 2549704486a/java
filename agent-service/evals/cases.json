@@ -31,7 +31,7 @@
     "question": "我想兑换一个奖品，应该怎么攒积分？",
     "required_tools": [],
     "allowed_tools": [],
-    "required_groups": [["奖品 ID", "奖品编号", "几号奖品"]]
+    "required_groups": [["奖品 ID", "奖品的 ID", "奖品编号", "几号奖品"]]
   },
   {
     "id": "E04",

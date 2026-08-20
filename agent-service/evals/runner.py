@@ -16,6 +16,7 @@ from langchain_openai import ChatOpenAI
 from app.api_client import BusinessApiClient
 from app.config import Settings
 from app.prompt import SYSTEM_PROMPT
+from app.skills.registry import SkillRegistry
 from app.tools import build_tools
 from evals.fixtures import FixtureBusinessApiClient
 
@@ -192,6 +193,7 @@ def run_one(
     settings: Settings,
     case: dict[str, Any],
     user_id: int,
+    skill_registry: SkillRegistry,
 ) -> dict[str, Any]:
     fixture_client: FixtureBusinessApiClient | None = None
     live_client: BusinessApiClient | None = None
@@ -209,7 +211,7 @@ def run_one(
     try:
         agent = create_agent(
             model=model,
-            tools=build_tools(client, user_id),
+            tools=build_tools(client, user_id, skill_registry),
             system_prompt=SYSTEM_PROMPT,
         )
         started = time.perf_counter()
@@ -301,6 +303,7 @@ def main() -> None:
         raise SystemExit("没有匹配的评测用例")
 
     settings = Settings.from_env()
+    skill_registry = SkillRegistry()
     model = build_model(settings)
     print(
         f"开始评测 model={settings.llm_model} suite={args.suite} cases={len(cases)}",
@@ -309,7 +312,7 @@ def main() -> None:
     results = []
     for index, case in enumerate(cases, start=1):
         print(f"[{index}/{len(cases)}] {case['id']} {case['question']}", flush=True)
-        result = run_one(model, settings, case, args.user_id)
+        result = run_one(model, settings, case, args.user_id, skill_registry)
         results.append(result)
         status = "PASS" if result["evaluation"]["passed"] else "FAIL"
         print(
@@ -335,6 +338,7 @@ def main() -> None:
             "system_prompt_sha256": hashlib.sha256(
                 SYSTEM_PROMPT.encode("utf-8")
             ).hexdigest(),
+            "skills": skill_registry.trace_metadata(),
             "case_ids": [case["id"] for case in cases],
         },
         "summary": summarize(results),

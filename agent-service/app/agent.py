@@ -6,10 +6,17 @@ from langchain_openai import ChatOpenAI
 from app.api_client import BusinessApiClient
 from app.config import Settings
 from app.prompt import SYSTEM_PROMPT
+from app.skills.registry import SkillRegistry
 from app.tools import build_tools
 
 
-def build_agent(settings: Settings, client: BusinessApiClient, user_id: int):
+def build_agent(
+    settings: Settings,
+    client: BusinessApiClient,
+    user_id: int,
+    skill_registry: SkillRegistry | None = None,
+):
+    registry = skill_registry or SkillRegistry()
     model = ChatOpenAI(
         model=settings.llm_model,
         api_key=settings.require_llm_api_key(),
@@ -20,7 +27,7 @@ def build_agent(settings: Settings, client: BusinessApiClient, user_id: int):
     )
     return create_agent(
         model=model,
-        tools=build_tools(client, user_id),
+        tools=build_tools(client, user_id, registry),
         system_prompt=SYSTEM_PROMPT,
     )
 
@@ -42,4 +49,3 @@ def run_agent(agent, message: str) -> str:
         ]
         return "\n".join(part for part in text_parts if part)
     return str(content)
-

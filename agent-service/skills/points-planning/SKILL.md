@@ -1,7 +1,7 @@
 ---
 name: points-planning
-description: 为当前用户检查目标奖品兑换资格，并在积分不足时生成任务积分方案。
-trigger: 用户指定奖品并询问能否兑换、积分缺口或应该完成哪些任务。
+description: 在奖品 ID 已确定后，检查当前用户兑换资格，并在积分不足时生成任务积分方案；用户已说“几号奖品”时直接把数字作为 award_id，不再查询奖品列表。
+trigger: 用户指定奖品并询问能否兑换、积分缺口或应该完成哪些任务；仅按名称指定奖品时先解析 award_id，按名称排除任务时先解析 task_id。
 version: 1.0.0
 tags: [points, award, read-only, planning]
 ---
@@ -49,4 +49,3 @@ tags: [points, award, read-only, planning]
 ## 输出
 
 输出稳定结构 `PointsPlan`，包含状态、原因码、当前积分、目标积分、积分缺口、推荐任务、预计积分和剩余缺口。
-

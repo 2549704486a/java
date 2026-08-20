@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import logging
+import time
+
 from pydantic import BaseModel, Field
 
 from langchain.tools import tool
 
 from app.api_client import BusinessApiClient, BusinessApiError
 from app.skills.points_plan import PointsPlanningSkill
+from app.skills.registry import SkillRegistry
+
+
+logger = logging.getLogger(__name__)
 
 
 class AwardIdInput(BaseModel):
@@ -26,7 +33,13 @@ class PlanPointsInput(BaseModel):
     )
 
 
-def build_tools(client: BusinessApiClient, user_id: int):
+def build_tools(
+    client: BusinessApiClient,
+    user_id: int,
+    skill_registry: SkillRegistry | None = None,
+):
+    registry = skill_registry or SkillRegistry()
+    points_manifest = registry.require_manifest("points-planning")
     skill = PointsPlanningSkill(client)
 
     def safe_result(callable_):
@@ -62,16 +75,29 @@ def build_tools(client: BusinessApiClient, user_id: int):
             lambda: client.check_exchange_eligibility(user_id, award_id)
         )
 
-    @tool(args_schema=PlanPointsInput)
+    @tool(
+        args_schema=PlanPointsInput,
+        description=points_manifest.tool_description,
+        extras=points_manifest.trace_metadata(),
+    )
     def plan_points_for_award(
         award_id: int, excluded_task_ids: list[int] | None = None
     ) -> dict:
-        """为目标奖品生成积分计划。用户问“怎么攒够积分”或要求任务组合时使用。"""
-        return skill.plan(
+        started = time.perf_counter()
+        active_definition = registry.activate(points_manifest.name)
+        plan = skill.plan(
             user_id=user_id,
             award_id=award_id,
             excluded_task_ids=excluded_task_ids or [],
-        ).model_dump(mode="json")
+        )
+        logger.info(
+            "skill_complete name=%s version=%s status=%s elapsed_ms=%.2f",
+            active_definition.manifest.name,
+            active_definition.manifest.version,
+            plan.status,
+            (time.perf_counter() - started) * 1000,
+        )
+        return plan.model_dump(mode="json")
 
     return [
         get_user_points,
@@ -81,4 +107,3 @@ def build_tools(client: BusinessApiClient, user_id: int):
         check_exchange_eligibility,
         plan_points_for_award,
     ]
-

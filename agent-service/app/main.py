@@ -13,6 +13,7 @@ from app.agent import build_agent, run_agent
 from app.api_client import BusinessApiClient
 from app.config import Settings
 from app.skills.points_plan import PointsPlanningSkill
+from app.skills.registry import SkillRegistry
 
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ def main() -> None:
     log_path = configure_logging()
     args = parse_args()
     settings = Settings.from_env()
+    skill_registry = SkillRegistry()
     if args.user_id <= 0:
         raise SystemExit("--user-id 必须是正整数")
 
@@ -62,9 +64,13 @@ def main() -> None:
     ) as client:
         if args.plan_award_id is not None:
             started = time.perf_counter()
+            active_definition = skill_registry.activate("points-planning")
             plan = PointsPlanningSkill(client).plan(args.user_id, args.plan_award_id)
             logger.info(
-                "points_plan_complete user_id=%s award_id=%s status=%s elapsed_ms=%.2f",
+                "points_plan_complete skill=%s version=%s user_id=%s award_id=%s "
+                "status=%s elapsed_ms=%.2f",
+                active_definition.manifest.name,
+                active_definition.manifest.version,
                 args.user_id,
                 args.plan_award_id,
                 plan.status,
@@ -79,7 +85,7 @@ def main() -> None:
             settings.llm_model,
             log_path,
         )
-        agent = build_agent(settings, client, args.user_id)
+        agent = build_agent(settings, client, args.user_id, skill_registry)
         if args.message:
             print(run_agent(agent, args.message))
             return
