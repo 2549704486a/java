@@ -14,3 +14,5 @@ agent-service/logs/
 ops/codecache-proof/*.class
 ops/codecache-proof/output_*/
 ops/codecache-proof/proof_*/
+web-ui/node_modules/
+web-ui/dist/

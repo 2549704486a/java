@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -38,8 +39,13 @@ class AwardData(BaseModel):
 
     award_id: int = Field(alias="awardId")
     name: str
+    cover_url: str | None = Field(default=None, alias="coverUrl")
+    award_type: int | None = Field(default=None, alias="awardType")
     required_points: int = Field(alias="requiredPoints")
     inventory: int
+    start_time: datetime | None = Field(default=None, alias="startTime")
+    end_time: datetime | None = Field(default=None, alias="endTime")
+    over_sell_allowed: bool = Field(default=False, alias="overSellAllowed")
 
 
 class AwardOptionData(BaseModel):

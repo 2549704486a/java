@@ -5,20 +5,26 @@ import re
 import uuid
 from collections.abc import Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, Request
+from fastapi import FastAPI, Header, Path as ApiPath, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
+from app.api_client import BusinessApiError
 from app.config import Settings
+from app.models import AwardOptionData, UserPointsData
 from app.runtime import AgentRuntime
+from app.trace import capture_tool_trace
 
 
 logger = logging.getLogger(__name__)
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 RuntimeFactory = Callable[[], AgentRuntime]
+FRONTEND_DIST = Path(__file__).resolve().parents[2] / "web-ui" / "dist"
 
 
 class ChatRequest(BaseModel):
@@ -56,6 +62,19 @@ class ChatResponse(BaseModel):
 class ErrorResponse(BaseModel):
     request_id: str
     session_id: str
+    code: str
+    message: str
+
+
+class DashboardResponse(BaseModel):
+    request_id: str
+    user_id: int
+    points: int
+    awards: list[AwardOptionData]
+
+
+class DashboardErrorResponse(BaseModel):
+    request_id: str
     code: str
     message: str
 
@@ -153,6 +172,97 @@ def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> Fas
             headers={"X-Request-ID": request_id},
         )
 
+    @application.get(
+        "/v1/dashboard/{user_id}",
+        response_model=DashboardResponse,
+        responses={
+            404: {"model": DashboardErrorResponse},
+            502: {"model": DashboardErrorResponse},
+            503: {"model": DashboardErrorResponse},
+        },
+    )
+    def dashboard(
+        request: Request,
+        user_id: int = ApiPath(gt=0),
+        x_request_id: str | None = Header(default=None),
+    ):
+        """聚合奖品中心首屏数据，避免浏览器理解两个 Java 接口的信封协议。"""
+        request_id = normalize_request_id(x_request_id)
+        try:
+            # 绑定请求 ID 后，BusinessApiClient 会自动将它透传给 Java 服务。
+            with capture_tool_trace(request_id):
+                points_envelope = request.app.state.runtime.client.get_user_points(
+                    user_id
+                )
+                awards_envelope = request.app.state.runtime.client.list_awards(user_id)
+
+            failed_envelope = next(
+                (
+                    envelope
+                    for envelope in (points_envelope, awards_envelope)
+                    if not envelope.success
+                ),
+                None,
+            )
+            if failed_envelope is not None:
+                status_code = 404 if failed_envelope.code == "USER_NOT_FOUND" else 502
+                return dashboard_error(
+                    request_id,
+                    failed_envelope.code,
+                    failed_envelope.message,
+                    status_code,
+                )
+
+            points = UserPointsData.model_validate(points_envelope.data)
+            awards = [
+                AwardOptionData.model_validate(item)
+                for item in (awards_envelope.data or [])
+            ]
+        except BusinessApiError as exc:
+            logger.warning(
+                "dashboard_business_api_failed request_id=%s user_id=%s code=%s",
+                request_id,
+                user_id,
+                exc.code,
+            )
+            return dashboard_error(
+                request_id,
+                exc.code,
+                "业务查询服务暂时不可用，请稍后重试",
+                503 if exc.retryable else 502,
+            )
+        except (TypeError, ValueError):
+            logger.exception(
+                "dashboard_invalid_response request_id=%s user_id=%s",
+                request_id,
+                user_id,
+            )
+            return dashboard_error(
+                request_id,
+                "INVALID_BUSINESS_RESPONSE",
+                "业务查询数据格式异常",
+                502,
+            )
+
+        response = DashboardResponse(
+            request_id=request_id,
+            user_id=user_id,
+            points=points.points,
+            awards=awards,
+        )
+        return JSONResponse(
+            content=response.model_dump(mode="json", by_alias=True),
+            headers={"X-Request-ID": request_id},
+        )
+
+    # API 路由必须先注册；根路径静态挂载放在最后，避免吞掉 /v1 和 /docs。
+    if FRONTEND_DIST.is_dir():
+        application.mount(
+            "/",
+            StaticFiles(directory=FRONTEND_DIST, html=True),
+            name="web-ui",
+        )
+
     return application
 
 
@@ -160,6 +270,24 @@ def normalize_request_id(candidate: str | None) -> str:
     if candidate and REQUEST_ID_PATTERN.fullmatch(candidate):
         return candidate
     return uuid.uuid4().hex
+
+
+def dashboard_error(
+    request_id: str,
+    code: str,
+    message: str,
+    status_code: int,
+) -> JSONResponse:
+    error = DashboardErrorResponse(
+        request_id=request_id,
+        code=code,
+        message=message,
+    )
+    return JSONResponse(
+        status_code=status_code,
+        content=error.model_dump(),
+        headers={"X-Request-ID": request_id},
+    )
 
 
 app = create_app()

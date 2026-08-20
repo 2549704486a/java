@@ -4,7 +4,48 @@ import unittest
 
 from fastapi.testclient import TestClient
 
+from app.models import ToolEnvelope
 from app.web import create_app
+
+
+class FakeBusinessClient:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, int]] = []
+
+    def get_user_points(self, user_id: int) -> ToolEnvelope:
+        self.calls.append(("points", user_id))
+        return ToolEnvelope(
+            success=True,
+            code="POINTS_FOUND",
+            data={"userId": user_id, "points": 680},
+            message="积分查询成功",
+        )
+
+    def list_awards(self, user_id: int) -> ToolEnvelope:
+        self.calls.append(("awards", user_id))
+        return ToolEnvelope(
+            success=True,
+            code="AWARDS_FOUND",
+            data=[
+                {
+                    "award": {
+                        "awardId": 6,
+                        "name": "城市随行保温杯",
+                        "coverUrl": None,
+                        "awardType": 1,
+                        "inventory": 100,
+                        "requiredPoints": 500,
+                        "startTime": "2026-01-01T00:00:00",
+                        "endTime": "2027-01-01T00:00:00",
+                        "overSellAllowed": False,
+                    },
+                    "redeemable": True,
+                    "pointsGap": 0,
+                    "reasonCode": "ELIGIBLE",
+                }
+            ],
+            message="奖品列表查询成功",
+        )
 
 
 class FakeRuntime:
@@ -12,6 +53,7 @@ class FakeRuntime:
         self.should_fail = should_fail
         self.closed = False
         self.calls: list[tuple[int, str, str, str | None]] = []
+        self.client = FakeBusinessClient()
 
     def health(self):
         return {
@@ -41,6 +83,25 @@ class FakeRuntime:
 
 
 class AgentWebTest(unittest.TestCase):
+    def test_dashboard_aggregates_points_and_awards(self):
+        runtime = FakeRuntime()
+        app = create_app(lambda: runtime)
+
+        with TestClient(app) as client:
+            response = client.get(
+                "/v1/dashboard/10",
+                headers={"X-Request-ID": "dashboard-001"},
+            )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("dashboard-001", response.headers["X-Request-ID"])
+        self.assertEqual(680, response.json()["points"])
+        self.assertEqual("城市随行保温杯", response.json()["awards"][0]["award"]["name"])
+        self.assertEqual(
+            [("points", 10), ("awards", 10)],
+            runtime.client.calls,
+        )
+
     def test_health_and_chat_contract(self):
         runtime = FakeRuntime()
         app = create_app(lambda: runtime)

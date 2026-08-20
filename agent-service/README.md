@@ -80,7 +80,7 @@ Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Too
 .\.venv\Scripts\python.exe -m app.main --user-id 10
 ```
 
-## 5. 运行 HTTP 服务
+## 5. 运行 HTTP 服务与前端
 
 单独启动：
 
@@ -94,7 +94,13 @@ Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Too
 .\start-local.ps1
 ```
 
-如果这次不需要 Agent，可以添加 `-SkipAgent`。默认监听 `127.0.0.1:8090`，接口文档位于 `http://127.0.0.1:8090/docs`。
+如果这次不需要 Agent，可以添加 `-SkipAgent`。脚本会自动安装并构建 `web-ui`，默认监听 `127.0.0.1:8090`：
+
+- 奖品中心与 Agent 对话：`http://127.0.0.1:8090/`
+- 接口文档：`http://127.0.0.1:8090/docs`
+- 聚合首屏数据：`GET /v1/dashboard/{user_id}`
+
+使用 `-SkipWeb` 可以跳过前端构建。前端独立开发和构建方式见 `web-ui/README.md`。
 
 健康检查：
 

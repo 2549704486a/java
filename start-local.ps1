@@ -5,7 +5,8 @@ param(
     [switch]$Rebuild,
     [switch]$SkipDashboard,
     [switch]$SkipApp,
-    [switch]$SkipAgent
+    [switch]$SkipAgent,
+    [switch]$SkipWeb
 )
 
 $ErrorActionPreference = 'Stop'
@@ -35,6 +36,9 @@ $AgentRoot = Join-Path $ProjectRoot 'agent-service'
 $AgentPython = Join-Path $AgentRoot '.venv\Scripts\python.exe'
 $AgentEnv = Join-Path $AgentRoot '.env'
 $AgentPort = 8090
+$WebRoot = Join-Path $ProjectRoot 'web-ui'
+$WebPackage = Join-Path $WebRoot 'package.json'
+$WebDistIndex = Join-Path $WebRoot 'dist\index.html'
 if (Test-Path -LiteralPath $AgentEnv) {
     $agentPortLine = Get-Content -LiteralPath $AgentEnv |
         Where-Object { $_ -match '^\s*AGENT_PORT\s*=\s*\d+\s*$' } |
@@ -305,6 +309,59 @@ function Start-App {
     Wait-TcpPort -Name 'Spring Boot application' -Port 8088 -TimeoutSeconds 120 | Out-Null
 }
 
+function Test-WebNeedsBuild {
+    if ($Rebuild -or -not (Test-Path -LiteralPath $WebDistIndex)) {
+        return $true
+    }
+
+    $distTime = (Get-Item -LiteralPath $WebDistIndex).LastWriteTimeUtc
+    $candidatePaths = @(
+        (Join-Path $WebRoot 'src'),
+        (Join-Path $WebRoot 'index.html'),
+        (Join-Path $WebRoot 'package.json'),
+        (Join-Path $WebRoot 'vite.config.mjs')
+    )
+    $newerSource = Get-ChildItem -LiteralPath $candidatePaths -Recurse -File |
+        Where-Object { $_.LastWriteTimeUtc -gt $distTime } |
+        Select-Object -First 1
+    return $null -ne $newerSource
+}
+
+function Build-Web {
+    if ($SkipWeb -or $SkipAgent) {
+        $reason = if ($SkipWeb) { '-SkipWeb' } else { '-SkipAgent' }
+        Write-Host "[SKIP] Web UI build was disabled by $reason."
+        return
+    }
+
+    Assert-Path $WebPackage 'Web UI package.json'
+    $npm = (Get-Command npm.cmd -ErrorAction Stop).Source
+    Push-Location $WebRoot
+    try {
+        if (-not (Test-Path -LiteralPath (Join-Path $WebRoot 'node_modules'))) {
+            Write-Step 'Installing Web UI dependencies'
+            & $npm install
+            if ($LASTEXITCODE -ne 0) {
+                throw "Web UI dependency installation failed with exit code $($LASTEXITCODE)."
+            }
+        }
+
+        if (Test-WebNeedsBuild) {
+            Write-Step 'Building Web UI'
+            & $npm run build
+            if ($LASTEXITCODE -ne 0) {
+                throw "Web UI build failed with exit code $($LASTEXITCODE)."
+            }
+        }
+        else {
+            Write-Host '[SKIP] Web UI build output is up to date.'
+        }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
 function Start-Agent {
     if ($SkipAgent) {
         Write-Host '[SKIP] Agent HTTP service was disabled by -SkipAgent.'
@@ -351,6 +408,9 @@ function Show-Status {
             Status = $state
         }
     } | Format-Table -AutoSize
+    if ((Test-Path -LiteralPath $WebDistIndex) -and (Test-TcpPort $AgentPort)) {
+        Write-Host "Web UI: http://127.0.0.1:$AgentPort/"
+    }
     Write-Host "Logs: $LogRoot"
 }
 
@@ -366,6 +426,7 @@ try {
     Start-Canal
     Start-Dashboard
     Start-App
+    Build-Web
     Start-Agent
     Write-Step 'Local environment startup completed'
     Show-Status
