@@ -80,7 +80,7 @@ export default function App() {
 
   function askAboutAward(option: AwardOption) {
     const prompt = option.redeemable
-      ? `我想兑换 ${option.award.awardId} 号奖品「${option.award.name}」，请先帮我确认当前兑换条件。`
+      ? `我想兑换 ${option.award.awardId} 号奖品「${option.award.name}」，请发起安全确认。`
       : `我想兑换 ${option.award.awardId} 号奖品「${option.award.name}」，请帮我规划需要完成的任务。`;
     setChatDraft(prompt);
     document.getElementById("advisor")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -177,7 +177,7 @@ export default function App() {
           <div className="note-icon"><ShieldCheck size={22} /></div>
           <div>
             <strong>先确认条件，再做兑换决定</strong>
-            <p>当前页面只提供实时资格查询与 Agent 规划；真实兑换将在一次性确认机制接入后开放。</p>
+            <p>真实兑换必须先展示奖品与积分摘要，再由你明确确认；受理后请到订单页面查看最终结果。</p>
           </div>
           <span className="note-tag">SAFE BY DESIGN</span>
         </section>
@@ -250,7 +250,7 @@ export default function App() {
             <div className="process-strip">
               <div><span>01</span><CheckCircle2 size={18} /><strong>查看资格</strong><p>读取实时积分与奖品状态</p></div>
               <div><span>02</span><Bot size={18} /><strong>制定计划</strong><p>Agent 组合任务与积分缺口</p></div>
-              <div><span>03</span><ShieldCheck size={18} /><strong>安全确认</strong><p>写操作上线后仍需明确确认</p></div>
+              <div><span>03</span><ShieldCheck size={18} /><strong>安全确认</strong><p>一次性凭证确保只提交一次</p></div>
             </div>
           </section>
 

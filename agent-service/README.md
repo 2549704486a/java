@@ -1,17 +1,18 @@
 # 积分规划与奖品兑换顾问
 
-这是积分激励项目的第一版最小 Agent。它只读取 Java 服务提供的业务事实，帮助用户判断奖品是否可兑换，并在积分不足时生成任务方案。
+这是积分激励项目的业务 Agent。它读取 Java 服务提供的实时事实，帮助用户判断兑换条件、生成任务方案，并通过一次性确认凭证受控地调用旧事务消息兑换链路。
 
 ## 1. 当前能力
 
 - 通过 LangChain `create_agent` 运行 Function Calling 循环。
-- 使用 5 个基础查询 Tool 和 2 个只读组合 Skill。
+- 使用 5 个基础查询 Tool、2 个只读组合 Skill 和 1 个受控兑换 Skill。
 - `plan_points_for_award` 使用确定性代码计算积分缺口和任务组合。
 - `recommend_awards` 使用确定性代码过滤并排序当前真正可兑换的奖品。
 - 启动时发现并校验 `skills/*/SKILL.md`，Tool 描述、Skill 版本和哈希来自声明文件。
 - 提供 FastAPI HTTP 接口，支持请求校验、请求 ID、错误脱敏和有界 Agent 缓存。
-- Tool 层只对 GET 请求的瞬时网络错误做有限重试。
-- 不直连 MySQL、Redis、RocketMQ，不调用兑换和任务写接口。
+- Tool 层只对 GET 请求的瞬时网络错误做有限重试；兑换 POST 绝不自动重试。
+- 兑换必须经过“准备摘要 -> 用户明确确认 -> 原子消费一次性凭证”，受理后仍由旧事务消息链路异步完成。
+- 不直连 MySQL、Redis、RocketMQ，也不提供修改积分、库存和任务状态的 Tool。
 
 课程讲义中的 `langgraph.prebuilt.create_react_agent` 在当前版本已由 `langchain.agents.create_agent` 取代，二者承担相同的“模型决定工具 -> 执行工具 -> 返回结果 -> 继续推理”循环。
 
@@ -80,6 +81,8 @@ Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Too
 .\.venv\Scripts\python.exe -m app.main --user-id 10
 ```
 
+受控兑换示例：先说“我想兑换 6 号奖品”，Agent 展示奖品和积分摘要后，再在同一会话明确回复“确认兑换”。`EXCHANGE_PROCESSING` 只表示已进入旧链路处理流程，最终结果需要到订单页面查看；遇到 `SUBMISSION_UNKNOWN` 时先核对订单，不要立即重复提交。
+
 ## 5. 运行 HTTP 服务与前端
 
 单独启动：
@@ -136,7 +139,7 @@ Invoke-RestMethod `
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-离线测试不需要 Java 服务和模型密钥，覆盖 Skill 发现与声明校验、运行时激活、资格分支、任务选择、任务排除、积分不足和 Tool 瞬时错误重试。
+离线测试不需要 Java 服务和模型密钥，覆盖 Skill 发现、规划与推荐分支、一次性凭证 TTL、用户/会话绑定、重复与并发确认、POST 禁止重试、轨迹脱敏和 HTTP 契约。
 
 ## 7. Agent 评测
 
@@ -162,7 +165,7 @@ Invoke-RestMethod `
 agent-service/logs/agent-service.log
 ```
 
-日志会记录 HTTP 请求 ID、用户 ID、请求总耗时，每次 Java 业务接口的路径、HTTP 状态、业务码、重试次数和耗时，以及组合 Skill 的名称、版本、定义哈希和总耗时。
+日志会记录 HTTP 请求 ID、用户 ID、请求总耗时，每次 Java 业务接口的路径、HTTP 状态、业务码、重试次数和耗时，以及组合 Skill 的名称、版本、定义哈希和总耗时。确认凭证不写入普通日志或 Tool 轨迹。
 
 每次 Agent 调用还会输出一条 `agent_tool_trace` 结构化日志，以 `request_id` 关联本次实际执行的 Tool/Skill，记录参数、完成状态、业务结果码和耗时。轨迹不记录 API Key、用户问题正文和完整业务响应。
 

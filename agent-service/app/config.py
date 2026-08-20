@@ -17,6 +17,8 @@ class Settings:
     agent_port: int = 8090
     agent_cache_size: int = 128
     agent_session_cache_size: int = 1024
+    exchange_confirmation_ttl_seconds: int = 120
+    exchange_confirmation_capacity: int = 10_000
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -39,6 +41,12 @@ class Settings:
             agent_cache_size=int(os.getenv("AGENT_CACHE_SIZE", "128")),
             agent_session_cache_size=int(
                 os.getenv("AGENT_SESSION_CACHE_SIZE", "1024")
+            ),
+            exchange_confirmation_ttl_seconds=int(
+                os.getenv("EXCHANGE_CONFIRMATION_TTL_SECONDS", "120")
+            ),
+            exchange_confirmation_capacity=int(
+                os.getenv("EXCHANGE_CONFIRMATION_CAPACITY", "10000")
             ),
         )
 

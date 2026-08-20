@@ -78,6 +78,64 @@ class BusinessApiClient:
             f"/agent/query/users/{user_id}/awards/{award_id}/eligibility"
         )
 
+    def submit_exchange(
+        self,
+        *,
+        user_id: int,
+        award_id: int,
+        request_id: str,
+        idempotency_key: str,
+    ) -> ToolEnvelope:
+        """只提交一次非幂等写请求；网络未知状态交给上层核对，禁止自动重放。"""
+        path = f"/agent/commands/users/{user_id}/awards/{award_id}/exchange"
+        started = time.perf_counter()
+        try:
+            response = self._client.post(
+                path,
+                headers={
+                    "X-Request-ID": request_id,
+                    "Idempotency-Key": idempotency_key,
+                },
+                timeout=self._timeout_seconds,
+            )
+        except (httpx.TimeoutException, httpx.TransportError) as exc:
+            logger.warning(
+                "business_api_write_unknown request_id=%s path=%s error=%s elapsed_ms=%.2f",
+                request_id,
+                path,
+                exc.__class__.__name__,
+                (time.perf_counter() - started) * 1000,
+            )
+            raise BusinessApiError(
+                "SUBMISSION_UNKNOWN",
+                "当前无法判断兑换请求是否已受理",
+                False,
+            ) from exc
+
+        if response.is_error:
+            raise BusinessApiError(
+                "SUBMISSION_UNKNOWN",
+                "当前无法判断兑换请求是否已受理",
+                False,
+            )
+        try:
+            envelope = ToolEnvelope.model_validate(response.json())
+        except (ValueError, TypeError) as exc:
+            raise BusinessApiError(
+                "SUBMISSION_UNKNOWN",
+                "兑换服务返回了无法识别的数据",
+                False,
+            ) from exc
+        logger.info(
+            "business_api_write request_id=%s path=%s http_status=%s code=%s elapsed_ms=%.2f",
+            request_id,
+            path,
+            response.status_code,
+            envelope.code,
+            (time.perf_counter() - started) * 1000,
+        )
+        return envelope
+
     def _get(self, path: str, params: dict[str, str] | None = None) -> ToolEnvelope:
         last_error: BusinessApiError | None = None
         # 从当前轨迹上下文取请求 ID，透传给 Java 服务，无需修改每个查询方法签名。

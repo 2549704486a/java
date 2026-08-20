@@ -8,10 +8,13 @@ from pydantic import BaseModel, Field
 from langchain.tools import tool
 
 from app.api_client import BusinessApiClient, BusinessApiError
+from app.confirmation_store import ConfirmationStore
+from app.execution_context import current_thread_id
 from app.skills.award_recommendation import AwardRecommendationSkill
+from app.skills.controlled_exchange import ControlledExchangeSkill
 from app.skills.points_plan import PointsPlanningSkill
 from app.skills.registry import SkillRegistry
-from app.trace import execute_traced
+from app.trace import current_correlation_id, execute_traced
 
 
 logger = logging.getLogger(__name__)
@@ -44,16 +47,30 @@ class RecommendAwardsInput(BaseModel):
     )
 
 
+class ConfirmationInput(BaseModel):
+    confirmation_id: str = Field(
+        min_length=20,
+        max_length=128,
+        description="prepare_exchange 返回的一次性确认凭证，必须原样传入",
+    )
+
+
 def build_tools(
     client: BusinessApiClient,
     user_id: int,
     skill_registry: SkillRegistry | None = None,
+    confirmation_store: ConfirmationStore | None = None,
 ):
     registry = skill_registry or SkillRegistry()
     points_manifest = registry.require_manifest("points-planning")
     recommendation_manifest = registry.require_manifest("award-recommendation")
+    exchange_manifest = registry.require_manifest("controlled-exchange")
     points_skill = PointsPlanningSkill(client)
     recommendation_skill = AwardRecommendationSkill(client)
+    controlled_exchange_skill = ControlledExchangeSkill(
+        client,
+        confirmation_store or ConfirmationStore(),
+    )
 
     def safe_result(tool_name: str, arguments: dict, callable_):
         # 基础 Tool 统一完成：调用业务接口、规范化业务错误、写入执行轨迹。
@@ -160,6 +177,92 @@ def build_tools(
 
         return execute_traced("recommend_awards", arguments, execute)
 
+    def exchange_context_error() -> dict | None:
+        if current_thread_id() is not None:
+            return None
+        return {
+            "success": False,
+            "code": "EXECUTION_CONTEXT_UNAVAILABLE",
+            "data": None,
+            "message": "当前调用缺少安全会话上下文，不能执行兑换操作",
+            "retryable": False,
+        }
+
+    @tool(
+        args_schema=AwardIdInput,
+        description=(
+            "用户明确表示想兑换指定奖品时使用。它只检查实时条件并生成一次性确认摘要，"
+            "不会立即扣积分或提交兑换。"
+        ),
+        extras=exchange_manifest.trace_metadata(),
+    )
+    def prepare_exchange(award_id: int) -> dict:
+        arguments = {"award_id": award_id}
+
+        def execute() -> dict:
+            context_error = exchange_context_error()
+            if context_error is not None:
+                return context_error
+            active_definition = registry.activate(exchange_manifest.name)
+            result = controlled_exchange_skill.prepare(
+                user_id=user_id,
+                session_id=current_thread_id() or "",
+                request_id=current_correlation_id() or "-",
+                award_id=award_id,
+            )
+            logger.info(
+                "skill_complete name=%s version=%s status=%s",
+                active_definition.manifest.name,
+                active_definition.manifest.version,
+                result.code,
+            )
+            return result.model_dump(mode="json")
+
+        return execute_traced("prepare_exchange", arguments, execute)
+
+    @tool(
+        args_schema=ConfirmationInput,
+        description=(
+            "仅当用户在同一会话看过兑换摘要后明确确认时使用。只能传入 prepare_exchange "
+            "刚返回的一次性凭证，工具最多提交一次旧事务消息兑换链路。"
+        ),
+        extras=exchange_manifest.trace_metadata(),
+    )
+    def confirm_exchange(confirmation_id: str) -> dict:
+        # 轨迹只记录是否提供凭证，不记录可被复制使用的完整授权值。
+        arguments = {"confirmation_provided": bool(confirmation_id)}
+
+        def execute() -> dict:
+            context_error = exchange_context_error()
+            if context_error is not None:
+                return context_error
+            result = controlled_exchange_skill.confirm(
+                user_id=user_id,
+                session_id=current_thread_id() or "",
+                request_id=current_correlation_id() or "-",
+                confirmation_id=confirmation_id,
+            )
+            return result.model_dump(mode="json")
+
+        return execute_traced("confirm_exchange", arguments, execute)
+
+    @tool(
+        description="用户明确表示取消、不换了时使用，使当前会话尚未使用的兑换确认立即失效。",
+        extras=exchange_manifest.trace_metadata(),
+    )
+    def cancel_exchange() -> dict:
+        def execute() -> dict:
+            context_error = exchange_context_error()
+            if context_error is not None:
+                return context_error
+            result = controlled_exchange_skill.cancel(
+                user_id=user_id,
+                session_id=current_thread_id() or "",
+            )
+            return result.model_dump(mode="json")
+
+        return execute_traced("cancel_exchange", {}, execute)
+
     return [
         get_user_points,
         list_available_tasks,
@@ -168,4 +271,7 @@ def build_tools(
         check_exchange_eligibility,
         plan_points_for_award,
         recommend_awards,
+        prepare_exchange,
+        confirm_exchange,
+        cancel_exchange,
     ]

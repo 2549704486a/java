@@ -7,7 +7,9 @@ from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 
 from app.api_client import BusinessApiClient
+from app.confirmation_store import ConfirmationStore
 from app.config import Settings
+from app.execution_context import bind_execution_context
 from app.prompt import SYSTEM_PROMPT
 from app.skills.registry import SkillRegistry
 from app.tools import build_tools
@@ -23,6 +25,7 @@ def build_agent(
     user_id: int,
     skill_registry: SkillRegistry | None = None,
     checkpointer=None,
+    confirmation_store: ConfirmationStore | None = None,
 ):
     registry = skill_registry or SkillRegistry()
     model = ChatOpenAI(
@@ -35,7 +38,7 @@ def build_agent(
     )
     return create_agent(
         model=model,
-        tools=build_tools(client, user_id, registry),
+        tools=build_tools(client, user_id, registry, confirmation_store),
         system_prompt=SYSTEM_PROMPT,
         checkpointer=checkpointer,
     )
@@ -52,7 +55,9 @@ def run_agent(
         config["configurable"] = {"thread_id": thread_id}
     correlation_id = request_id or thread_id or "cli"
     # 一次 Agent 请求对应一个轨迹会话，期间执行的 Tool/Skill 会自动写入该会话。
-    with capture_tool_trace(correlation_id) as trace_session:
+    with capture_tool_trace(correlation_id) as trace_session, bind_execution_context(
+        thread_id
+    ):
         try:
             result = agent.invoke(
                 {"messages": [{"role": "user", "content": message}]},

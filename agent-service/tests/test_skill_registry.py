@@ -56,7 +56,7 @@ class SkillRegistryTest(unittest.TestCase):
         self.assertIn("## 执行步骤", definition.instructions)
         self.assertEqual(64, len(manifest.sha256))
         self.assertEqual(
-            {"award-recommendation", "points-planning"},
+            {"award-recommendation", "controlled-exchange", "points-planning"},
             {item.name for item in registry.manifests()},
         )
 

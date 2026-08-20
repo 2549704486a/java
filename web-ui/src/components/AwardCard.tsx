@@ -74,7 +74,7 @@ export default function AwardCard({ option, index, onAsk }: AwardCardProps) {
         </div>
 
         <button className="award-action" type="button" onClick={() => onAsk(option)}>
-          <span>{option.redeemable ? "咨询兑换" : "让顾问规划"}</span>
+          <span>{option.redeemable ? "准备兑换" : "让顾问规划"}</span>
           <ArrowUpRight size={17} />
         </button>
       </div>

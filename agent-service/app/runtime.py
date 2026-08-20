@@ -12,12 +12,15 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from app.agent import build_agent, run_agent
 from app.api_client import BusinessApiClient
+from app.confirmation_store import ConfirmationStore
 from app.config import Settings
 from app.skills.registry import SkillRegistry
 
 
 logger = logging.getLogger(__name__)
-AgentBuilder = Callable[[Settings, BusinessApiClient, int, SkillRegistry, Any], Any]
+AgentBuilder = Callable[
+    [Settings, BusinessApiClient, int, SkillRegistry, Any, ConfirmationStore], Any
+]
 AgentRunner = Callable[[Any, str, str, str | None], str]
 
 
@@ -38,6 +41,7 @@ class AgentRuntime:
         checkpointer: Any | None = None,
         agent_builder: AgentBuilder = build_agent,
         agent_runner: AgentRunner = run_agent,
+        confirmation_store: ConfirmationStore | None = None,
     ) -> None:
         settings.require_llm_api_key()
         self.settings = settings
@@ -49,6 +53,10 @@ class AgentRuntime:
         self._owns_client = client is None
         self.skill_registry = skill_registry or SkillRegistry()
         self.checkpointer = checkpointer or InMemorySaver()
+        self.confirmation_store = confirmation_store or ConfirmationStore(
+            ttl_seconds=settings.exchange_confirmation_ttl_seconds,
+            capacity=settings.exchange_confirmation_capacity,
+        )
         self._agent_builder = agent_builder
         self._agent_runner = agent_runner
         self._cache_size = max(1, settings.agent_cache_size)
@@ -89,12 +97,14 @@ class AgentRuntime:
             "cached_sessions": cached_sessions,
             "session_cache_size": self._session_cache_size,
             "skills": self.skill_registry.trace_metadata(),
+            "exchange_confirmations": self.confirmation_store.stats(),
         }
 
     def close(self) -> None:
         with self._lock:
             self._agents.clear()
             self._sessions.clear()
+            self.confirmation_store.clear()
         if self._owns_client:
             self.client.close()
 
@@ -112,6 +122,7 @@ class AgentRuntime:
                 user_id,
                 self.skill_registry,
                 self.checkpointer,
+                self.confirmation_store,
             )
             self._agents[user_id] = agent
             logger.info("agent_cache_miss user_id=%s", user_id)
@@ -151,4 +162,6 @@ class AgentRuntime:
                 return
             self._sessions.pop(evicted_thread_id)
             self.checkpointer.delete_thread(evicted_thread_id)
+            # 会话记忆淘汰时同步撤销待确认授权，避免孤立凭证继续可用。
+            self.confirmation_store.cancel_pending_by_session(evicted_thread_id)
             logger.info("session_evicted thread_id=%s", evicted_thread_id)

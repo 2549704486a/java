@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import time
+import uuid
 
 from dotenv import load_dotenv
 
@@ -103,8 +104,9 @@ def main() -> None:
             log_path,
         )
         agent = build_agent(settings, client, args.user_id, skill_registry)
+        cli_thread_id = f"user:{args.user_id}:session:cli"
         if args.message:
-            print(run_agent(agent, args.message))
+            print(run_agent(agent, args.message, cli_thread_id, uuid.uuid4().hex))
             return
 
         print("积分规划顾问已启动，输入 exit 退出。")
@@ -113,7 +115,9 @@ def main() -> None:
             if message.lower() in {"exit", "quit"}:
                 return
             if message:
-                print(f"顾问：{run_agent(agent, message)}")
+                print(
+                    f"顾问：{run_agent(agent, message, cli_thread_id, uuid.uuid4().hex)}"
+                )
 
 
 if __name__ == "__main__":

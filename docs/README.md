@@ -24,6 +24,7 @@
 | `agent-design/16_受控兑换Tool契约.md` | 准备与确认 Tool、Java 写入适配、重试和审计契约 |
 | `agent-design/17_受控兑换评测用例.md` | 授权、重复提交、并发、未知结果和回归评测场景 |
 | `agent-design/18_奖品中心与Agent前端.md` | React 奖品中心、Agent 对话、dashboard 聚合接口和同源部署边界 |
+| `agent-design/19_受控兑换Skill实现.md` | 一次性确认存储、旧链路 POST 适配、状态语义和安全测试证据 |
 
 这些文档服务于开发、调试和代码评审，可以记录具体路径、接口、状态码和运行命令。
 

@@ -57,6 +57,19 @@ class AwardOptionData(BaseModel):
     reason_code: str = Field(alias="reasonCode")
 
 
+class ExchangePreparationData(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    confirmation_id: str = Field(alias="confirmationId")
+    status: Literal["AWAITING_CONFIRMATION"]
+    award_id: int = Field(alias="awardId")
+    award_name: str = Field(alias="awardName")
+    current_points: int = Field(alias="currentPoints")
+    required_points: int = Field(alias="requiredPoints")
+    remaining_points: int = Field(alias="remainingPoints")
+    expires_at: datetime = Field(alias="expiresAt")
+
+
 class RecommendedAward(BaseModel):
     award_id: int
     name: str
