@@ -11,7 +11,7 @@
 - 启动时发现并校验 `skills/*/SKILL.md`，Tool 描述、Skill 版本和哈希来自声明文件。
 - 提供 FastAPI HTTP 接口，支持请求校验、请求 ID、错误脱敏和有界 Agent 缓存。
 - 使用签名 JWT 验证用户身份，查询、会话和兑换不接受浏览器自行指定用户 ID。
-- 建立受控 RAG 知识源目录，使用文档版本、来源引用和结构校验管理索引输入；当前尚未接入在线检索。
+- 建立受控 RAG 知识源目录，使用文档版本、来源引用和结构校验管理索引输入；已实现文档切分与本地 Chroma 索引，当前尚未接入在线检索。
 - Tool 层只对 GET 请求的瞬时网络错误做有限重试；兑换 POST 绝不自动重试。
 - 兑换必须经过“准备摘要 -> 用户明确确认 -> 服务端确定性路由 -> 原子消费一次性凭证”，确认凭证不进入模型上下文，受理后仍由旧事务消息链路异步完成。
 - 不直连业务 MySQL 和 RocketMQ；只使用独立 Redis Key 前缀保存 Agent 自己的确认授权状态，不直接修改积分、库存和任务状态。
@@ -202,15 +202,22 @@ $outputPrice = [double](Read-Host "每百万输出 Token 的美元单价")
 .\.venv\Scripts\python.exe -m evals.rescore --input evals\results\原结果.json --output evals\results\重评结果.json
 ```
 
-## 8. 校验 RAG 知识源
+## 8. 构建 RAG 知识索引
 
-当前只完成知识源治理，还没有把 RAG 检索 Tool 接入 Agent。新增或修改 `knowledge/documents/` 后，先审核动态事实边界并同步文档版本与目录版本，再执行：
+当前已完成知识源治理、文档切分和本地向量索引构建，还没有把 RAG 检索接入 Agent。新增或修改 `knowledge/documents/` 后，先审核动态事实边界并同步文档版本与目录版本，再执行目录校验和切分检查：
 
 ```powershell
 .\.venv\Scripts\python.exe -m app.knowledge_catalog
+.\.venv\Scripts\python.exe -m app.knowledge_index inspect-chunks
 ```
 
-校验器会检查清单契约、重复 ID、目录穿越、YAML Front Matter、固定章节和项目内来源。详细设计见 `docs/agent-design/26_RAG知识源治理与Tool边界.md`。
+配置 `RAG_EMBEDDING_API_KEY`、`RAG_EMBEDDING_BASE_URL` 和 `RAG_EMBEDDING_MODEL` 后，可以重建本地持久化索引：
+
+```powershell
+.\.venv\Scripts\python.exe -m app.knowledge_index build
+```
+
+校验器会检查清单契约、重复 ID、目录穿越、YAML Front Matter、固定章节和项目内来源；索引器会保留章节与来源元数据，并完整重建指定集合。详细设计见 `docs/agent-design/26_RAG知识源治理与Tool边界.md` 和 `27_RAG文档切分与本地向量索引.md`。
 
 ## 9. 日志与耗时
 

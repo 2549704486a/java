@@ -1,6 +1,6 @@
 # 受控业务知识源
 
-这里保存未来 RAG 索引的原始知识，不保存向量数据库文件。当前阶段只建立知识源治理，不会把这些文档自动注入模型上下文。
+这里保存 RAG 索引的原始知识，不保存向量数据库文件。当前已支持切分和本地索引构建，但不会把这些文档自动注入模型上下文。
 
 ## 收录规则
 
@@ -10,11 +10,18 @@
 - 新增或修改文档后必须审核内容、同步文档版本与目录版本，再运行目录校验。
 - 向量库、Embedding 结果和临时检索输出属于派生产物，不提交到本目录。
 
-## 校验命令
+## 校验与建库
 
 ```powershell
 cd D:\工作\incentive-事务消息\agent-service
 .\.venv\Scripts\python.exe -m app.knowledge_catalog
+.\.venv\Scripts\python.exe -m app.knowledge_index inspect-chunks
 ```
 
-只有校验通过的 `active` 文档，才允许进入下一阶段的切分与索引流程。
+只有校验通过的 `active` 文档才会进入切分与索引流程。配置 Embedding 服务后可执行：
+
+```powershell
+.\.venv\Scripts\python.exe -m app.knowledge_index build
+```
+
+索引默认写入 `knowledge/index/`。该目录是可重新生成的派生产物，不提交到 Git。

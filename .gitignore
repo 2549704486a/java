@@ -9,6 +9,7 @@ agent-service/.env
 agent-service/__pycache__/
 agent-service/**/__pycache__/
 agent-service/logs/
+agent-service/knowledge/index/
 .local-runtime/
 *.pyc
 ops/codecache-proof/*.class

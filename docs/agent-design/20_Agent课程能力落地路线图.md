@@ -45,8 +45,8 @@
 | 2. Prompt Engineering | System Prompt、结构化表达、Few-shot、ReAct | 部分落地 | `app/prompt.py`、固定回归和失败轨迹 | 缺少系统化 Few-shot 治理和结构化模型输出 | 只依据评测失败做通用修正，不堆特例 |
 | 3. Function Calling | Tool Schema、调用、错误处理 | 已落地 | `app/tools.py`、Pydantic 契约、Tool 轨迹、Java 请求级持久化幂等、Redis Lua 原子确认、JWT 可信身份绑定 | 尚未验证复杂并行调用和服务间权限模型 | 随真实需求增强，不单独扩张 |
 | 4. LangChain | Agent 构建、模型与 Tool 编排 | 已落地 | `create_agent`、checkpointer、运行时服务 | 对底层执行图的理解仍可深化 | 结合现有调用链学习 |
-| 5. RAG | 文档切分、向量检索、引用与评测 | 部分落地 | `knowledge/` 受控知识源、`app/knowledge_catalog.py`、目录治理测试、`26_RAG知识源治理与Tool边界.md` | 尚未实现切分、向量索引、在线检索、引用和检索评测 | P2.1 已完成，继续落地检索闭环 |
-| 6. LangChain 深入实践 | LCEL、Chain、Retriever、Output Parser、Callback | 部分落地 | 已有 Callback 类似的 Tool 轨迹与 LangChain Agent 链路 | 未显式落地 LCEL、Retriever、Output Parser | 与 RAG 一并落地，避免为用而用 |
+| 5. RAG | 文档切分、向量检索、引用与评测 | 部分落地 | `knowledge/` 受控知识源、`app/knowledge_catalog.py`、`app/knowledge_index.py`、本地 Chroma 与切分/检索测试、`26` 和 `27` 号设计文档 | 尚未接入在线检索、来源引用、拒答和检索评测 | P2.2 已完成，继续落地检索闭环 |
+| 6. LangChain 深入实践 | LCEL、Chain、Retriever、Output Parser、Callback | 部分落地 | 已有 Callback 类似的 Tool 轨迹、LangChain Agent 链路和递归文档切分 | 未显式落地 LCEL、Retriever、Output Parser | 与在线 RAG 一并落地，避免为用而用 |
 | 7. 记忆系统 | 短期记忆、裁剪、摘要和长期记忆 | 部分落地 | `InMemorySaver`、`thread_id`、会话锁、LRU、确定性确认结果回写和真实 StateGraph 状态测试 | 缺少 token 预算、摘要、共享存储和长期偏好治理 | P3 阶段补齐治理能力 |
 | 8. 多 Agent | 角色拆分、协作与路由 | 未落地 | 无项目代码证据 | 尚未证明单 Agent 无法稳定完成当前任务 | P6 候选项，先用评测证明必要性 |
 | 9. MCP | 标准化工具、资源接入 | 未落地 | 无项目代码证据 | Tool 契约和权限边界仍需先稳定 | P4 先接只读能力，写操作暂不外放 |
@@ -84,9 +84,10 @@
 RAG 的第一个合理场景是积分规则、兑换规则、活动说明和常见问题等静态或低频变化知识。
 
 1. [x] 建立受控知识源和文档版本。
-2. 实现切分、元数据、向量化、检索和来源引用。
-3. 使用 LCEL 串联检索、上下文构造、回答和结构化输出。
-4. 建立检索命中率、引用正确性和无答案拒答评测。
+2. [x] 实现切分、Chunk 元数据、向量化接口和可重复构建的本地索引。
+3. 实现在线检索、来源引用和低相关结果拒答。
+4. 使用 LCEL 串联检索、上下文构造、回答和结构化输出。
+5. 建立检索命中率、引用正确性和无答案拒答评测。
 
 边界必须保持：
 
@@ -161,8 +162,8 @@ RAG 的第一个合理场景是积分规则、兑换规则、活动说明和常�
 
 - 当前阶段：`P2 业务规则 RAG`
 - 已有基础：受控兑换状态机、一次性确认、旧链路 POST 适配、Java 持久化 `Idempotency-Key`、Redis 共享确认、前端确认卡片、结构化轨迹和安全回归。
-- 已完成：`P0.1 Java 请求级持久化幂等`、`P0.2 Redis 确认凭证共享存储`、`P0.3 JWT 可信用户身份`、`P1.1 调优/盲测集隔离`、`P1.2 重复试验稳定性统计`、`P1.4 模型耗时、Token 与成本指标`、`P2.1 受控知识源和 RAG/Tool 边界`。
-- 下一项：开始 `P2.2`，实现可重复的文档切分、Chunk 元数据和本地向量索引构建。
+- 已完成：`P0.1 Java 请求级持久化幂等`、`P0.2 Redis 确认凭证共享存储`、`P0.3 JWT 可信用户身份`、`P1.1 调优/盲测集隔离`、`P1.2 重复试验稳定性统计`、`P1.4 模型耗时、Token 与成本指标`、`P2.1 受控知识源和 RAG/Tool 边界`、`P2.2 文档切分与本地向量索引`。
+- 下一项：开始 `P2.3`，实现只读在线检索、来源引用和低相关结果拒答。
 - 当前阻塞：无。
 - 后续补充：`P0.4` 固定端到端回归，以及 P1 的 Judge 校准、安全硬门禁和对抗用例；MCP 和多 Agent 继续暂缓。
 

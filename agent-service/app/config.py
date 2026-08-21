@@ -13,6 +13,13 @@ class Settings:
     llm_base_url: str | None = None
     llm_model: str = "gpt-4o-mini"
     llm_timeout_seconds: float = 30.0
+    rag_embedding_api_key: str | None = None
+    rag_embedding_base_url: str | None = None
+    rag_embedding_model: str = "text-embedding-3-small"
+    rag_chunk_size: int = 400
+    rag_chunk_overlap: int = 60
+    rag_index_dir: str = "knowledge/index"
+    rag_collection_name: str = "incentive-business-rules"
     agent_host: str = "127.0.0.1"
     agent_port: int = 8090
     agent_cache_size: int = 128
@@ -44,6 +51,25 @@ class Settings:
             llm_base_url=os.getenv("LLM_BASE_URL") or None,
             llm_model=os.getenv("LLM_MODEL", "gpt-4o-mini"),
             llm_timeout_seconds=float(os.getenv("LLM_TIMEOUT_SECONDS", "30")),
+            rag_embedding_api_key=(
+                os.getenv("RAG_EMBEDDING_API_KEY")
+                or os.getenv("LLM_API_KEY")
+                or None
+            ),
+            rag_embedding_base_url=(
+                os.getenv("RAG_EMBEDDING_BASE_URL")
+                or os.getenv("LLM_BASE_URL")
+                or None
+            ),
+            rag_embedding_model=os.getenv(
+                "RAG_EMBEDDING_MODEL", "text-embedding-3-small"
+            ),
+            rag_chunk_size=int(os.getenv("RAG_CHUNK_SIZE", "400")),
+            rag_chunk_overlap=int(os.getenv("RAG_CHUNK_OVERLAP", "60")),
+            rag_index_dir=os.getenv("RAG_INDEX_DIR", "knowledge/index").strip(),
+            rag_collection_name=os.getenv(
+                "RAG_COLLECTION_NAME", "incentive-business-rules"
+            ).strip(),
             agent_host=os.getenv("AGENT_HOST", "127.0.0.1"),
             agent_port=int(os.getenv("AGENT_PORT", "8090")),
             agent_cache_size=int(os.getenv("AGENT_CACHE_SIZE", "128")),
@@ -92,3 +118,10 @@ class Settings:
                 "缺少 AGENT_AUTH_SECRET。请生成至少 32 字符的随机密钥并写入 .env。"
             )
         return self.agent_auth_secret
+
+    def require_rag_embedding_api_key(self) -> str:
+        if not self.rag_embedding_api_key:
+            raise ValueError(
+                "缺少 RAG_EMBEDDING_API_KEY。可以单独配置，或复用 LLM_API_KEY。"
+            )
+        return self.rag_embedding_api_key
