@@ -24,6 +24,12 @@ from app.skills.registry import SkillRegistry
 from app.tools import build_tools
 from app.trace import capture_tool_trace
 from evals.fixtures import FixtureBusinessApiClient
+from evals.metrics import (
+    ModelTimingHandler,
+    TokenPricing,
+    summarize_model_timing,
+    summarize_token_usage,
+)
 
 
 ROOT = Path(__file__).resolve().parent
@@ -41,6 +47,13 @@ def positive_int(value: str) -> int:
     parsed = int(value)
     if parsed < 1:
         raise argparse.ArgumentTypeError("必须是大于 0 的整数")
+    return parsed
+
+
+def non_negative_float(value: str) -> float:
+    parsed = float(value)
+    if not math.isfinite(parsed) or parsed < 0:
+        raise argparse.ArgumentTypeError("必须是有限的非负数")
     return parsed
 
 
@@ -67,7 +80,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ids", help="只运行指定编号，多个编号使用逗号分隔")
     parser.add_argument("--user-id", type=int, default=10)
     parser.add_argument("--output", help="指定结果 JSON 路径")
+    parser.add_argument(
+        "--input-cost-per-million",
+        type=non_negative_float,
+        help="每百万输入 Token 的美元单价，必须与输出单价同时配置",
+    )
+    parser.add_argument(
+        "--output-cost-per-million",
+        type=non_negative_float,
+        help="每百万输出 Token 的美元单价，必须与输入单价同时配置",
+    )
     return parser.parse_args()
+
+
+def resolve_pricing(
+    input_cost_per_million: float | None,
+    output_cost_per_million: float | None,
+) -> TokenPricing | None:
+    if input_cost_per_million is None and output_cost_per_million is None:
+        return None
+    if input_cost_per_million is None or output_cost_per_million is None:
+        raise SystemExit("输入和输出 Token 单价必须同时配置")
+    return TokenPricing(input_cost_per_million, output_cost_per_million)
 
 
 def load_cases(
@@ -242,6 +276,7 @@ def run_one(
 ) -> dict[str, Any]:
     fixture_client: FixtureBusinessApiClient | None = None
     live_client: BusinessApiClient | None = None
+    model_timing = ModelTimingHandler()
     if case["source"] == "fixture":
         fixture_client = FixtureBusinessApiClient(case["fixture"])
         client: Any = fixture_client
@@ -272,7 +307,10 @@ def run_one(
         ) as trace_session, bind_execution_context(thread_id):
             result = agent.invoke(
                 {"messages": [{"role": "user", "content": case["question"]}]},
-                config={"recursion_limit": 12},
+                config={
+                    "recursion_limit": 12,
+                    "callbacks": [model_timing],
+                },
             )
         elapsed_ms = (time.perf_counter() - started) * 1000
         messages = result["messages"]
@@ -306,6 +344,7 @@ def run_one(
             "question": case["question"],
             "response": response,
             "elapsed_ms": round(elapsed_ms, 2),
+            "model_metrics": model_timing.summary(),
             "usage": collect_usage(messages),
             "tool_calls": tool_calls,
             "declared_tool_calls": declared_tool_calls,
@@ -323,6 +362,8 @@ def run_one(
             "fixture": case.get("fixture"),
             "question": case["question"],
             "error": f"{exc.__class__.__name__}: {exc}",
+            "model_metrics": model_timing.summary(),
+            "usage": {},
             "evaluation": {"passed": False, "checks": {}, "details": {}},
         }
     finally:
@@ -406,11 +447,14 @@ def summarize_stability(results: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
+def summarize(
+    results: list[dict[str, Any]],
+    pricing: TokenPricing | None = None,
+) -> dict[str, Any]:
     category_results: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for result in results:
         category_results[result["category"]].append(result)
-    elapsed_values = [
+    run_elapsed_values = [
         float(result["elapsed_ms"])
         for result in results
         if isinstance(result.get("elapsed_ms"), (int, float))
@@ -429,14 +473,16 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
         for event in result.get("tool_execution_trace", []):
             tool_events[event["tool_name"]].append(event)
     for tool_name, events in sorted(tool_events.items()):
-        elapsed_values = [float(event["elapsed_ms"]) for event in events]
+        tool_elapsed_values = [float(event["elapsed_ms"]) for event in events]
         tool_metrics[tool_name] = {
             "calls": len(events),
             "execution_failures": sum(
                 not event.get("completed", False) for event in events
             ),
-            "average_elapsed_ms": round(sum(elapsed_values) / len(events), 2),
-            "max_elapsed_ms": round(max(elapsed_values), 2),
+            "average_elapsed_ms": round(
+                sum(tool_elapsed_values) / len(events), 2
+            ),
+            "max_elapsed_ms": round(max(tool_elapsed_values), 2),
         }
 
     return {
@@ -459,11 +505,13 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
             for name, total in check_totals.items()
         },
         "tool_metrics": tool_metrics,
-        "average_elapsed_ms": round(statistics.mean(elapsed_values), 2)
-        if elapsed_values
+        "token_metrics": summarize_token_usage(results, pricing),
+        "model_metrics": summarize_model_timing(results),
+        "average_elapsed_ms": round(statistics.mean(run_elapsed_values), 2)
+        if run_elapsed_values
         else 0,
         "p95_elapsed_ms": round(
-            percentile(elapsed_values, 0.95),
+            percentile(run_elapsed_values, 0.95),
             2,
         ),
         "stability": summarize_stability(results),
@@ -479,6 +527,7 @@ def redact_blind_result(result: dict[str, Any]) -> dict[str, Any]:
         "category": result["category"],
         "source": result["source"],
         "elapsed_ms": result.get("elapsed_ms"),
+        "model_metrics": result.get("model_metrics", {}),
         "usage": result.get("usage", {}),
         "error_type": result.get("error", "").partition(":")[0] or None,
         "evaluation": {
@@ -491,6 +540,10 @@ def redact_blind_result(result: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     load_dotenv()
     args = parse_args()
+    pricing = resolve_pricing(
+        args.input_cost_per_million,
+        args.output_cost_per_million,
+    )
     ids = {item.strip() for item in args.ids.split(",")} if args.ids else None
     cases = load_cases(args.suite, ids, args.dataset)
     if not cases:
@@ -531,8 +584,12 @@ def main() -> None:
                     " tools="
                     f"{[call['name'] for call in result.get('tool_calls', [])]}"
                 )
+            usage = result.get("usage", {})
+            model_metrics = result.get("model_metrics", {})
             print(
-                f"  {status} elapsed_ms={result.get('elapsed_ms', 0)}{detail}",
+                f"  {status} elapsed_ms={result.get('elapsed_ms', 0)} "
+                f"model_ms={model_metrics.get('total_elapsed_ms', 0)} "
+                f"tokens={usage.get('total_tokens', 0)}{detail}",
                 flush=True,
             )
 
@@ -564,7 +621,7 @@ def main() -> None:
             ).hexdigest(),
             "blind_details_redacted": args.dataset == "blind",
         },
-        "summary": summarize(results),
+        "summary": summarize(results, pricing),
         "results": (
             [redact_blind_result(result) for result in results]
             if args.dataset == "blind"

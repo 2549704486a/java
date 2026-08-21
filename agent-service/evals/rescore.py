@@ -6,7 +6,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from evals.runner import DATASET_PATHS, evaluate_case, summarize
+from evals.runner import (
+    DATASET_PATHS,
+    evaluate_case,
+    non_negative_float,
+    resolve_pricing,
+    summarize,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -19,11 +25,25 @@ def parse_args() -> argparse.Namespace:
         default="tuning",
         help="选择原始结果所属的用例集",
     )
+    parser.add_argument(
+        "--input-cost-per-million",
+        type=non_negative_float,
+        help="每百万输入 Token 的美元单价",
+    )
+    parser.add_argument(
+        "--output-cost-per-million",
+        type=non_negative_float,
+        help="每百万输出 Token 的美元单价",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    pricing = resolve_pricing(
+        args.input_cost_per_million,
+        args.output_cost_per_million,
+    )
     cases = {
         case["id"]: case
         for case in json.loads(
@@ -57,7 +77,7 @@ def main() -> None:
             "dataset": args.dataset,
             "case_ids": [result["id"] for result in results],
         },
-        "summary": summarize(results),
+        "summary": summarize(results, pricing),
         "results": results,
     }
     output_path.write_text(

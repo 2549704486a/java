@@ -184,7 +184,18 @@ Remove-Item Env:RUN_REDIS_INTEGRATION_TESTS
 
 盲测结果默认脱敏，不保存问题、回答、期望内容和完整轨迹，不能用于离线重评分。具体治理规则见 `docs/agent-design/24_评测集隔离与重复试验.md`。
 
-结果保存在 `evals/results/`，包含最终回答、模型声明调用、实际 Tool 执行轨迹、参数、结果码、Tool 耗时、后端路径和消息轨迹。汇总区会按 Tool 统计调用次数、执行失败数、平均耗时和最大耗时。修改评分规则后可以对同一模型输出离线重评，避免反复调用模型碰结果：
+结果保存在 `evals/results/`，包含最终回答、模型声明调用、实际 Tool 执行轨迹、参数、结果码、Tool 耗时、后端路径和消息轨迹。汇总区会分别统计 Agent 端到端耗时、模型调用耗时、Tool 耗时和 Token；模型价格不会硬编码，只有同时传入当前输入与输出单价时才估算美元成本：
+
+```powershell
+$inputPrice = [double](Read-Host "每百万输入 Token 的美元单价")
+$outputPrice = [double](Read-Host "每百万输出 Token 的美元单价")
+.\.venv\Scripts\python.exe -m evals.runner `
+  --suite fixture `
+  --input-cost-per-million $inputPrice `
+  --output-cost-per-million $outputPrice
+```
+
+详细口径见 `docs/agent-design/25_Agent评测耗时Token与成本指标.md`。修改评分规则或价格后，可以对保留了完整回答和 Token 的同一模型输出离线重评，避免反复调用模型碰结果：
 
 ```powershell
 .\.venv\Scripts\python.exe -m evals.rescore --input evals\results\原结果.json --output evals\results\重评结果.json

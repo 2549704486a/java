@@ -124,6 +124,26 @@ class EvalRunnerTest(unittest.TestCase):
         self.assertEqual(1, stability["single_passed_cases"])
         self.assertEqual(0, stability["stable_passed_cases"])
 
+    def test_run_latency_is_not_overwritten_by_last_tool_latency(self):
+        first = self._result("B01", 1, True, 100)
+        second = self._result("B02", 1, True, 200)
+        first["tool_execution_trace"] = [
+            {
+                "tool_name": "get_user_points",
+                "elapsed_ms": 5,
+                "completed": True,
+            }
+        ]
+
+        summary = summarize([first, second])
+
+        self.assertEqual(150, summary["average_elapsed_ms"])
+        self.assertEqual(200, summary["p95_elapsed_ms"])
+        self.assertEqual(
+            5,
+            summary["tool_metrics"]["get_user_points"]["average_elapsed_ms"],
+        )
+
     def test_blind_result_redaction_removes_prompt_answer_and_trace(self):
         result = self._result("B01", 1, True, 10)
         result.update(
