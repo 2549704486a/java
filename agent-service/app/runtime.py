@@ -11,7 +11,7 @@ from typing import Any
 
 from langgraph.checkpoint.memory import InMemorySaver
 
-from app.agent import build_agent, run_agent
+from app.agent import append_agent_turn, build_agent, run_agent
 from app.api_client import BusinessApiClient
 from app.confirmation_store import ConfirmationStore, ConfirmationStoreBackend
 from app.config import Settings
@@ -100,6 +100,14 @@ class AgentRuntime:
                     thread_id=thread_id,
                     request_id=request_id or thread_id,
                     confirmation_id=pending.confirmation_id,
+                )
+                # 确认/取消绕过模型执行，但结果仍需写回 LangGraph 记忆。
+                # 否则下一轮模型看到的历史仍停留在“等待确认”。
+                self._append_exchange_action_turn(
+                    user_id=user_id,
+                    thread_id=thread_id,
+                    user_message=message,
+                    assistant_message=result.message,
                 )
                 return result.message, (time.perf_counter() - started) * 1000
 
@@ -254,6 +262,29 @@ class AgentRuntime:
             result.code,
         )
         return result
+
+    def _append_exchange_action_turn(
+        self,
+        *,
+        user_id: int,
+        thread_id: str,
+        user_message: str,
+        assistant_message: str,
+    ) -> None:
+        try:
+            append_agent_turn(
+                self._agent_for(user_id),
+                user_message,
+                assistant_message,
+                thread_id,
+            )
+        except Exception:
+            # 兑换已经执行，记忆同步失败不能把成功响应改成接口异常。
+            logger.exception(
+                "exchange_history_sync_failed user_id=%s thread_id=%s",
+                user_id,
+                thread_id,
+            )
 
     @staticmethod
     def _thread_id(user_id: int, session_id: str) -> str:

@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import unittest
 
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph import START, MessagesState, StateGraph
+
+from app.agent import append_agent_turn
 from app.config import Settings
 from app.confirmation_store import ConfirmationStatus, ConfirmationStore
 from app.models import ToolEnvelope
@@ -39,7 +43,34 @@ class FakeCheckpointer:
         self.deleted_thread_ids.append(thread_id)
 
 
+class FakeAgent:
+    def __init__(self) -> None:
+        self.state_updates: list[tuple[dict, dict]] = []
+
+    def update_state(self, config: dict, values: dict) -> None:
+        self.state_updates.append((config, values))
+
+
 class AgentRuntimeTest(unittest.TestCase):
+    def test_append_agent_turn_updates_real_langgraph_message_history(self):
+        graph = StateGraph(MessagesState)
+        graph.add_node("passthrough", lambda state: {})
+        graph.add_edge(START, "passthrough")
+        agent = graph.compile(checkpointer=InMemorySaver())
+        config = {"configurable": {"thread_id": "session-history"}}
+        agent.invoke(
+            {"messages": [{"role": "assistant", "content": "等待确认"}]},
+            config=config,
+        )
+
+        append_agent_turn(agent, "确认兑换", "兑换请求已进入处理流程", "session-history")
+
+        messages = agent.get_state(config).values["messages"]
+        self.assertEqual(
+            ["等待确认", "确认兑换", "兑换请求已进入处理流程"],
+            [message.content for message in messages],
+        )
+
     def test_reuses_user_agent_and_evicts_least_recently_used_entry(self):
         built_user_ids: list[int] = []
 
@@ -160,9 +191,10 @@ class AgentRuntimeTest(unittest.TestCase):
         client = FakeClient()
         runner_calls: list[str] = []
         store = ConfirmationStore(token_factory=lambda: "runtime-confirmation-token")
+        agent = FakeAgent()
 
         def builder(*args):
-            return {"agent": "unused"}
+            return agent
 
         def runner(agent, message, thread_id, request_id):
             runner_calls.append(message)
@@ -197,6 +229,14 @@ class AgentRuntimeTest(unittest.TestCase):
         self.assertEqual("兑换请求已进入处理流程", answer)
         self.assertEqual(1, client.submit_calls)
         self.assertEqual([], runner_calls)
+        self.assertEqual(1, len(agent.state_updates))
+        config, values = agent.state_updates[0]
+        self.assertEqual(
+            "user:10:session:session-a",
+            config["configurable"]["thread_id"],
+        )
+        self.assertEqual("确认兑换！", values["messages"][0].content)
+        self.assertEqual("兑换请求已进入处理流程", values["messages"][1].content)
         self.assertEqual(
             ConfirmationStatus.PROCESSING,
             store.snapshot(record.confirmation_id).status,

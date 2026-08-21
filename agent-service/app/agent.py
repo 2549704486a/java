@@ -4,6 +4,7 @@ import json
 import logging
 
 from langchain.agents import create_agent
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 
 from app.api_client import BusinessApiClient
@@ -87,3 +88,21 @@ def run_agent(
         ]
         return "\n".join(part for part in text_parts if part)
     return str(content)
+
+
+def append_agent_turn(
+    agent,
+    user_message: str,
+    assistant_message: str,
+    thread_id: str,
+) -> None:
+    """将确定性路由产生的对话写回 Agent 记忆，但不再次调用模型。"""
+    agent.update_state(
+        {"configurable": {"thread_id": thread_id}},
+        {
+            "messages": [
+                HumanMessage(content=user_message),
+                AIMessage(content=assistant_message),
+            ]
+        },
+    )
