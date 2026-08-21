@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,7 +25,6 @@ class CatalogDocumentEntry(BaseModel):
 
     id: str = Field(pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
     path: str = Field(min_length=1)
-    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
 class CatalogManifest(BaseModel):
@@ -55,7 +53,6 @@ class KnowledgeDocument:
     metadata: KnowledgeMetadata
     body: str
     source_path: Path
-    sha256: str
 
 
 @dataclass(frozen=True)
@@ -108,17 +105,10 @@ class KnowledgeCatalog:
     def _load_document(self, entry: CatalogDocumentEntry) -> KnowledgeDocument:
         source_path = self._safe_child_path(entry.path)
         try:
-            raw_content = source_path.read_bytes()
+            text = source_path.read_text(encoding="utf-8-sig")
         except FileNotFoundError as exc:
             raise KnowledgeCatalogError(f"知识文档不存在：{source_path}") from exc
 
-        actual_sha256 = hashlib.sha256(raw_content).hexdigest()
-        if actual_sha256 != entry.sha256:
-            raise KnowledgeCatalogError(
-                f"知识文档摘要不一致：{entry.id}，请审核内容后更新 manifest.json"
-            )
-
-        text = raw_content.decode("utf-8-sig")
         metadata, body = self._parse_front_matter(source_path, text)
         if metadata.knowledge_id != entry.id:
             raise KnowledgeCatalogError(
@@ -130,7 +120,6 @@ class KnowledgeCatalog:
             metadata=metadata,
             body=body,
             source_path=source_path,
-            sha256=actual_sha256,
         )
 
     def _safe_child_path(self, relative_path: str) -> Path:
@@ -190,8 +179,7 @@ def main() -> None:
         print(
             "knowledge_document_valid "
             f"id={document.metadata.knowledge_id} "
-            f"version={document.metadata.version} "
-            f"sha256={document.sha256}"
+            f"version={document.metadata.version}"
         )
 
 

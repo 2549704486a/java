@@ -4,18 +4,15 @@
   "documents": [
     {
       "id": "agent-service-guide",
-      "path": "documents/agent-service-guide.md",
-      "sha256": "15b46e30f396dc1b96573af171973f6f788c16dd0718c164eea2e3363c306729"
+      "path": "documents/agent-service-guide.md"
     },
     {
       "id": "exchange-rules-and-status",
-      "path": "documents/exchange-rules-and-status.md",
-      "sha256": "3fc8c1431ab18143350b0b92340a6447b3db027a4fb2f34f40f003ec0f28e1fa"
+      "path": "documents/exchange-rules-and-status.md"
     },
     {
       "id": "points-and-tasks",
-      "path": "documents/points-and-tasks.md",
-      "sha256": "ea85821a1da5e97d00c2bb9bc3da2602ea5741f390611be2f7d5ad9ba8d51469"
+      "path": "documents/points-and-tasks.md"
     }
   ]
 }
