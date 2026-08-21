@@ -7,3 +7,4 @@ PyYAML==6.0.3
 fastapi==0.141.1
 uvicorn==0.52.4
 redis==5.2.1
+PyJWT==2.10.1

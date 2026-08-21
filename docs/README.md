@@ -28,6 +28,7 @@
 | `agent-design/20_Agent课程能力落地路线图.md` | 项目最高优先级、课程能力覆盖、分阶段实施顺序和动态调整规则 |
 | `agent-design/21_Java兑换请求持久化幂等.md` | Agent 写入口的请求占位、响应重放、冲突检测和未知状态边界 |
 | `agent-design/22_Redis确认凭证共享存储.md` | 确认授权的 Redis Key 模型、Lua 原子迁移、TTL 和跨实例验证 |
+| `agent-design/23_Agent可信用户身份.md` | JWT 身份来源、Token 契约、前端登录边界和越权回归 |
 
 这些文档服务于开发、调试和代码评审，可以记录具体路径、接口、状态码和运行命令。
 

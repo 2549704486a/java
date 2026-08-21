@@ -9,12 +9,18 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, Path as ApiPath, Request
+from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.api_client import BusinessApiError
+from app.auth import (
+    AuthenticatedUser,
+    AuthenticationError,
+    JwtAuthenticator,
+    authenticator_from_settings,
+)
 from app.config import Settings
 from app.models import AwardOptionData, PendingExchangeData, UserPointsData
 from app.runtime import AgentRuntime
@@ -24,11 +30,13 @@ from app.trace import capture_tool_trace
 logger = logging.getLogger(__name__)
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 RuntimeFactory = Callable[[], AgentRuntime]
+AuthenticatorFactory = Callable[[], JwtAuthenticator]
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "web-ui" / "dist"
 
 
 class ChatRequest(BaseModel):
-    user_id: int = Field(gt=0)
+    model_config = ConfigDict(extra="forbid")
+
     message: str = Field(min_length=1, max_length=2000)
     session_id: str | None = Field(default=None, max_length=128)
 
@@ -80,16 +88,36 @@ class DashboardErrorResponse(BaseModel):
     message: str
 
 
+class CurrentUserResponse(BaseModel):
+    user_id: int
+
+
+class AuthenticationErrorResponse(BaseModel):
+    request_id: str
+    code: str
+    message: str
+
+
 def default_runtime_factory() -> AgentRuntime:
     load_dotenv()
     return AgentRuntime(Settings.from_env())
 
 
-def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> FastAPI:
+def default_authenticator_factory() -> JwtAuthenticator:
+    load_dotenv()
+    return authenticator_from_settings(Settings.from_env())
+
+
+def create_app(
+    runtime_factory: RuntimeFactory = default_runtime_factory,
+    authenticator_factory: AuthenticatorFactory = default_authenticator_factory,
+) -> FastAPI:
     @asynccontextmanager
     async def lifespan(application: FastAPI):
+        authenticator = authenticator_factory()
         runtime = runtime_factory()
         application.state.runtime = runtime
+        application.state.authenticator = authenticator
         logger.info("agent_http_started health=%s", runtime.health())
         try:
             yield
@@ -103,20 +131,58 @@ def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> Fas
         lifespan=lifespan,
     )
 
+    @application.exception_handler(AuthenticationError)
+    def authentication_error_handler(
+        request: Request,
+        exc: AuthenticationError,
+    ) -> JSONResponse:
+        request_id = normalize_request_id(request.headers.get("X-Request-ID"))
+        body = AuthenticationErrorResponse(
+            request_id=request_id,
+            code=exc.code,
+            message=exc.message,
+        )
+        return JSONResponse(
+            status_code=401,
+            content=body.model_dump(),
+            headers={
+                "X-Request-ID": request_id,
+                "WWW-Authenticate": "Bearer",
+            },
+        )
+
     @application.get("/health")
     def health(request: Request) -> dict[str, Any]:
         return request.app.state.runtime.health()
 
+    @application.get(
+        "/v1/me",
+        response_model=CurrentUserResponse,
+        responses={401: {"model": AuthenticationErrorResponse}},
+    )
+    def current_user(
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ) -> CurrentUserResponse:
+        identity = authenticate_request(request, authorization)
+        return CurrentUserResponse(user_id=identity.user_id)
+
     @application.post(
         "/v1/chat",
         response_model=ChatResponse,
-        responses={503: {"model": ErrorResponse}},
+        responses={
+            401: {"model": AuthenticationErrorResponse},
+            503: {"model": ErrorResponse},
+        },
     )
     def chat(
         payload: ChatRequest,
         request: Request,
         x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
     ):
+        identity = authenticate_request(request, authorization)
+        user_id = identity.user_id
         # 优先沿用网关传入的请求 ID，否则生成一个，作为整条调用链的关联键。
         request_id = normalize_request_id(x_request_id)
         session_id = payload.session_id or uuid.uuid4().hex
@@ -125,12 +191,12 @@ def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> Fas
             "message_length=%s",
             request_id,
             session_id,
-            payload.user_id,
+            user_id,
             len(payload.message),
         )
         try:
             answer, elapsed_ms = request.app.state.runtime.answer(
-                payload.user_id,
+                user_id,
                 session_id,
                 payload.message,
                 request_id,
@@ -139,7 +205,7 @@ def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> Fas
             logger.exception(
                 "agent_request_failed request_id=%s user_id=%s",
                 request_id,
-                payload.user_id,
+                user_id,
             )
             error = ErrorResponse(
                 request_id=request_id,
@@ -158,17 +224,17 @@ def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> Fas
             "elapsed_ms=%.2f",
             request_id,
             session_id,
-            payload.user_id,
+            user_id,
             elapsed_ms,
         )
         response = ChatResponse(
             request_id=request_id,
             session_id=session_id,
-            user_id=payload.user_id,
+            user_id=user_id,
             answer=answer,
             elapsed_ms=round(elapsed_ms, 2),
             pending_exchange=request.app.state.runtime.pending_exchange(
-                payload.user_id,
+                user_id,
                 session_id,
             ),
         )
@@ -178,9 +244,10 @@ def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> Fas
         )
 
     @application.get(
-        "/v1/dashboard/{user_id}",
+        "/v1/dashboard",
         response_model=DashboardResponse,
         responses={
+            401: {"model": AuthenticationErrorResponse},
             404: {"model": DashboardErrorResponse},
             502: {"model": DashboardErrorResponse},
             503: {"model": DashboardErrorResponse},
@@ -188,10 +255,11 @@ def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> Fas
     )
     def dashboard(
         request: Request,
-        user_id: int = ApiPath(gt=0),
         x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
     ):
         """聚合奖品中心首屏数据，避免浏览器理解两个 Java 接口的信封协议。"""
+        user_id = authenticate_request(request, authorization).user_id
         request_id = normalize_request_id(x_request_id)
         try:
             # 绑定请求 ID 后，BusinessApiClient 会自动将它透传给 Java 服务。
@@ -275,6 +343,13 @@ def normalize_request_id(candidate: str | None) -> str:
     if candidate and REQUEST_ID_PATTERN.fullmatch(candidate):
         return candidate
     return uuid.uuid4().hex
+
+
+def authenticate_request(
+    request: Request,
+    authorization: str | None,
+) -> AuthenticatedUser:
+    return request.app.state.authenticator.authenticate(authorization)
 
 
 def dashboard_error(

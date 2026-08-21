@@ -4,8 +4,29 @@ import unittest
 
 from fastapi.testclient import TestClient
 
+from app.auth import JwtAuthenticator
 from app.models import PendingExchangeData, ToolEnvelope
 from app.web import create_app
+
+
+TEST_AUTHENTICATOR = JwtAuthenticator(
+    "web-test-auth-secret-that-is-longer-than-32-characters",
+    "test-agent",
+    "test-web",
+)
+
+
+def auth_headers(user_id: int = 10, request_id: str | None = None) -> dict[str, str]:
+    headers = {
+        "Authorization": f"Bearer {TEST_AUTHENTICATOR.issue_token(user_id, 60)}"
+    }
+    if request_id:
+        headers["X-Request-ID"] = request_id
+    return headers
+
+
+def create_test_app(runtime: "FakeRuntime"):
+    return create_app(lambda: runtime, lambda: TEST_AUTHENTICATOR)
 
 
 class FakeBusinessClient:
@@ -99,13 +120,13 @@ class AgentWebTest(unittest.TestCase):
                 expiresAt="2026-08-21T08:02:00Z",
             )
         )
-        app = create_app(lambda: runtime)
+        app = create_test_app(runtime)
 
         with TestClient(app) as client:
             response = client.post(
                 "/v1/chat",
+                headers=auth_headers(),
                 json={
-                    "user_id": 10,
                     "session_id": "session-001",
                     "message": "兑换6号奖品",
                 },
@@ -118,12 +139,12 @@ class AgentWebTest(unittest.TestCase):
 
     def test_dashboard_aggregates_points_and_awards(self):
         runtime = FakeRuntime()
-        app = create_app(lambda: runtime)
+        app = create_test_app(runtime)
 
         with TestClient(app) as client:
             response = client.get(
-                "/v1/dashboard/10",
-                headers={"X-Request-ID": "dashboard-001"},
+                "/v1/dashboard",
+                headers=auth_headers(request_id="dashboard-001"),
             )
 
         self.assertEqual(200, response.status_code)
@@ -137,15 +158,14 @@ class AgentWebTest(unittest.TestCase):
 
     def test_health_and_chat_contract(self):
         runtime = FakeRuntime()
-        app = create_app(lambda: runtime)
+        app = create_test_app(runtime)
 
         with TestClient(app) as client:
             health = client.get("/health")
             response = client.post(
                 "/v1/chat",
-                headers={"X-Request-ID": "request-001"},
+                headers=auth_headers(request_id="request-001"),
                 json={
-                    "user_id": 10,
                     "session_id": "session-001",
                     "message": "  我有多少积分？  ",
                 },
@@ -174,39 +194,44 @@ class AgentWebTest(unittest.TestCase):
 
     def test_rejects_invalid_request_before_runtime_call(self):
         runtime = FakeRuntime()
-        app = create_app(lambda: runtime)
+        app = create_test_app(runtime)
 
         with TestClient(app) as client:
-            invalid_user = client.post(
-                "/v1/chat", json={"user_id": 0, "message": "查询积分"}
+            injected_user = client.post(
+                "/v1/chat",
+                headers=auth_headers(),
+                json={"user_id": 11, "message": "查询积分"},
             )
             blank_message = client.post(
-                "/v1/chat", json={"user_id": 10, "message": "   "}
+                "/v1/chat", headers=auth_headers(), json={"message": "   "}
             )
             invalid_session = client.post(
                 "/v1/chat",
+                headers=auth_headers(),
                 json={
-                    "user_id": 10,
                     "session_id": "invalid session",
                     "message": "查询积分",
                 },
             )
 
-        self.assertEqual(422, invalid_user.status_code)
+        self.assertEqual(422, injected_user.status_code)
         self.assertEqual(422, blank_message.status_code)
         self.assertEqual(422, invalid_session.status_code)
         self.assertEqual([], runtime.calls)
 
     def test_returns_sanitized_error_and_generated_request_id(self):
         runtime = FakeRuntime(should_fail=True)
-        app = create_app(lambda: runtime)
+        app = create_test_app(runtime)
 
         with TestClient(app) as client:
             with self.assertLogs("app.web", level="ERROR"):
                 response = client.post(
                     "/v1/chat",
-                    headers={"X-Request-ID": "invalid request id"},
-                    json={"user_id": 10, "message": "查询积分"},
+                    headers={
+                        **auth_headers(),
+                        "X-Request-ID": "invalid request id",
+                    },
+                    json={"message": "查询积分"},
                 )
 
         body = response.json()
@@ -216,6 +241,29 @@ class AgentWebTest(unittest.TestCase):
         self.assertEqual(32, len(body["request_id"]))
         self.assertEqual(32, len(body["session_id"]))
         self.assertEqual(body["request_id"], response.headers["X-Request-ID"])
+
+    def test_requires_token_and_uses_token_identity(self):
+        runtime = FakeRuntime()
+        app = create_test_app(runtime)
+
+        with TestClient(app) as client:
+            unauthorized = client.get(
+                "/v1/me",
+                headers={"X-Request-ID": "auth-001"},
+            )
+            identity = client.get("/v1/me", headers=auth_headers(user_id=11))
+            chat = client.post(
+                "/v1/chat",
+                headers=auth_headers(user_id=11),
+                json={"message": "查询积分"},
+            )
+
+        self.assertEqual(401, unauthorized.status_code)
+        self.assertEqual("AUTH_REQUIRED", unauthorized.json()["code"])
+        self.assertEqual("auth-001", unauthorized.headers["X-Request-ID"])
+        self.assertEqual({"user_id": 11}, identity.json())
+        self.assertEqual(11, chat.json()["user_id"])
+        self.assertEqual(11, runtime.calls[0][0])
 
 
 if __name__ == "__main__":

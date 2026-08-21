@@ -1,4 +1,4 @@
-import type { ChatResponse, DashboardResponse } from "./types";
+import type { ChatResponse, CurrentUserResponse, DashboardResponse } from "./types";
 
 interface ApiErrorBody {
   code?: string;
@@ -32,30 +32,45 @@ function requestId(): string {
   return `web-${crypto.randomUUID()}`;
 }
 
+function authenticatedHeaders(accessToken: string): HeadersInit {
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    "X-Request-ID": requestId()
+  };
+}
+
+export async function fetchCurrentUser(
+  accessToken: string
+): Promise<CurrentUserResponse> {
+  const response = await fetch("/v1/me", {
+    headers: authenticatedHeaders(accessToken)
+  });
+  return readJson<CurrentUserResponse>(response);
+}
+
 export async function fetchDashboard(
-  userId: number,
+  accessToken: string,
   signal?: AbortSignal
 ): Promise<DashboardResponse> {
-  const response = await fetch(`/v1/dashboard/${userId}`, {
-    headers: { "X-Request-ID": requestId() },
+  const response = await fetch("/v1/dashboard", {
+    headers: authenticatedHeaders(accessToken),
     signal
   });
   return readJson<DashboardResponse>(response);
 }
 
 export async function sendChat(
-  userId: number,
+  accessToken: string,
   sessionId: string | null,
   message: string
 ): Promise<ChatResponse> {
   const response = await fetch("/v1/chat", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "X-Request-ID": requestId()
+      ...authenticatedHeaders(accessToken),
+      "Content-Type": "application/json; charset=utf-8"
     },
     body: JSON.stringify({
-      user_id: userId,
       session_id: sessionId,
       message
     })

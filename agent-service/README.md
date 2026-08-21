@@ -10,6 +10,7 @@
 - `recommend_awards` 使用确定性代码过滤并排序当前真正可兑换的奖品。
 - 启动时发现并校验 `skills/*/SKILL.md`，Tool 描述、Skill 版本和哈希来自声明文件。
 - 提供 FastAPI HTTP 接口，支持请求校验、请求 ID、错误脱敏和有界 Agent 缓存。
+- 使用签名 JWT 验证用户身份，查询、会话和兑换不接受浏览器自行指定用户 ID。
 - Tool 层只对 GET 请求的瞬时网络错误做有限重试；兑换 POST 绝不自动重试。
 - 兑换必须经过“准备摘要 -> 用户明确确认 -> 服务端确定性路由 -> 原子消费一次性凭证”，确认凭证不进入模型上下文，受理后仍由旧事务消息链路异步完成。
 - 不直连业务 MySQL 和 RocketMQ；只使用独立 Redis Key 前缀保存 Agent 自己的确认授权状态，不直接修改积分、库存和任务状态。
@@ -56,6 +57,15 @@ LLM_MODEL=服务商提供的模型名
 
 `.env` 已被项目 `.gitignore` 忽略。不要把真实 Key 发到聊天、提交到 Git 或写进截图；如果曾经泄露，应立即在服务商控制台撤销并重新创建。
 
+同时配置本地 JWT 签名密钥：
+
+```dotenv
+AGENT_AUTH_SECRET=至少32字符的本地随机密钥
+AGENT_AUTH_ISSUER=incentive-agent
+AGENT_AUTH_AUDIENCE=incentive-agent-web
+AGENT_ACCESS_TOKEN_TTL_SECONDS=3600
+```
+
 ## 3. 先验证业务 Skill
 
 这一步不调用大模型，只验证 Java 接口和确定性积分计算：
@@ -101,7 +111,8 @@ Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Too
 
 - 奖品中心与 Agent 对话：`http://127.0.0.1:8090/`
 - 接口文档：`http://127.0.0.1:8090/docs`
-- 聚合首屏数据：`GET /v1/dashboard/{user_id}`
+- 当前身份：`GET /v1/me`
+- 聚合首屏数据：`GET /v1/dashboard`
 
 使用 `-SkipWeb` 可以跳过前端构建。前端独立开发和构建方式见 `web-ui/README.md`。
 
@@ -114,8 +125,8 @@ Invoke-RestMethod http://127.0.0.1:8090/health
 调用 Agent：
 
 ```powershell
+$token = .\.venv\Scripts\python.exe -m app.auth --user-id 10
 $json = @{
-    user_id = 10
     session_id = 'local-session-001'
     message = '我想兑换 6 号奖品，积分不够该做哪些任务？'
 } | ConvertTo-Json
@@ -125,11 +136,16 @@ Invoke-RestMethod `
     -Method Post `
     -Uri http://127.0.0.1:8090/v1/chat `
     -ContentType 'application/json; charset=utf-8' `
-    -Headers @{ 'X-Request-ID' = 'local-demo-001' } `
+    -Headers @{
+        'X-Request-ID' = 'local-demo-001'
+        'Authorization' = "Bearer $token"
+    } `
     -Body $body
 ```
 
 响应包含 `request_id`、`session_id`、`user_id`、`answer` 和服务端总耗时 `elapsed_ms`。首次不传 `session_id` 时服务会生成并返回；后续请求携带同一个 `session_id` 即可延续对话。
+
+本地签发命令使用 `.env` 中的 JWT 密钥。生产环境应由正式登录系统签发身份，不能把签名密钥交给浏览器，也不能提供公开的“输入用户 ID 换 Token”接口。
 
 短期记忆只保存在当前进程内，并按 `user_id + session_id` 隔离。服务重启或会话被 LRU 淘汰后，历史消息不会保留。
 

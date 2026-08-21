@@ -43,7 +43,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 1. Agent 全景认知 | Agent 边界、循环和业务定位 | 已落地 | `app/agent.py`、三个业务 Skill、Tool/Skill 边界文档 | 仍需持续校准产品边界 | 作为架构基线维护 |
 | 2. Prompt Engineering | System Prompt、结构化表达、Few-shot、ReAct | 部分落地 | `app/prompt.py`、固定回归和失败轨迹 | 缺少系统化 Few-shot 治理和结构化模型输出 | 只依据评测失败做通用修正，不堆特例 |
-| 3. Function Calling | Tool Schema、调用、错误处理 | 已落地 | `app/tools.py`、Pydantic 契约、Tool 轨迹、Java 请求级持久化幂等、Redis Lua 原子确认 | 尚未验证复杂并行调用和更细权限模型 | 随真实需求增强，不单独扩张 |
+| 3. Function Calling | Tool Schema、调用、错误处理 | 已落地 | `app/tools.py`、Pydantic 契约、Tool 轨迹、Java 请求级持久化幂等、Redis Lua 原子确认、JWT 可信身份绑定 | 尚未验证复杂并行调用和服务间权限模型 | 随真实需求增强，不单独扩张 |
 | 4. LangChain | Agent 构建、模型与 Tool 编排 | 已落地 | `create_agent`、checkpointer、运行时服务 | 对底层执行图的理解仍可深化 | 结合现有调用链学习 |
 | 5. RAG | 文档切分、向量检索、引用与评测 | 未落地 | 无项目代码证据 | 缺少知识源治理、检索器和检索评测 | P2 阶段落地业务规则知识库 |
 | 6. LangChain 深入实践 | LCEL、Chain、Retriever、Output Parser、Callback | 部分落地 | 已有 Callback 类似的 Tool 轨迹与 LangChain Agent 链路 | 未显式落地 LCEL、Retriever、Output Parser | 与 RAG 一并落地，避免为用而用 |
@@ -64,7 +64,7 @@
 
 - [x] 在 Java 旧兑换入口实现持久化的请求级幂等，明确请求指纹、幂等键、执行中、完成和未知状态。
 - [x] 将 Python `ConfirmationStore` 从单进程内存迁移为 Redis 共享存储，使用原子状态迁移保证多实例下最多执行一次。
-- [ ] 明确可信用户身份来源，逐步替代当前由请求参数直接传入 `user_id` 的演示边界。
+- [x] 使用签名 JWT 建立可信用户身份来源，移除请求体和路径中的 `user_id` 演示边界。
 - [ ] 建立“准备兑换 -> 用户确认 -> Java 受理 -> 查询最终结果”的固定端到端回归。
 
 完成门槛：单元测试、并发测试和本地真实链路验证全部通过；失败与未知结果语义清楚；覆盖表和任务日记已更新。
@@ -159,8 +159,8 @@ RAG 的第一个合理场景是积分规则、兑换规则、活动说明和常�
 
 - 当前阶段：`P0 受控写操作工程底座`
 - 已有基础：受控兑换状态机、一次性确认、旧链路 POST 适配、Java 持久化 `Idempotency-Key`、Redis 共享确认、前端确认卡片、结构化轨迹和安全回归。
-- 已完成：`P0.1 Java 请求级持久化幂等`；`P0.2 Redis 确认凭证共享存储`，包含共享状态、Lua 原子消费、TTL、容量治理和跨实例并发验证。
-- 下一项：`P0.3` 明确可信用户身份来源，替代由请求体直接传入 `user_id` 的演示边界。
+- 已完成：`P0.1 Java 请求级持久化幂等`；`P0.2 Redis 确认凭证共享存储`；`P0.3 JWT 可信用户身份`，包含 Token 校验、前端身份改造和越权回归。
+- 下一项：`P0.4` 建立“准备兑换 -> 用户确认 -> Java 受理 -> 查询最终结果”的固定端到端回归。
 - 当前阻塞：无。
 - 暂不进入：RAG、MCP 和多 Agent，直到 P0 完成且 P1 建立基本评测门禁。
 

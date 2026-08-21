@@ -17,6 +17,10 @@ class Settings:
     agent_port: int = 8090
     agent_cache_size: int = 128
     agent_session_cache_size: int = 1024
+    agent_auth_secret: str | None = None
+    agent_auth_issuer: str = "incentive-agent"
+    agent_auth_audience: str = "incentive-agent-web"
+    agent_access_token_ttl_seconds: int = 3600
     exchange_confirmation_ttl_seconds: int = 120
     exchange_confirmation_capacity: int = 10_000
     exchange_confirmation_store: str = "memory"
@@ -46,6 +50,14 @@ class Settings:
             agent_session_cache_size=int(
                 os.getenv("AGENT_SESSION_CACHE_SIZE", "1024")
             ),
+            agent_auth_secret=os.getenv("AGENT_AUTH_SECRET") or None,
+            agent_auth_issuer=os.getenv("AGENT_AUTH_ISSUER", "incentive-agent"),
+            agent_auth_audience=os.getenv(
+                "AGENT_AUTH_AUDIENCE", "incentive-agent-web"
+            ),
+            agent_access_token_ttl_seconds=int(
+                os.getenv("AGENT_ACCESS_TOKEN_TTL_SECONDS", "3600")
+            ),
             exchange_confirmation_ttl_seconds=int(
                 os.getenv("EXCHANGE_CONFIRMATION_TTL_SECONDS", "120")
             ),
@@ -73,3 +85,10 @@ class Settings:
                 "缺少 LLM_API_KEY。若只想验证业务规划，可改用 --plan-award-id。"
             )
         return self.llm_api_key
+
+    def require_auth_secret(self) -> str:
+        if not self.agent_auth_secret:
+            raise ValueError(
+                "缺少 AGENT_AUTH_SECRET。请生成至少 32 字符的随机密钥并写入 .env。"
+            )
+        return self.agent_auth_secret

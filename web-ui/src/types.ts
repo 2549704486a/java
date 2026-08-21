@@ -32,6 +32,10 @@ export interface DashboardResponse {
   awards: AwardOption[];
 }
 
+export interface CurrentUserResponse {
+  user_id: number;
+}
+
 export interface ChatResponse {
   request_id: string;
   session_id: string;

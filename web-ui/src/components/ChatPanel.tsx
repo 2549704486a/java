@@ -14,6 +14,7 @@ import { ApiError, sendChat } from "../api";
 import type { ChatMessage, PendingExchange } from "../types";
 
 interface ChatPanelProps {
+  accessToken: string;
   userId: number;
   externalDraft: string;
   onExternalDraftConsumed: () => void;
@@ -34,6 +35,7 @@ function initialMessage(): ChatMessage {
 }
 
 export default function ChatPanel({
+  accessToken,
   userId,
   externalDraft,
   onExternalDraftConsumed
@@ -75,7 +77,7 @@ export default function ChatPanel({
     ]);
 
     try {
-      const response = await sendChat(userId, sessionId, normalized);
+      const response = await sendChat(accessToken, sessionId, normalized);
       setSessionId(response.session_id);
       setPendingExchange(response.pending_exchange);
       setMessages((current) => [

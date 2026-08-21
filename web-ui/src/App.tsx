@@ -6,14 +6,16 @@ import {
   CircleUserRound,
   Coins,
   Gift,
+  KeyRound,
   LoaderCircle,
+  LogOut,
   RefreshCw,
   ShieldCheck,
   Sparkles,
   Target
 } from "lucide-react";
 
-import { ApiError, fetchDashboard, fetchHealth } from "./api";
+import { ApiError, fetchCurrentUser, fetchDashboard, fetchHealth } from "./api";
 import AwardCard from "./components/AwardCard";
 import ChatPanel from "./components/ChatPanel";
 import type { AwardOption, DashboardResponse } from "./types";
@@ -26,14 +28,16 @@ const filterLabels: Array<{ value: Filter; label: string }> = [
   { value: "planning", label: "需要规划" }
 ];
 
-function readInitialUserId(): number {
-  const stored = Number(localStorage.getItem("incentive-user-id"));
-  return Number.isInteger(stored) && stored > 0 ? stored : 10;
+function readInitialAccessToken(): string {
+  return sessionStorage.getItem("incentive-access-token") ?? "";
 }
 
 export default function App() {
-  const [userId, setUserId] = useState(readInitialUserId);
-  const [userDraft, setUserDraft] = useState(String(readInitialUserId()));
+  const [accessToken, setAccessToken] = useState(readInitialAccessToken);
+  const [tokenDraft, setTokenDraft] = useState(readInitialAccessToken);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [authLoading, setAuthLoading] = useState(Boolean(readInitialAccessToken()));
+  const [authError, setAuthError] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -42,12 +46,12 @@ export default function App() {
   const [serviceOnline, setServiceOnline] = useState<boolean | null>(null);
   const [chatDraft, setChatDraft] = useState("");
 
-  async function loadDashboard(targetUserId: number, silent = false) {
+  async function loadDashboard(token: string, silent = false) {
     if (silent) setRefreshing(true);
     else setLoading(true);
     setError(null);
     try {
-      const result = await fetchDashboard(targetUserId);
+      const result = await fetchDashboard(token);
       setDashboard(result);
     } catch (loadError) {
       setDashboard(null);
@@ -63,19 +67,60 @@ export default function App() {
   }
 
   useEffect(() => {
-    void loadDashboard(userId);
     void fetchHealth().then(setServiceOnline);
-  }, [userId]);
+  }, []);
 
-  function switchUser(event: FormEvent) {
-    event.preventDefault();
-    const nextUserId = Number(userDraft);
-    if (!Number.isInteger(nextUserId) || nextUserId <= 0) {
-      setError("用户 ID 必须是正整数");
+  useEffect(() => {
+    if (!accessToken) {
+      setUserId(null);
+      setDashboard(null);
+      setAuthLoading(false);
       return;
     }
-    localStorage.setItem("incentive-user-id", String(nextUserId));
-    setUserId(nextUserId);
+
+    let active = true;
+    setAuthLoading(true);
+    setAuthError(null);
+    void fetchCurrentUser(accessToken)
+      .then((identity) => {
+        if (!active) return;
+        setUserId(identity.user_id);
+        void loadDashboard(accessToken);
+      })
+      .catch((authFailure) => {
+        if (!active) return;
+        setUserId(null);
+        setDashboard(null);
+        setAuthError(
+          authFailure instanceof ApiError
+            ? authFailure.message
+            : "无法验证访问令牌，请确认 Agent 服务已启动。"
+        );
+      })
+      .finally(() => {
+        if (active) setAuthLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
+
+  function signIn(event: FormEvent) {
+    event.preventDefault();
+    const token = tokenDraft.trim();
+    if (!token) {
+      setAuthError("请粘贴本地签发的访问令牌");
+      return;
+    }
+    sessionStorage.setItem("incentive-access-token", token);
+    setAccessToken(token);
+  }
+
+  function signOut() {
+    sessionStorage.removeItem("incentive-access-token");
+    setAccessToken("");
+    setTokenDraft("");
+    setAuthError(null);
   }
 
   function askAboutAward(option: AwardOption) {
@@ -93,6 +138,38 @@ export default function App() {
     if (filter === "planning") return !option.redeemable;
     return true;
   });
+
+  if (authLoading || userId === null) {
+    return (
+      <div className="auth-shell">
+        <div className="grain" aria-hidden="true" />
+        <section className="auth-card">
+          <span className="brand-seal">拾</span>
+          <p className="eyebrow">TRUSTED IDENTITY</p>
+          <h1>先验证身份，再进入奖品社。</h1>
+          <p>
+            用户身份来自服务端签名令牌，不再由浏览器填写用户 ID。令牌只保存在当前标签页会话中。
+          </p>
+          <form onSubmit={signIn}>
+            <label htmlFor="access-token"><KeyRound size={16} /> 访问令牌</label>
+            <textarea
+              id="access-token"
+              rows={4}
+              value={tokenDraft}
+              onChange={(event) => setTokenDraft(event.target.value)}
+              placeholder="粘贴 python -m app.auth --user-id 10 生成的令牌"
+              disabled={authLoading}
+            />
+            {authError && <span className="auth-error">{authError}</span>}
+            <button type="submit" disabled={authLoading || !tokenDraft.trim()}>
+              {authLoading ? <LoaderCircle className="spin" size={18} /> : <ShieldCheck size={18} />}
+              {authLoading ? "正在验证" : "验证并进入"}
+            </button>
+          </form>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -112,18 +189,11 @@ export default function App() {
           <a href="#advisor">兑换顾问</a>
         </nav>
 
-        <form className="user-switcher" onSubmit={switchUser}>
+        <div className="user-switcher">
           <CircleUserRound size={17} />
-          <label htmlFor="user-id">用户</label>
-          <input
-            id="user-id"
-            inputMode="numeric"
-            value={userDraft}
-            onChange={(event) => setUserDraft(event.target.value)}
-            aria-label="用户 ID"
-          />
-          <button type="submit">切换</button>
-        </form>
+          <span>用户 {userId}</span>
+          <button type="button" onClick={signOut}><LogOut size={14} /> 退出</button>
+        </div>
       </header>
 
       <main id="top">
@@ -193,7 +263,7 @@ export default function App() {
                 className="refresh-button"
                 type="button"
                 disabled={refreshing}
-                onClick={() => void loadDashboard(userId, true)}
+                onClick={() => void loadDashboard(accessToken, true)}
               >
                 <RefreshCw size={16} className={refreshing ? "spin" : ""} />
                 刷新实时状态
@@ -224,7 +294,7 @@ export default function App() {
               <div className="error-state">
                 <Target size={28} />
                 <div><strong>数据暂时没有到达</strong><p>{error}</p></div>
-                <button type="button" onClick={() => void loadDashboard(userId)}>重新加载</button>
+                <button type="button" onClick={() => void loadDashboard(accessToken)}>重新加载</button>
               </div>
             )}
 
@@ -255,6 +325,7 @@ export default function App() {
           </section>
 
           <ChatPanel
+            accessToken={accessToken}
             userId={userId}
             externalDraft={chatDraft}
             onExternalDraftConsumed={() => setChatDraft("")}
