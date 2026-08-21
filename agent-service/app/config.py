@@ -28,6 +28,7 @@ class Settings:
     rag_embedding_api_key: str | None = None
     rag_embedding_base_url: str | None = None
     rag_embedding_model: str = "text-embedding-3-small"
+    rag_embedding_batch_size: int = 10
     rag_chunk_size: int = 400
     rag_chunk_overlap: int = 60
     rag_index_dir: str = "knowledge/index"
@@ -78,6 +79,9 @@ class Settings:
             ),
             rag_embedding_model=os.getenv(
                 "RAG_EMBEDDING_MODEL", "text-embedding-3-small"
+            ),
+            rag_embedding_batch_size=int(
+                os.getenv("RAG_EMBEDDING_BATCH_SIZE", "10")
             ),
             rag_chunk_size=int(os.getenv("RAG_CHUNK_SIZE", "400")),
             rag_chunk_overlap=int(os.getenv("RAG_CHUNK_OVERLAP", "60")),

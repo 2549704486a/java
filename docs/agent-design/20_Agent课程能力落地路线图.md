@@ -45,7 +45,7 @@
 | 2. Prompt Engineering | System Prompt、结构化表达、Few-shot、ReAct | 部分落地 | `app/prompt.py`、固定回归和失败轨迹 | 缺少系统化 Few-shot 治理和结构化模型输出 | 只依据评测失败做通用修正，不堆特例 |
 | 3. Function Calling | Tool Schema、调用、错误处理 | 已落地 | `app/tools.py`、Pydantic 契约、Tool 轨迹、Java 请求级持久化幂等、Redis Lua 原子确认、JWT 可信身份绑定 | 尚未验证复杂并行调用和服务间权限模型 | 随真实需求增强，不单独扩张 |
 | 4. LangChain | Agent 构建、模型与 Tool 编排 | 已落地 | `create_agent`、checkpointer、运行时服务 | 对底层执行图的理解仍可深化 | 结合现有调用链学习 |
-| 5. RAG | 文档切分、向量检索、引用与评测 | 部分落地 | `knowledge/`、`knowledge_index.py`、`knowledge_search.py`、可选知识 Tool、引用/拒答/失败保护测试、`26` 至 `28` 号设计文档 | 当前模型服务缺少 Embedding；尚未完成真实检索联调、阈值校准和检索评测 | P2.3 代码完成，先补真实向量服务再验收 |
+| 5. RAG | 文档切分、向量检索、引用与评测 | 部分落地 | `knowledge/`、`knowledge_index.py`、`knowledge_search.py`、真实阿里云 Embedding 索引、可选知识 Tool、引用/拒答/失败保护测试、`26` 至 `28` 号设计文档 | 已完成真实建库和冒烟阈值校准；尚缺正式检索数据集、召回/拒答指标和引用正确性评测 | P2.3 工程链路完成，下一步建设 P2.4 检索评测 |
 | 6. LangChain 深入实践 | LCEL、Chain、Retriever、Output Parser、Callback | 部分落地 | 已有 Callback 类似的 Tool 轨迹、LangChain Agent 链路和递归文档切分 | 未显式落地 LCEL、Retriever、Output Parser | 与在线 RAG 一并落地，避免为用而用 |
 | 7. 记忆系统 | 短期记忆、裁剪、摘要和长期记忆 | 部分落地 | `InMemorySaver`、`thread_id`、会话锁、LRU、确定性确认结果回写和真实 StateGraph 状态测试 | 缺少 token 预算、摘要、共享存储和长期偏好治理 | P3 阶段补齐治理能力 |
 | 8. 多 Agent | 角色拆分、协作与路由 | 未落地 | 无项目代码证据 | 尚未证明单 Agent 无法稳定完成当前任务 | P6 候选项，先用评测证明必要性 |
@@ -162,9 +162,9 @@ RAG 的第一个合理场景是积分规则、兑换规则、活动说明和常�
 
 - 当前阶段：`P2 业务规则 RAG`
 - 已有基础：受控兑换状态机、一次性确认、旧链路 POST 适配、Java 持久化 `Idempotency-Key`、Redis 共享确认、前端确认卡片、结构化轨迹和安全回归。
-- 已完成：`P0.1 Java 请求级持久化幂等`、`P0.2 Redis 确认凭证共享存储`、`P0.3 JWT 可信用户身份`、`P1.1 调优/盲测集隔离`、`P1.2 重复试验稳定性统计`、`P1.4 模型耗时、Token 与成本指标`、`P2.1 受控知识源和 RAG/Tool 边界`、`P2.2 文档切分与本地向量索引`、`P2.3 只读检索代码与拒答契约`。
-- 下一项：配置可用 Embedding 服务，完成真实建库、检索阈值校准和端到端引用验证；通过后再进入 LCEL 编排。
-- 当前阻塞：现有对话模型兼容服务不提供 Embedding 模型，默认请求返回 `404`，模型列表无可用候选。
+- 已完成：`P0.1 Java 请求级持久化幂等`、`P0.2 Redis 确认凭证共享存储`、`P0.3 JWT 可信用户身份`、`P1.1 调优/盲测集隔离`、`P1.2 重复试验稳定性统计`、`P1.4 模型耗时、Token 与成本指标`、`P2.1 受控知识源和 RAG/Tool 边界`、`P2.2 文档切分与本地向量索引`、`P2.3 只读检索、真实 Embedding 联调与拒答契约`。
+- 下一项：`P2.4` 建立检索评测集，统计相关问题召回、无关问题拒答和引用正确性；通过后再决定是否进入 LCEL 编排。
+- 当前阻塞：无硬阻塞；阿里云 Embedding 已完成真实建库和 Tool 冒烟验证，尚缺覆盖同义问法与干扰问题的正式评测证据。
 - 后续补充：`P0.4` 固定端到端回归，以及 P1 的 Judge 校准、安全硬门禁和对抗用例；MCP 和多 Agent 继续暂缓。
 
 ## 7. 调整记录

@@ -4,7 +4,11 @@ import unittest
 
 from langchain_core.documents import Document
 
-from app.knowledge_search import KnowledgeSearchError, KnowledgeSearchService
+from app.knowledge_search import (
+    KnowledgeSearchError,
+    KnowledgeSearchService,
+    normalized_euclidean_relevance,
+)
 from app.tools import build_tools
 from app.trace import capture_tool_trace
 from evals.fixtures import FixtureBusinessApiClient
@@ -39,6 +43,10 @@ def rule_document(chunk_id: str = "exchange:1.0.0:0001") -> Document:
 
 
 class KnowledgeSearchServiceTest(unittest.TestCase):
+    def test_normalized_relevance_is_bounded(self):
+        self.assertEqual(1.0, normalized_euclidean_relevance(0.0))
+        self.assertEqual(0.0, normalized_euclidean_relevance(10.0))
+
     def test_returns_only_relevant_unique_matches_with_citations(self):
         document = rule_document()
         store = FakeVectorStore(

@@ -3,16 +3,19 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import chromadb
 from langchain_chroma import Chroma
 from langchain_core.embeddings import Embeddings
 
+from app.config import Settings
 from app.knowledge_catalog import KnowledgeCatalog
 from app.knowledge_index import (
     KnowledgeChunker,
     KnowledgeIndexBuilder,
     KnowledgeIndexError,
+    build_openai_embeddings,
     close_vector_store,
 )
 
@@ -65,6 +68,24 @@ class KnowledgeIndexTest(unittest.TestCase):
     def test_rejects_invalid_overlap(self):
         with self.assertRaisesRegex(KnowledgeIndexError, "chunk_overlap"):
             KnowledgeChunker(chunk_size=100, chunk_overlap=100)
+
+    @patch("app.knowledge_index.OpenAIEmbeddings")
+    def test_embedding_client_uses_configured_batch_size(self, embeddings_class):
+        settings = Settings(
+            rag_embedding_api_key="test-key",
+            rag_embedding_model="test-embedding-model",
+            rag_embedding_batch_size=7,
+        )
+
+        build_openai_embeddings(settings)
+
+        embeddings_class.assert_called_once_with(
+            model="test-embedding-model",
+            api_key="test-key",
+            base_url=None,
+            chunk_size=7,
+            check_embedding_ctx_length=False,
+        )
 
     def test_build_is_repeatable_and_index_can_retrieve_exchange_rule(self):
         chunker = KnowledgeChunker(chunk_size=260, chunk_overlap=40)

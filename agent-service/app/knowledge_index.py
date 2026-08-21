@@ -194,6 +194,7 @@ def build_openai_embeddings(settings: Settings) -> OpenAIEmbeddings:
         model=settings.rag_embedding_model,
         api_key=settings.require_rag_embedding_api_key(),
         base_url=settings.rag_embedding_base_url,
+        chunk_size=settings.rag_embedding_batch_size,
         check_embedding_ctx_length=False,
     )
 

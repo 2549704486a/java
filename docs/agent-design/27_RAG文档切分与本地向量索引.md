@@ -54,6 +54,7 @@ manifest.json
 RAG_EMBEDDING_API_KEY=
 RAG_EMBEDDING_BASE_URL=
 RAG_EMBEDDING_MODEL=text-embedding-3-small
+RAG_EMBEDDING_BATCH_SIZE=10
 RAG_CHUNK_SIZE=400
 RAG_CHUNK_OVERLAP=60
 RAG_INDEX_DIR=knowledge/index
@@ -61,6 +62,8 @@ RAG_COLLECTION_NAME=incentive-business-rules
 ```
 
 如果 Embedding 服务与对话模型使用同一套兼容接口，可以不单独填写 RAG Key 和地址，运行时会复用 `LLM_API_KEY` 与 `LLM_BASE_URL`。模型名称仍应单独确认，因为聊天模型和 Embedding 模型职责不同。
+
+`RAG_EMBEDDING_BATCH_SIZE` 控制一次提交给 Embedding 服务的文本数。当前阿里云兼容接口单批最多接收 `10` 条，因此默认设置为 `10`；它只影响离线建库批次，不改变 Chunk 数量和在线检索结果。
 
 ## 4. 使用方式
 

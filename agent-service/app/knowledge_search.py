@@ -17,6 +17,12 @@ from app.knowledge_index import (
 )
 
 
+def normalized_euclidean_relevance(distance: float) -> float:
+    """Keep LangChain's Euclidean conversion while bounding noisy outliers."""
+    score = 1.0 - distance / math.sqrt(2.0)
+    return max(0.0, min(1.0, score))
+
+
 class KnowledgeSearchError(RuntimeError):
     """知识索引不可用或检索失败。"""
 
@@ -178,6 +184,7 @@ def open_knowledge_search(settings: Settings) -> KnowledgeSearchService:
         collection_name=settings.rag_collection_name,
         embedding_function=build_openai_embeddings(settings),
         persist_directory=str(index_dir),
+        relevance_score_fn=normalized_euclidean_relevance,
     )
     if not vector_store.get(limit=1).get("ids"):
         close_vector_store(vector_store)
