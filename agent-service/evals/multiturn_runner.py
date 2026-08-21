@@ -13,6 +13,8 @@ from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
 
 from app.config import Settings
+from app.confirmation_store import ConfirmationStore
+from app.execution_context import bind_execution_context
 from app.prompt import SYSTEM_PROMPT
 from app.skills.registry import SkillRegistry
 from app.tools import build_tools
@@ -48,9 +50,10 @@ def load_cases(ids: set[str] | None) -> list[dict[str, Any]]:
 
 def run_case(model, case: dict[str, Any], user_id: int, registry: SkillRegistry):
     client = FixtureBusinessApiClient(case["fixture"])
+    confirmation_store = ConfirmationStore()
     agent = create_agent(
         model=model,
-        tools=build_tools(client, user_id, registry),
+        tools=build_tools(client, user_id, registry, confirmation_store),
         system_prompt=SYSTEM_PROMPT,
         checkpointer=InMemorySaver(),
     )
@@ -64,10 +67,11 @@ def run_case(model, case: dict[str, Any], user_id: int, registry: SkillRegistry)
 
     for index, turn in enumerate(case["turns"], start=1):
         started = time.perf_counter()
-        result = agent.invoke(
-            {"messages": [{"role": "user", "content": turn["question"]}]},
-            config=config,
-        )
+        with bind_execution_context(config["configurable"]["thread_id"]):
+            result = agent.invoke(
+                {"messages": [{"role": "user", "content": turn["question"]}]},
+                config=config,
+            )
         elapsed_ms = (time.perf_counter() - started) * 1000
         all_messages = result["messages"]
         new_messages = all_messages[previous_message_count:]

@@ -47,14 +47,6 @@ class RecommendAwardsInput(BaseModel):
     )
 
 
-class ConfirmationInput(BaseModel):
-    confirmation_id: str = Field(
-        min_length=20,
-        max_length=128,
-        description="prepare_exchange 返回的一次性确认凭证，必须原样传入",
-    )
-
-
 def build_tools(
     client: BusinessApiClient,
     user_id: int,
@@ -192,7 +184,7 @@ def build_tools(
         args_schema=AwardIdInput,
         description=(
             "用户明确表示想兑换指定奖品时使用。它只检查实时条件并生成一次性确认摘要，"
-            "不会立即扣积分或提交兑换。"
+            "不会立即扣积分或提交兑换。若用户要求跳过、不用或绕过确认，不得调用本工具。"
         ),
         extras=exchange_manifest.trace_metadata(),
     )
@@ -216,35 +208,13 @@ def build_tools(
                 active_definition.manifest.version,
                 result.code,
             )
-            return result.model_dump(mode="json")
+            payload = result.model_dump(mode="json")
+            # 确认凭证只留在服务端存储中；模型只需要展示业务摘要。
+            if isinstance(payload.get("data"), dict):
+                payload["data"].pop("confirmationId", None)
+            return payload
 
         return execute_traced("prepare_exchange", arguments, execute)
-
-    @tool(
-        args_schema=ConfirmationInput,
-        description=(
-            "仅当用户在同一会话看过兑换摘要后明确确认时使用。只能传入 prepare_exchange "
-            "刚返回的一次性凭证，工具最多提交一次旧事务消息兑换链路。"
-        ),
-        extras=exchange_manifest.trace_metadata(),
-    )
-    def confirm_exchange(confirmation_id: str) -> dict:
-        # 轨迹只记录是否提供凭证，不记录可被复制使用的完整授权值。
-        arguments = {"confirmation_provided": bool(confirmation_id)}
-
-        def execute() -> dict:
-            context_error = exchange_context_error()
-            if context_error is not None:
-                return context_error
-            result = controlled_exchange_skill.confirm(
-                user_id=user_id,
-                session_id=current_thread_id() or "",
-                request_id=current_correlation_id() or "-",
-                confirmation_id=confirmation_id,
-            )
-            return result.model_dump(mode="json")
-
-        return execute_traced("confirm_exchange", arguments, execute)
 
     @tool(
         description="用户明确表示取消、不换了时使用，使当前会话尚未使用的兑换确认立即失效。",
@@ -272,6 +242,5 @@ def build_tools(
         plan_points_for_award,
         recommend_awards,
         prepare_exchange,
-        confirm_exchange,
         cancel_exchange,
     ]

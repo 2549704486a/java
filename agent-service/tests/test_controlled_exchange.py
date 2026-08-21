@@ -6,7 +6,10 @@ import unittest
 from app.api_client import BusinessApiError
 from app.confirmation_store import ConfirmationStatus, ConfirmationStore
 from app.models import ToolEnvelope
-from app.skills.controlled_exchange import ControlledExchangeSkill
+from app.skills.controlled_exchange import (
+    ControlledExchangeSkill,
+    explicit_exchange_action,
+)
 
 
 class ExchangeClient:
@@ -151,3 +154,11 @@ class ControlledExchangeSkillTest(unittest.TestCase):
             ConfirmationStatus.UNKNOWN,
             self.store.snapshot(confirmation_id).status,
         )
+
+    def test_explicit_action_only_accepts_conservative_whitelist(self):
+        self.assertEqual("CONFIRM", explicit_exchange_action("确认兑换！"))
+        self.assertEqual("CONFIRM", explicit_exchange_action("就换这个"))
+        self.assertEqual("CANCEL", explicit_exchange_action("先不换了。"))
+        self.assertIsNone(explicit_exchange_action("可以吗"))
+        self.assertIsNone(explicit_exchange_action("我再考虑一下"))
+        self.assertIsNone(explicit_exchange_action("如果可以就兑换"))

@@ -4,7 +4,7 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from app.models import ToolEnvelope
+from app.models import PendingExchangeData, ToolEnvelope
 from app.web import create_app
 
 
@@ -49,8 +49,9 @@ class FakeBusinessClient:
 
 
 class FakeRuntime:
-    def __init__(self, should_fail: bool = False) -> None:
+    def __init__(self, should_fail: bool = False, pending=None) -> None:
         self.should_fail = should_fail
+        self.pending = pending
         self.closed = False
         self.calls: list[tuple[int, str, str, str | None]] = []
         self.client = FakeBusinessClient()
@@ -81,8 +82,40 @@ class FakeRuntime:
     def close(self) -> None:
         self.closed = True
 
+    def pending_exchange(self, user_id: int, session_id: str):
+        return self.pending
+
 
 class AgentWebTest(unittest.TestCase):
+    def test_chat_returns_safe_pending_exchange_without_confirmation_token(self):
+        runtime = FakeRuntime(
+            pending=PendingExchangeData(
+                status="AWAITING_CONFIRMATION",
+                awardId=6,
+                awardName="手表",
+                currentPoints=300,
+                requiredPoints=200,
+                remainingPoints=100,
+                expiresAt="2026-08-21T08:02:00Z",
+            )
+        )
+        app = create_app(lambda: runtime)
+
+        with TestClient(app) as client:
+            response = client.post(
+                "/v1/chat",
+                json={
+                    "user_id": 10,
+                    "session_id": "session-001",
+                    "message": "兑换6号奖品",
+                },
+            )
+
+        pending = response.json()["pending_exchange"]
+        self.assertEqual("手表", pending["awardName"])
+        self.assertEqual(100, pending["remainingPoints"])
+        self.assertNotIn("confirmationId", pending)
+
     def test_dashboard_aggregates_points_and_awards(self):
         runtime = FakeRuntime()
         app = create_app(lambda: runtime)
@@ -129,6 +162,7 @@ class AgentWebTest(unittest.TestCase):
                 "user_id": 10,
                 "answer": "测试回答",
                 "elapsed_ms": 12.35,
+                "pending_exchange": None,
             },
             response.json(),
         )

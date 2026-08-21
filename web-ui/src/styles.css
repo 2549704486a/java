@@ -839,6 +839,105 @@ main {
   font-weight: 700;
 }
 
+.exchange-confirmation {
+  margin: 8px 46px 14px;
+  padding: 16px;
+  border: 1px solid rgba(41, 99, 72, 0.24);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(237, 246, 238, 0.96), rgba(250, 247, 235, 0.94));
+  box-shadow: 0 12px 30px rgba(49, 72, 57, 0.08);
+}
+
+.confirmation-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--green);
+}
+
+.confirmation-heading div {
+  display: grid;
+  gap: 2px;
+}
+
+.confirmation-heading span {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.confirmation-heading strong {
+  color: var(--ink);
+  font-family: "Noto Serif SC", serif;
+  font-size: 1rem;
+}
+
+.confirmation-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0 10px;
+}
+
+.confirmation-summary div {
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.confirmation-summary dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.confirmation-summary dd {
+  margin: 3px 0 0;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.exchange-confirmation > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.confirmation-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.confirmation-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-height: 36px;
+  border: 0;
+  border-radius: 11px;
+  background: var(--green);
+  color: white;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.confirmation-actions button.is-secondary {
+  border: 1px solid rgba(33, 45, 37, 0.14);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+}
+
+.confirmation-actions button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .chat-viewport {
   height: 405px;
   overflow-y: auto;

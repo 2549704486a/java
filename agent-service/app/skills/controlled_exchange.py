@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import re
+from typing import Literal
 
 from pydantic import ValidationError
 
@@ -15,6 +17,35 @@ from app.models import (
 
 
 logger = logging.getLogger(__name__)
+
+ExchangeAction = Literal["CONFIRM", "CANCEL"]
+_CONFIRM_PHRASES = {
+    "确认",
+    "确认兑换",
+    "确定兑换",
+    "我确认",
+    "我确认兑换",
+    "确认兑换该奖品",
+    "就换这个",
+    "就兑换这个",
+}
+_CANCEL_PHRASES = {
+    "取消",
+    "取消兑换",
+    "不换了",
+    "先不换了",
+    "暂不兑换",
+}
+
+
+def explicit_exchange_action(message: str) -> ExchangeAction | None:
+    """只识别保守白名单，避免把含糊的自然语言推断成高风险写授权。"""
+    normalized = re.sub(r"[\s，。！？!?、]+", "", message).casefold()
+    if normalized in _CONFIRM_PHRASES:
+        return "CONFIRM"
+    if normalized in _CANCEL_PHRASES:
+        return "CANCEL"
+    return None
 
 
 class ControlledExchangeSkill:
@@ -71,6 +102,9 @@ class ControlledExchangeSkill:
             user_id=user_id,
             session_id=session_id,
             award_id=award_id,
+            award_name=award.name,
+            current_points=eligibility.current_points,
+            required_points=eligibility.required_points,
             request_id=request_id,
         )
         data = ExchangePreparationData(

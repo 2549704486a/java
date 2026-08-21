@@ -4,10 +4,24 @@ import unittest
 
 from app.config import Settings
 from app.confirmation_store import ConfirmationStatus, ConfirmationStore
+from app.models import ToolEnvelope
 from app.runtime import AgentRuntime
 
 
 class FakeClient:
+    def __init__(self) -> None:
+        self.submit_calls = 0
+
+    def submit_exchange(self, **kwargs) -> ToolEnvelope:
+        self.submit_calls += 1
+        return ToolEnvelope(
+            success=True,
+            code="EXCHANGE_PROCESSING",
+            data=None,
+            message="兑换请求已进入处理流程",
+            retryable=False,
+        )
+
     def close(self) -> None:
         raise AssertionError("外部注入的 Client 不应由 Runtime 关闭")
 
@@ -69,6 +83,9 @@ class AgentRuntimeTest(unittest.TestCase):
             user_id=10,
             session_id="user:10:session:session-a",
             award_id=6,
+            award_name="手表",
+            current_points=300,
+            required_points=200,
             request_id="request-runtime",
         )
         runtime.answer(11, "session-b", "用户11")
@@ -138,6 +155,90 @@ class AgentRuntimeTest(unittest.TestCase):
     def test_requires_model_key_before_serving_requests(self):
         with self.assertRaisesRegex(ValueError, "LLM_API_KEY"):
             AgentRuntime(Settings(), client=FakeClient())
+
+    def test_explicit_confirmation_uses_deterministic_route_without_model(self):
+        client = FakeClient()
+        runner_calls: list[str] = []
+        store = ConfirmationStore(token_factory=lambda: "runtime-confirmation-token")
+
+        def builder(*args):
+            return {"agent": "unused"}
+
+        def runner(agent, message, thread_id, request_id):
+            runner_calls.append(message)
+            return "不应调用模型"
+
+        runtime = AgentRuntime(
+            Settings(llm_api_key="test-key"),
+            client=client,
+            skill_registry=FakeSkillRegistry(),
+            checkpointer=FakeCheckpointer(),
+            agent_builder=builder,
+            agent_runner=runner,
+            confirmation_store=store,
+        )
+        record = store.create(
+            user_id=10,
+            session_id="user:10:session:session-a",
+            award_id=6,
+            award_name="手表",
+            current_points=300,
+            required_points=200,
+            request_id="request-prepare",
+        )
+
+        answer, _ = runtime.answer(
+            10,
+            "session-a",
+            "确认兑换！",
+            "request-confirm",
+        )
+
+        self.assertEqual("兑换请求已进入处理流程", answer)
+        self.assertEqual(1, client.submit_calls)
+        self.assertEqual([], runner_calls)
+        self.assertEqual(
+            ConfirmationStatus.PROCESSING,
+            store.snapshot(record.confirmation_id).status,
+        )
+        self.assertIsNone(runtime.pending_exchange(10, "session-a"))
+
+    def test_ambiguous_message_stays_with_model_and_keeps_pending(self):
+        client = FakeClient()
+        store = ConfirmationStore(token_factory=lambda: "runtime-confirmation-token")
+
+        def builder(*args):
+            return {"agent": "used"}
+
+        def runner(agent, message, thread_id, request_id):
+            return "请明确确认或取消"
+
+        runtime = AgentRuntime(
+            Settings(llm_api_key="test-key"),
+            client=client,
+            skill_registry=FakeSkillRegistry(),
+            checkpointer=FakeCheckpointer(),
+            agent_builder=builder,
+            agent_runner=runner,
+            confirmation_store=store,
+        )
+        store.create(
+            user_id=10,
+            session_id="user:10:session:session-a",
+            award_id=6,
+            award_name="手表",
+            current_points=300,
+            required_points=200,
+            request_id="request-prepare",
+        )
+
+        answer, _ = runtime.answer(10, "session-a", "我再想想", "request-next")
+
+        self.assertEqual("请明确确认或取消", answer)
+        self.assertEqual(0, client.submit_calls)
+        pending = runtime.pending_exchange(10, "session-a")
+        self.assertIsNotNone(pending)
+        self.assertEqual("手表", pending.award_name)
 
 
 if __name__ == "__main__":

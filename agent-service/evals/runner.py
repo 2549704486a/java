@@ -15,6 +15,8 @@ from langchain_openai import ChatOpenAI
 
 from app.api_client import BusinessApiClient
 from app.config import Settings
+from app.confirmation_store import ConfirmationStore
+from app.execution_context import bind_execution_context
 from app.prompt import SYSTEM_PROMPT
 from app.skills.registry import SkillRegistry
 from app.tools import build_tools
@@ -218,13 +220,22 @@ def run_one(
         client = live_client
 
     try:
+        confirmation_store = ConfirmationStore()
         agent = create_agent(
             model=model,
-            tools=build_tools(client, user_id, skill_registry),
+            tools=build_tools(
+                client,
+                user_id,
+                skill_registry,
+                confirmation_store,
+            ),
             system_prompt=SYSTEM_PROMPT,
         )
         started = time.perf_counter()
-        with capture_tool_trace(f"eval:{case['id']}") as trace_session:
+        thread_id = f"eval:{case['id']}:user:{user_id}"
+        with capture_tool_trace(f"eval:{case['id']}") as trace_session, bind_execution_context(
+            thread_id
+        ):
             result = agent.invoke(
                 {"messages": [{"role": "user", "content": case["question"]}]},
                 config={"recursion_limit": 12},

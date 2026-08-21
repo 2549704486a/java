@@ -54,11 +54,11 @@ class ToolClient:
 
 
 class ControlledExchangeToolsTest(unittest.TestCase):
-    def test_tools_require_runtime_context_and_hide_token_from_trace(self):
+    def test_prepare_requires_context_and_hides_token_from_model_and_trace(self):
         client = ToolClient()
         tools = build_tools(client, 10, confirmation_store=ConfirmationStore())
         prepare = next(tool for tool in tools if tool.name == "prepare_exchange")
-        confirm = next(tool for tool in tools if tool.name == "confirm_exchange")
+        self.assertNotIn("confirm_exchange", {tool.name for tool in tools})
 
         without_context = prepare.invoke({"award_id": 6})
         self.assertEqual("EXECUTION_CONTEXT_UNAVAILABLE", without_context["code"])
@@ -67,20 +67,9 @@ class ControlledExchangeToolsTest(unittest.TestCase):
             "request-tool-001"
         ) as prepare_trace:
             prepared = prepare.invoke({"award_id": 6})
-            confirmation_id = prepared["data"]["confirmationId"]
-            same_turn = confirm.invoke({"confirmation_id": confirmation_id})
 
-        with bind_execution_context("user:10:session:a"), capture_tool_trace(
-            "request-tool-002"
-        ) as confirm_trace:
-            confirmed = confirm.invoke({"confirmation_id": confirmation_id})
-
-        self.assertEqual("CONFIRMATION_REQUIRES_NEW_TURN", same_turn["code"])
-        self.assertEqual("EXCHANGE_PROCESSING", confirmed["code"])
-        self.assertEqual(1, client.submit_calls)
-        confirm_event = confirm_trace.as_dicts()[0]
-        self.assertEqual(
-            {"confirmation_provided": True}, confirm_event["arguments"]
-        )
-        self.assertNotIn(confirmation_id, str(prepare_trace.as_dicts()))
-        self.assertNotIn(confirmation_id, str(confirm_trace.as_dicts()))
+        self.assertEqual("EXCHANGE_CONFIRMATION_REQUIRED", prepared["code"])
+        self.assertNotIn("confirmationId", prepared["data"])
+        self.assertEqual(0, client.submit_calls)
+        self.assertNotIn("confirmationId", str(prepare_trace.as_dicts()))
+        self.assertNotIn("token_urlsafe", str(prepare_trace.as_dicts()))

@@ -24,6 +24,10 @@ class ConfirmationRecord:
     user_id: int
     session_id: str
     award_id: int
+    award_name: str
+    current_points: int
+    required_points: int
+    remaining_points: int
     request_id: str
     status: ConfirmationStatus
     created_at: datetime
@@ -64,6 +68,9 @@ class ConfirmationStore:
         user_id: int,
         session_id: str,
         award_id: int,
+        award_name: str,
+        current_points: int,
+        required_points: int,
         request_id: str,
     ) -> ConfirmationRecord:
         now = self._now()
@@ -77,6 +84,10 @@ class ConfirmationStore:
                 user_id=user_id,
                 session_id=session_id,
                 award_id=award_id,
+                award_name=award_name,
+                current_points=current_points,
+                required_points=required_points,
+                remaining_points=current_points - required_points,
                 request_id=request_id,
                 status=ConfirmationStatus.PREPARED,
                 created_at=now,
@@ -160,6 +171,27 @@ class ConfirmationStore:
     def snapshot(self, confirmation_id: str) -> ConfirmationRecord | None:
         with self._lock:
             return self._records.get(confirmation_id)
+
+    def pending_for(
+        self,
+        *,
+        user_id: int,
+        session_id: str,
+    ) -> ConfirmationRecord | None:
+        """返回当前会话仍可确认的记录；调用方不得直接序列化其中的凭证。"""
+        now = self._now()
+        with self._lock:
+            self._expire_locked(now)
+            return next(
+                (
+                    record
+                    for record in self._records.values()
+                    if record.user_id == user_id
+                    and record.session_id == session_id
+                    and record.status == ConfirmationStatus.PREPARED
+                ),
+                None,
+            )
 
     def stats(self) -> dict[str, int]:
         now = self._now()

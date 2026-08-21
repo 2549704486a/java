@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import threading
 import time
@@ -14,7 +15,13 @@ from app.agent import build_agent, run_agent
 from app.api_client import BusinessApiClient
 from app.confirmation_store import ConfirmationStore
 from app.config import Settings
+from app.models import PendingExchangeData, ToolEnvelope
+from app.skills.controlled_exchange import (
+    ControlledExchangeSkill,
+    explicit_exchange_action,
+)
 from app.skills.registry import SkillRegistry
+from app.trace import capture_tool_trace, execute_traced
 
 
 logger = logging.getLogger(__name__)
@@ -57,6 +64,10 @@ class AgentRuntime:
             ttl_seconds=settings.exchange_confirmation_ttl_seconds,
             capacity=settings.exchange_confirmation_capacity,
         )
+        self._controlled_exchange = ControlledExchangeSkill(
+            self.client,
+            self.confirmation_store,
+        )
         self._agent_builder = agent_builder
         self._agent_runner = agent_runner
         self._cache_size = max(1, settings.agent_cache_size)
@@ -73,9 +84,25 @@ class AgentRuntime:
         request_id: str | None = None,
     ) -> tuple[str, float]:
         started = time.perf_counter()
-        agent = self._agent_for(user_id)
         thread_id, slot = self._acquire_session(user_id, session_id)
         try:
+            # 明确确认/取消属于高风险确定性动作。存在待确认记录时不再让模型猜测。
+            action = explicit_exchange_action(message)
+            pending = self.confirmation_store.pending_for(
+                user_id=user_id,
+                session_id=thread_id,
+            )
+            if action is not None and pending is not None:
+                result = self._execute_exchange_action(
+                    action=action,
+                    user_id=user_id,
+                    thread_id=thread_id,
+                    request_id=request_id or thread_id,
+                    confirmation_id=pending.confirmation_id,
+                )
+                return result.message, (time.perf_counter() - started) * 1000
+
+            agent = self._agent_for(user_id)
             # thread_id 隔离会话记忆；request_id 只串联本次请求的日志与轨迹。
             answer = self._agent_runner(agent, message, thread_id, request_id)
             return answer, (time.perf_counter() - started) * 1000
@@ -84,6 +111,27 @@ class AgentRuntime:
             with self._lock:
                 slot.in_use -= 1
                 self._evict_sessions()
+
+    def pending_exchange(
+        self,
+        user_id: int,
+        session_id: str,
+    ) -> PendingExchangeData | None:
+        record = self.confirmation_store.pending_for(
+            user_id=user_id,
+            session_id=self._thread_id(user_id, session_id),
+        )
+        if record is None:
+            return None
+        return PendingExchangeData(
+            status="AWAITING_CONFIRMATION",
+            awardId=record.award_id,
+            awardName=record.award_name,
+            currentPoints=record.current_points,
+            requiredPoints=record.required_points,
+            remainingPoints=record.remaining_points,
+            expiresAt=record.expires_at,
+        )
 
     def health(self) -> dict[str, Any]:
         with self._lock:
@@ -136,7 +184,7 @@ class AgentRuntime:
         user_id: int,
         session_id: str,
     ) -> tuple[str, SessionSlot]:
-        thread_id = f"user:{user_id}:session:{session_id}"
+        thread_id = self._thread_id(user_id, session_id)
         with self._lock:
             slot = self._sessions.pop(thread_id, None)
             if slot is None:
@@ -147,6 +195,67 @@ class AgentRuntime:
             self._evict_sessions(excluded_thread_id=thread_id)
         slot.lock.acquire()
         return thread_id, slot
+
+    def _execute_exchange_action(
+        self,
+        *,
+        action: str,
+        user_id: int,
+        thread_id: str,
+        request_id: str,
+        confirmation_id: str,
+    ) -> ToolEnvelope:
+        tool_name = "confirm_exchange" if action == "CONFIRM" else "cancel_exchange"
+        arguments = (
+            {"confirmation_provided": True, "routing": "deterministic"}
+            if action == "CONFIRM"
+            else {"routing": "deterministic"}
+        )
+        with capture_tool_trace(request_id) as trace_session:
+            try:
+                if action == "CONFIRM":
+                    result = execute_traced(
+                        tool_name,
+                        arguments,
+                        lambda: self._controlled_exchange.confirm(
+                            user_id=user_id,
+                            session_id=thread_id,
+                            request_id=request_id,
+                            confirmation_id=confirmation_id,
+                        ),
+                    )
+                else:
+                    result = execute_traced(
+                        tool_name,
+                        arguments,
+                        lambda: self._controlled_exchange.cancel(
+                            user_id=user_id,
+                            session_id=thread_id,
+                        ),
+                    )
+            finally:
+                logger.info(
+                    "agent_tool_trace request_id=%s thread_id=%s events=%s",
+                    request_id,
+                    thread_id,
+                    json.dumps(
+                        trace_session.as_dicts(),
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    ),
+                )
+        logger.info(
+            "exchange_action_routed request_id=%s thread_id=%s action=%s code=%s",
+            request_id,
+            thread_id,
+            action,
+            result.code,
+        )
+        return result
+
+    @staticmethod
+    def _thread_id(user_id: int, session_id: str) -> str:
+        return f"user:{user_id}:session:{session_id}"
 
     def _evict_sessions(self, excluded_thread_id: str | None = None) -> None:
         while len(self._sessions) > self._session_cache_size:

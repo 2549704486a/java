@@ -38,6 +38,17 @@ export interface ChatResponse {
   user_id: number;
   answer: string;
   elapsed_ms: number;
+  pending_exchange: PendingExchange | null;
+}
+
+export interface PendingExchange {
+  status: "AWAITING_CONFIRMATION";
+  awardId: number;
+  awardName: string;
+  currentPoints: number;
+  requiredPoints: number;
+  remainingPoints: number;
+  expiresAt: string;
 }
 
 export type ChatRole = "assistant" | "user";

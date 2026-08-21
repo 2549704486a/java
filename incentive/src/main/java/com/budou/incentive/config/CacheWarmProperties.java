@@ -8,7 +8,7 @@ import java.util.List;
 @ConfigurationProperties(prefix = "cache.warm")
 public class CacheWarmProperties {
     private boolean enabled = true;
-    private List<Long> awardIds = new ArrayList<>(List.of(6L));
+    private List<Long> awardIds = new ArrayList<>(List.of(1L, 2L, 3L, 4L, 5L, 6L));
     private boolean userCurrencyEnabled = true;
     private Long userCurrencyMinUserId = 1L;
     private Long userCurrencyMaxUserId = 10000L;

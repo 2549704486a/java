@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.api_client import BusinessApiError
 from app.config import Settings
-from app.models import AwardOptionData, UserPointsData
+from app.models import AwardOptionData, PendingExchangeData, UserPointsData
 from app.runtime import AgentRuntime
 from app.trace import capture_tool_trace
 
@@ -57,6 +57,7 @@ class ChatResponse(BaseModel):
     user_id: int
     answer: str
     elapsed_ms: float
+    pending_exchange: PendingExchangeData | None = None
 
 
 class ErrorResponse(BaseModel):
@@ -166,9 +167,13 @@ def create_app(runtime_factory: RuntimeFactory = default_runtime_factory) -> Fas
             user_id=payload.user_id,
             answer=answer,
             elapsed_ms=round(elapsed_ms, 2),
+            pending_exchange=request.app.state.runtime.pending_exchange(
+                payload.user_id,
+                session_id,
+            ),
         )
         return JSONResponse(
-            content=response.model_dump(),
+            content=response.model_dump(mode="json", by_alias=True),
             headers={"X-Request-ID": request_id},
         )
 

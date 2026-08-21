@@ -70,6 +70,20 @@ class ExchangePreparationData(BaseModel):
     expires_at: datetime = Field(alias="expiresAt")
 
 
+class PendingExchangeData(BaseModel):
+    """可安全返回浏览器的待确认摘要，不包含一次性确认凭证。"""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    status: Literal["AWAITING_CONFIRMATION"]
+    award_id: int = Field(alias="awardId")
+    award_name: str = Field(alias="awardName")
+    current_points: int = Field(alias="currentPoints")
+    required_points: int = Field(alias="requiredPoints")
+    remaining_points: int = Field(alias="remainingPoints")
+    expires_at: datetime = Field(alias="expiresAt")
+
+
 class RecommendedAward(BaseModel):
     award_id: int
     name: str

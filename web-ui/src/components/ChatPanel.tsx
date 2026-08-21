@@ -1,8 +1,17 @@
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
-import { Bot, CornerDownLeft, LoaderCircle, RotateCcw, Send, UserRound } from "lucide-react";
+import {
+  Bot,
+  CornerDownLeft,
+  LoaderCircle,
+  RotateCcw,
+  Send,
+  ShieldCheck,
+  UserRound,
+  X
+} from "lucide-react";
 
 import { ApiError, sendChat } from "../api";
-import type { ChatMessage } from "../types";
+import type { ChatMessage, PendingExchange } from "../types";
 
 interface ChatPanelProps {
   userId: number;
@@ -32,6 +41,7 @@ export default function ChatPanel({
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessage()]);
   const [draft, setDraft] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [pendingExchange, setPendingExchange] = useState<PendingExchange | null>(null);
   const [sending, setSending] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
 
@@ -44,6 +54,7 @@ export default function ChatPanel({
   useEffect(() => {
     setMessages([initialMessage()]);
     setSessionId(null);
+    setPendingExchange(null);
     setDraft("");
   }, [userId]);
 
@@ -66,6 +77,7 @@ export default function ChatPanel({
     try {
       const response = await sendChat(userId, sessionId, normalized);
       setSessionId(response.session_id);
+      setPendingExchange(response.pending_exchange);
       setMessages((current) => [
         ...current,
         {
@@ -105,6 +117,7 @@ export default function ChatPanel({
     if (sending) return;
     setMessages([initialMessage()]);
     setSessionId(null);
+    setPendingExchange(null);
     setDraft("");
   }
 
@@ -149,6 +162,54 @@ export default function ChatPanel({
             </div>
           </div>
         ))}
+        {pendingExchange && (
+          <section className="exchange-confirmation" aria-label="待确认兑换">
+            <div className="confirmation-heading">
+              <ShieldCheck size={18} />
+              <div>
+                <span>等待你的明确确认</span>
+                <strong>{pendingExchange.awardName}</strong>
+              </div>
+            </div>
+            <dl className="confirmation-summary">
+              <div>
+                <dt>当前积分</dt>
+                <dd>{pendingExchange.currentPoints}</dd>
+              </div>
+              <div>
+                <dt>需要积分</dt>
+                <dd>{pendingExchange.requiredPoints}</dd>
+              </div>
+              <div>
+                <dt>兑换后</dt>
+                <dd>{pendingExchange.remainingPoints}</dd>
+              </div>
+            </dl>
+            <p>
+              凭证有效至
+              {new Date(pendingExchange.expiresAt).toLocaleTimeString("zh-CN", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+              })}
+            </p>
+            <div className="confirmation-actions">
+              <button type="button" disabled={sending} onClick={() => void submit("确认兑换")}>
+                <ShieldCheck size={15} />
+                确认兑换
+              </button>
+              <button
+                className="is-secondary"
+                type="button"
+                disabled={sending}
+                onClick={() => void submit("取消兑换")}
+              >
+                <X size={15} />
+                取消
+              </button>
+            </div>
+          </section>
+        )}
         {sending && (
           <div className="message-row is-assistant">
             <div className="message-avatar">

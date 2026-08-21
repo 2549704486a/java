@@ -1,3 +1,36 @@
+"""
+SkillRegistry()
+      │
+      ▼
+找到 skills 目录
+      │
+      ▼
+扫描 */SKILL.md
+      │
+      ▼
+_load_definition()
+      │
+      ├── 读取文件
+      ├── 拆 YAML Front Matter
+      ├── YAML 解析
+      ├── 检查 name / description / trigger / version
+      ├── 检查必须存在的 Markdown 章节
+      ├── 检查 tags
+      └── 计算 SHA256
+      │
+      ▼
+SkillDefinition
+      │
+      ▼
+检查「目录名 == Skill name」
+      │
+      ▼
+注册到 _definitions
+      │
+      ▼
+运行时 activate("xxx")
+"""
+
 from __future__ import annotations
 
 import hashlib
@@ -6,7 +39,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
-
 
 logger = logging.getLogger(__name__)
 

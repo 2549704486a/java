@@ -1,58 +1,79 @@
 # 受控兑换 Skill 实现
 
-> 这一阶段把受控兑换从设计变成可执行代码。难点不在调用一次 POST，而在于把“用户真的确认过这一次兑换”和“写请求最多执行一次”落实为服务端状态，而不是依赖模型记住一句话。
+> 这一阶段把“用户想兑换”与“用户确认执行”拆成两个回合。模型只负责理解兑换目标和生成摘要；真正的确认授权由服务端状态机判断，避免模型误调用写接口或泄露一次性凭证。
 
 ## 1. 完整调用链
 
 ```text
 用户提出兑换
-  -> prepare_exchange
-  -> Java 实时资格与奖品查询
-  -> ConfirmationStore 创建 PREPARED 凭证
-  -> Agent 展示奖品、积分消耗和有效期
-  -> 用户在同一会话明确确认
-  -> confirm_exchange 原子 claim：PREPARED -> EXECUTING
-  -> POST /agent/commands/.../exchange
-  -> UserAwardService.exchange 执行旧事务消息链路
+  -> 模型调用 prepare_exchange
+  -> Java 实时查询资格与奖品
+  -> ConfirmationStore 创建 PREPARED 记录
+  -> 模型只看到不含凭证的业务摘要
+  -> FastAPI 向页面返回 pending_exchange 安全摘要
+  -> 用户在同一会话点击确认或明确回复“确认兑换”
+  -> AgentRuntime 白名单识别确认意图，不再经过模型
+  -> 服务端取出一次性凭证并原子 claim：PREPARED -> EXECUTING
+  -> POST /agent/commands/users/{userId}/awards/{awardId}/exchange
+  -> Java 复用旧事务消息链路
   -> PROCESSING / REJECTED / UNKNOWN
 ```
 
-准备和确认被拆开后，模型只负责理解意图和选择 Tool；用户、会话、奖品、过期时间和凭证状态由确定性代码校验。
+准备阶段允许模型调用 `prepare_exchange`，但 `confirmationId` 在 Tool 返回给模型前会被移除。确认阶段没有模型可调用的 `confirm_exchange` Tool，凭证只在服务端 `ConfirmationStore` 与确定性执行器之间流转。
 
 ## 2. 关键实现
 
 | 位置 | 作用 |
 | --- | --- |
-| `app/confirmation_store.py` | 使用锁保护凭证创建、过期、取消和原子占用 |
-| `app/execution_context.py` | 使用 `ContextVar` 将运行时 `thread_id` 注入 Tool，不允许模型填写会话 |
-| `app/skills/controlled_exchange.py` | 编排资格、摘要、确认状态机与写接口结果 |
-| `app/api_client.py` | 单次发送兑换 POST；超时、断连、5xx 和格式异常均不重试 |
-| `app/tools.py` | 暴露 prepare、confirm、cancel 三个 Tool，并隐藏轨迹中的完整凭证 |
-| `AgentCommandController.java` | 将稳定 Agent POST 契约映射到现有 `UserAwardService.exchange` |
+| `app/confirmation_store.py` | 保存确认摘要和凭证，处理 TTL、取消、身份绑定及原子占用 |
+| `app/skills/controlled_exchange.py` | 编排准备、确认和取消；用保守短语白名单识别明确动作 |
+| `app/runtime.py` | 有待确认记录时确定性路由确认或取消，不让模型猜测高风险授权 |
+| `app/tools.py` | 向模型暴露 prepare/cancel，移除 prepare 结果中的一次性凭证 |
+| `app/web.py` | 返回不含凭证的 `pending_exchange` 页面契约 |
+| `web-ui/src/components/ChatPanel.tsx` | 展示结构化确认卡片与确认、取消按钮 |
+| `app/api_client.py` | 单次发送兑换 POST；超时、断连、5xx 和格式异常均不自动重试 |
+| `AgentCommandController.java` | 将稳定 Agent POST 契约映射到原有旧事务消息链路 |
 
-`Idempotency-Key` 当前用于关联请求。第一版真正防止 Agent 重复提交的是 Python 确认存储的原子 `claim`；多实例部署时必须使用 Redis Lua 或数据库条件更新，并补接收端持久化幂等。
+`Idempotency-Key` 当前由确认凭证生成并随 POST 发送，但 Java 接收端只校验格式，尚未将它持久化为请求级去重键。单实例下防止 Agent 重复提交依赖 Python 确认记录的原子 `claim`；多实例部署前需要把确认状态迁移到 Redis/数据库，并在 Java 端补持久化幂等。
 
 ## 3. 状态语义
 
-- `EXCHANGE_CONFIRMATION_REQUIRED`：只完成准备，尚未写入。
-- `EXCHANGE_PROCESSING`：旧事务消息链路已进入处理流程，不代表最终兑换成功。
-- `EXCHANGE_REJECTED` / `ALREADY_REDEEMED`：Java 给出明确业务结果，不自动重试。
-- `SUBMISSION_UNKNOWN`：无法判断 POST 是否到达 Java，先核对订单，禁止盲目重放。
+- `EXCHANGE_CONFIRMATION_REQUIRED`：只生成确认摘要，没有写业务数据。
+- `EXCHANGE_PROCESSING`：旧事务消息链路已经受理，不代表最终兑换成功。
+- `EXCHANGE_REJECTED` / `ALREADY_REDEEMED`：Java 给出明确拒绝结果，不自动重试。
+- `SUBMISSION_UNKNOWN`：无法确定 POST 是否到达 Java，要求先查订单，禁止盲目重放。
 
-会话被 LRU 淘汰或用户主动取消时，尚未使用的凭证同步失效。普通日志记录状态变化和业务码，但不记录完整确认凭证。
+会话被 LRU 淘汰、确认过期、用户改换奖品或主动取消时，旧确认都会失效。轨迹只记录是否提供授权，不记录完整确认凭证。
 
-## 4. 验证证据
+## 4. 本地端到端排查与修复
 
-- Python 离线测试 `42/42` 通过，覆盖 TTL、身份和会话绑定、会话淘汰撤销、跨轮确认、重复/并发确认、未知结果及轨迹脱敏。
-- Java `AgentCommandControllerTest` 与 `AgentQueryServiceTest` 定向测试通过。
-- React TypeScript 生产构建通过。
-- 本地重新部署后，Agent 健康检查发现 3 个 Skill，待确认数量为 0。
-- 使用不存在的用户进行安全 POST 冒烟，接口真实返回 `EXCHANGE_REJECTED`，未进入事务消息发送。
-- 自然语言冒烟中，“想兑换”只生成确认摘要，“取消兑换”使待确认数量从 1 回到 0；要求“跳过确认直接提交”时也只有 prepare 轨迹，没有写接口调用。
+第一次真实兑换进入 `EXCHANGE_PROCESSING` 后最终失败。直接证据是 MySQL 的 2 号奖品分片库存总和为 `60`，但 Redis 的 `award_inventory_split:2` 长度为 `0`，Consumer 因没有候选分片将订单置为失败。根因不是 Agent 确认，而是默认只预热 6 号奖品。
 
-## 5. 当前边界
+修复过程：
 
+1. 将默认预热奖品改为 `1,2,3,4,5,6`，仍由 `CacheWarmer` 从 MySQL 重建缓存，不手工伪造结果。
+2. 修复 Canal 的过期 binlog 位点，使客户端重新从当前日志文件消费。
+3. 发现分片库存能够同步但积分不同步，最终定位到 `RDSBinlog` 写入 `user_currency:<id>`，而业务读取 `user:currency:<id>`。
+4. 统一积分键名，并用构造 Canal RowData 的单元测试锁定行为。
+
+最终使用用户 8 真实兑换 2 号奖品：
+
+| 证据 | 兑换前 | 兑换后 |
+| --- | ---: | ---: |
+| MySQL 用户积分 | 2300 | 800 |
+| Redis 用户积分 | 2300 | 800 |
+| MySQL 分片库存总和 | 58 | 57 |
+| Redis 分片库存总和 | 58 | 57 |
+| `user_award.status` | 无记录 | 1 |
+
+同时生成 1 条业务幂等记录，结果查询接口返回兑换成功。Redis 的积分和库存均在不重启应用、不再次预热的情况下与 MySQL 一致，证明本次结果来自实时 Canal 同步。
+
+## 5. 验证证据与边界
+
+- Python 确定性测试 `47/47` 通过，覆盖 TTL、身份/会话绑定、凭证隐藏、确定性确认路由、重复/并发确认、未知结果和 HTTP 契约。
+- Java `mvn test` 通过，新增 `RDSBinlogTest` 直接验证积分写入 `user:currency:7`。
+- React TypeScript 校验与 Vite 生产构建通过。
+- 模型完整回归 `23/25`，安全检查 `25/25`；受控兑换定向复验 `2/2`。两个剩余失败分别是拒绝措辞评分和多调用一次资格查询，不属于越权写入。
 - 只接入旧事务消息链路，没有恢复或引入 Redis 预扣新链路。
-- 凭证是单进程内存状态，服务重启即失效，符合安全默认但不支持多实例共享。
-- 本地演示身份仍由前端用户 ID 提供，生产系统必须从登录态或网关注入可信身份。
-- 本轮完成确定性代码安全测试，设计文档中的模型意图识别用例仍应作为后续 Agent 回归集持续执行。
+- 确认状态仍是单进程内存数据，服务重启即失效；这符合安全默认，但不支持多实例共享。
+- 本地演示身份来自前端用户 ID；生产系统必须改为由登录态或网关注入可信身份。

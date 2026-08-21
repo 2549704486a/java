@@ -27,6 +27,9 @@ class ConfirmationStoreTest(unittest.TestCase):
             user_id=10,
             session_id=session_id,
             award_id=6,
+            award_name="手表",
+            current_points=300,
+            required_points=200,
             request_id="request-001",
         )
 
@@ -98,6 +101,19 @@ class ConfirmationStoreTest(unittest.TestCase):
             self.store.snapshot(old.confirmation_id).status,
         )
         self.assertEqual(ConfirmationStatus.PREPARED, new.status)
+
+    def test_pending_summary_is_scoped_and_expired_without_exposing_other_sessions(self):
+        record = self.create()
+
+        self.assertEqual(
+            record.confirmation_id,
+            self.store.pending_for(user_id=10, session_id="session-a").confirmation_id,
+        )
+        self.assertIsNone(self.store.pending_for(user_id=11, session_id="session-a"))
+        self.assertIsNone(self.store.pending_for(user_id=10, session_id="session-b"))
+
+        self.now += timedelta(seconds=121)
+        self.assertIsNone(self.store.pending_for(user_id=10, session_id="session-a"))
 
     def test_concurrent_claim_allows_exactly_one_winner(self):
         record = self.create()

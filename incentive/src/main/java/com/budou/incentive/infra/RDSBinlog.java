@@ -386,7 +386,8 @@ public class RDSBinlog {
             }
 
             // 构建缓存键并更新Redis
-            String userCurrencyKey = "user_currency:" + userId;
+            // 与业务查询和 CacheWarmer 使用同一套键名，避免 Canal 把积分写到无人读取的旁路键。
+            String userCurrencyKey = "user:currency:" + userId;
             redisDao.set(userCurrencyKey, currency);
         }
     }
