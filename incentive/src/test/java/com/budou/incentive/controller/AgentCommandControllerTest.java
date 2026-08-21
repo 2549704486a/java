@@ -1,9 +1,7 @@
 package com.budou.incentive.controller;
 
 import com.budou.incentive.dto.agent.AgentToolResponse;
-import com.budou.incentive.service.UserAwardService;
-import com.budou.incentive.utils.Result;
-import com.budou.incentive.utils.ResultCodeEnum;
+import com.budou.incentive.service.AgentExchangeCommandService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,19 +19,23 @@ import static org.mockito.Mockito.when;
 class AgentCommandControllerTest {
 
     @Mock
-    private UserAwardService userAwardService;
+    private AgentExchangeCommandService commandService;
 
     private AgentCommandController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AgentCommandController(userAwardService);
+        controller = new AgentCommandController(commandService);
     }
 
     @Test
     void shouldMapAcceptedOldChainResultToProcessing() {
-        when(userAwardService.exchange(10L, 6L))
-                .thenReturn(Result.build(null, ResultCodeEnum.Query_Later));
+        when(commandService.exchange(10L, 6L, "confirmation-001"))
+                .thenReturn(AgentToolResponse.ok(
+                        "EXCHANGE_PROCESSING",
+                        null,
+                        "兑换请求已进入处理流程，请到订单页面查看最终结果"
+                ));
 
         AgentToolResponse<Void> response = controller.exchange(
                 10L, 6L, "request-001", "confirmation-001"
@@ -41,13 +43,17 @@ class AgentCommandControllerTest {
 
         assertTrue(response.success());
         assertEquals("EXCHANGE_PROCESSING", response.code());
-        verify(userAwardService).exchange(10L, 6L);
+        verify(commandService).exchange(10L, 6L, "confirmation-001");
     }
 
     @Test
     void shouldPreserveAlreadyRedeemedMeaning() {
-        when(userAwardService.exchange(10L, 6L))
-                .thenReturn(Result.build(null, ResultCodeEnum.AWARD_REDEEMED));
+        when(commandService.exchange(10L, 6L, "confirmation-002"))
+                .thenReturn(AgentToolResponse.fail(
+                        "ALREADY_REDEEMED",
+                        "该奖品已经兑换或已有兑换记录",
+                        false
+                ));
 
         AgentToolResponse<Void> response = controller.exchange(
                 10L, 6L, "request-002", "confirmation-002"
@@ -65,6 +71,17 @@ class AgentCommandControllerTest {
 
         assertFalse(response.success());
         assertEquals("INVALID_IDEMPOTENCY_KEY", response.code());
-        verifyNoInteractions(userAwardService);
+        verifyNoInteractions(commandService);
+    }
+
+    @Test
+    void shouldRejectNonAsciiIdempotencyKey() {
+        AgentToolResponse<Void> response = controller.exchange(
+                10L, 6L, "request-004", "确认-001"
+        );
+
+        assertFalse(response.success());
+        assertEquals("INVALID_IDEMPOTENCY_KEY", response.code());
+        verifyNoInteractions(commandService);
     }
 }

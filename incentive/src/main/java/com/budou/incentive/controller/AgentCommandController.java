@@ -1,15 +1,15 @@
 package com.budou.incentive.controller;
 
 import com.budou.incentive.dto.agent.AgentToolResponse;
-import com.budou.incentive.service.UserAwardService;
-import com.budou.incentive.utils.Result;
-import com.budou.incentive.utils.ResultCodeEnum;
+import com.budou.incentive.service.AgentExchangeCommandService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.regex.Pattern;
 
 /**
  * Agent 写操作适配层。这里只把稳定协议映射到现有事务消息链路，不复制兑换逻辑。
@@ -19,10 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class AgentCommandController {
 
-    private final UserAwardService userAwardService;
+    private static final Pattern IDEMPOTENCY_KEY_PATTERN =
+            Pattern.compile("^[A-Za-z0-9._:-]{1,128}$");
 
-    public AgentCommandController(UserAwardService userAwardService) {
-        this.userAwardService = userAwardService;
+    private final AgentExchangeCommandService commandService;
+
+    public AgentCommandController(AgentExchangeCommandService commandService) {
+        this.commandService = commandService;
     }
 
     @PostMapping("users/{userId}/awards/{awardId}/exchange")
@@ -31,7 +34,7 @@ public class AgentCommandController {
             @PathVariable Long awardId,
             @RequestHeader(value = "X-Request-ID", required = false) String requestId,
             @RequestHeader("Idempotency-Key") String idempotencyKey) {
-        if (idempotencyKey == null || idempotencyKey.isBlank() || idempotencyKey.length() > 128) {
+        if (idempotencyKey == null || !IDEMPOTENCY_KEY_PATTERN.matcher(idempotencyKey).matches()) {
             return AgentToolResponse.fail(
                     "INVALID_IDEMPOTENCY_KEY",
                     "兑换确认凭证不合法",
@@ -39,59 +42,12 @@ public class AgentCommandController {
             );
         }
 
-        // Python 层已原子消费一次性凭证；这里仍执行旧链路的实时业务校验。
-        Result<?> result = userAwardService.exchange(userId, awardId);
-        if (result == null || result.getCode() == null) {
-            log.warn(
-                    "agentExchangeCompleted requestId={} userId={} awardId={} resultCode=EMPTY_RESULT",
-                    requestId, userId, awardId
-            );
-            return AgentToolResponse.fail(
-                    "EXCHANGE_REJECTED",
-                    "兑换请求被业务系统拒绝",
-                    false
-            );
-        }
-
-        Integer code = result.getCode();
+        // 持久化幂等层先占位，再决定执行旧链路还是重放此前响应。
+        AgentToolResponse<Void> response = commandService.exchange(userId, awardId, idempotencyKey);
         log.info(
                 "agentExchangeCompleted requestId={} userId={} awardId={} resultCode={}",
-                requestId, userId, awardId, code
+                requestId, userId, awardId, response.code()
         );
-        if (ResultCodeEnum.Query_Later.getCode().equals(code)) {
-            return AgentToolResponse.ok(
-                    "EXCHANGE_PROCESSING",
-                    null,
-                    "兑换请求已进入处理流程，请到订单页面查看最终结果"
-            );
-        }
-        if (ResultCodeEnum.AWARD_REDEEMED.getCode().equals(code)) {
-            return AgentToolResponse.fail(
-                    "ALREADY_REDEEMED",
-                    "该奖品已经兑换或已有兑换记录",
-                    false
-            );
-        }
-        return AgentToolResponse.fail(
-                "EXCHANGE_REJECTED",
-                rejectionMessage(code),
-                false
-        );
-    }
-
-    private String rejectionMessage(Integer code) {
-        if (ResultCodeEnum.INSUFFICIENT_CURRENCY.getCode().equals(code)) {
-            return "当前积分不足";
-        }
-        if (ResultCodeEnum.AWARD_EXPIRE.getCode().equals(code)) {
-            return "兑换活动已经结束";
-        }
-        if (ResultCodeEnum.AWARD_NOT_STARTED.getCode().equals(code)) {
-            return "兑换活动尚未开始";
-        }
-        if (ResultCodeEnum.TRANSACTION_SEND_FAILED.getCode().equals(code)) {
-            return "事务消息发送失败，本次请求未受理";
-        }
-        return "兑换请求被业务系统拒绝";
+        return response;
     }
 }

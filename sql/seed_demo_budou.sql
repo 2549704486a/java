@@ -1,5 +1,5 @@
 -- 本地演示数据：清理核心业务表中的历史压测数据，生成关系一致、可解释的数据。
--- 只清理积分激励系统的 10 张核心表，不处理 test_lock 等独立测试表。
+-- 只清理积分激励系统的业务表，不处理 test_lock 等独立测试表。
 USE `budou`;
 
 SET NAMES utf8mb4;
@@ -8,6 +8,7 @@ START TRANSACTION;
 -- Step 1: 按依赖关系从业务流水向配置表清理，避免违反外键约束。
 DELETE FROM `inventory_log`;
 DELETE FROM `add_currency_record`;
+DELETE FROM `agent_exchange_request`;
 DELETE FROM `idempotent_table`;
 DELETE FROM `user_award`;
 DELETE FROM `finish_task_record`;
