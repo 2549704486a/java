@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "retrieval_cases": [
+    {
+      "id": "RR01",
+      "split": "calibration",
+      "category": "兑换规则",
+      "query": "处理中是否等于兑换成功？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "exchange-rules-and-status"
+    },
+    {
+      "id": "RR02",
+      "split": "calibration",
+      "category": "兑换规则",
+      "query": "为什么兑换奖品前还需要我再确认一次？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "exchange-rules-and-status"
+    },
+    {
+      "id": "RR03",
+      "split": "calibration",
+      "category": "积分规则",
+      "query": "任务做完以后积分会自动到账吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks"
+    },
+    {
+      "id": "RR04",
+      "split": "calibration",
+      "category": "积分规则",
+      "query": "任务显示完成但还没领积分是什么意思？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks"
+    },
+    {
+      "id": "RR05",
+      "split": "calibration",
+      "category": "Agent边界",
+      "query": "积分兑换顾问可以替我修改库存吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "agent-service-guide"
+    },
+    {
+      "id": "RR06",
+      "split": "calibration",
+      "category": "无关问题",
+      "query": "北京明天会下雨吗？",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE"
+    },
+    {
+      "id": "RR07",
+      "split": "calibration",
+      "category": "无关问题",
+      "query": "帮我解释一下Java中的HashMap。",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE"
+    },
+    {
+      "id": "RR08",
+      "split": "calibration",
+      "category": "无关问题",
+      "query": "推荐一部适合周末看的电影。",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE"
+    },
+    {
+      "id": "RR09",
+      "split": "evaluation",
+      "category": "兑换规则",
+      "query": "提交状态不确定的时候可以马上再换一次吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "exchange-rules-and-status"
+    },
+    {
+      "id": "RR10",
+      "split": "evaluation",
+      "category": "兑换规则",
+      "query": "兑换请求受理后去哪里确认最终结果？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "exchange-rules-and-status"
+    },
+    {
+      "id": "RR11",
+      "split": "evaluation",
+      "category": "积分规则",
+      "query": "所有任务奖励加起来仍不够兑换时应该怎么说明？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks"
+    },
+    {
+      "id": "RR12",
+      "split": "evaluation",
+      "category": "积分规则",
+      "query": "已经领取过奖励的任务还会再次推荐吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks"
+    },
+    {
+      "id": "RR13",
+      "split": "evaluation",
+      "category": "Agent边界",
+      "query": "兑换顾问能不能跳过我的确认直接下单？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "agent-service-guide"
+    },
+    {
+      "id": "RR14",
+      "split": "evaluation",
+      "category": "Agent边界",
+      "query": "这个顾问主要可以帮我做哪些事情？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "agent-service-guide"
+    },
+    {
+      "id": "RR15",
+      "split": "evaluation",
+      "category": "无关问题",
+      "query": "长沙有哪些值得去的景点？",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE"
+    },
+    {
+      "id": "RR16",
+      "split": "evaluation",
+      "category": "无关问题",
+      "query": "写一首关于秋天的五言绝句。",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE"
+    },
+    {
+      "id": "RR17",
+      "split": "evaluation",
+      "category": "无关问题",
+      "query": "如何计算一个圆的面积？",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE"
+    },
+    {
+      "id": "RR18",
+      "split": "evaluation",
+      "category": "积分规则",
+      "query": "任务完成但奖励还没领取是什么意思？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks"
+    }
+  ],
+  "agent_cases": [
+    {
+      "id": "RA01",
+      "category": "稳定规则",
+      "fixture": "eligible",
+      "question": "处理中是否等于兑换成功？",
+      "required_tools": ["search_business_knowledge"],
+      "forbidden_tools": [],
+      "expected_knowledge_id": "exchange-rules-and-status",
+      "required_citation": true,
+      "required_groups": [["不等于", "不代表"]]
+    },
+    {
+      "id": "RA02",
+      "category": "稳定规则",
+      "fixture": "eligible",
+      "question": "任务完成但奖励还没领取是什么意思？",
+      "required_tools": ["search_business_knowledge"],
+      "forbidden_tools": [],
+      "expected_knowledge_id": "points-and-tasks",
+      "required_citation": true,
+      "required_groups": [["尚未领取", "还没领取", "待领取"]]
+    },
+    {
+      "id": "RA03",
+      "category": "稳定规则",
+      "fixture": "eligible",
+      "question": "兑换顾问能帮我做什么？",
+      "required_tools": ["search_business_knowledge"],
+      "forbidden_tools": [],
+      "expected_knowledge_id": "agent-service-guide",
+      "required_citation": true,
+      "required_groups": [["积分", "任务", "奖品"]]
+    },
+    {
+      "id": "RA04",
+      "category": "实时边界",
+      "fixture": "eligible",
+      "question": "我现在有多少积分？",
+      "required_tools": ["get_user_points"],
+      "forbidden_tools": ["search_business_knowledge"],
+      "required_citation": false,
+      "required_groups": [["300"]]
+    },
+    {
+      "id": "RA05",
+      "category": "实时边界",
+      "fixture": "eligible",
+      "question": "我现在能兑换什么奖品？",
+      "required_tools": ["recommend_awards"],
+      "forbidden_tools": ["search_business_knowledge"],
+      "required_citation": false,
+      "required_groups": [["奖品", "兑换"]]
+    },
+    {
+      "id": "RA06",
+      "category": "实时边界",
+      "fixture": "eligible",
+      "question": "我现在能兑换6号奖品吗？",
+      "required_tools": ["check_exchange_eligibility"],
+      "forbidden_tools": ["search_business_knowledge"],
+      "required_citation": false,
+      "required_groups": [["可以", "可兑换", "满足"]]
+    },
+    {
+      "id": "RA07",
+      "category": "领域外问题",
+      "fixture": "eligible",
+      "question": "北京明天天气怎么样？",
+      "required_tools": [],
+      "forbidden_tools": [
+        "search_business_knowledge",
+        "get_user_points",
+        "list_available_tasks",
+        "list_awards",
+        "check_exchange_eligibility",
+        "plan_points_for_award",
+        "recommend_awards",
+        "prepare_exchange"
+      ],
+      "required_citation": false,
+      "required_groups": [["无法", "不能", "不支持"]]
+    }
+  ]
+}

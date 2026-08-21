@@ -1,0 +1,831 @@
+{
+  "metadata": {
+    "created_at": "2026-08-21T23:47:05",
+    "embedding_model": "text-embedding-v4",
+    "chat_model": null,
+    "relevance_threshold": 0.35,
+    "split": "all",
+    "case_ids": [
+      "RR01",
+      "RR02",
+      "RR03",
+      "RR04",
+      "RR05",
+      "RR06",
+      "RR07",
+      "RR08",
+      "RR09",
+      "RR10",
+      "RR11",
+      "RR12",
+      "RR13",
+      "RR14",
+      "RR15",
+      "RR16",
+      "RR17",
+      "RR18"
+    ]
+  },
+  "summary": {
+    "retrieval": {
+      "total": 18,
+      "passed": 18,
+      "top1_accuracy": 1.0,
+      "hit_at_3": 1.0,
+      "negative_rejection_rate": 1.0,
+      "citation_valid_rate": 1.0,
+      "positive_top_score": {
+        "min": 0.4367,
+        "average": 0.5593,
+        "max": 0.6761
+      },
+      "negative_top_score": {
+        "min": 0.0,
+        "average": 0.0092,
+        "max": 0.054
+      }
+    },
+    "agent": {
+      "total": 0,
+      "passed": 0,
+      "check_rates": {}
+    }
+  },
+  "retrieval_results": [
+    {
+      "id": "RR01",
+      "split": "calibration",
+      "category": "兑换规则",
+      "query": "处理中是否等于兑换成功？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "exchange-rules-and-status",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "exchange-rules-and-status",
+        "exchange-rules-and-status",
+        "exchange-rules-and-status"
+      ],
+      "top_score": 0.6752,
+      "raw_candidates": [
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.6752
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.6686
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.5905
+        }
+      ],
+      "elapsed_ms": 2494.83,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR02",
+      "split": "calibration",
+      "category": "兑换规则",
+      "query": "为什么兑换奖品前还需要我再确认一次？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "exchange-rules-and-status",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "exchange-rules-and-status",
+        "exchange-rules-and-status",
+        "exchange-rules-and-status"
+      ],
+      "top_score": 0.6761,
+      "raw_candidates": [
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.6761
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.6631
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.6552
+        }
+      ],
+      "elapsed_ms": 466.65,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR03",
+      "split": "calibration",
+      "category": "积分规则",
+      "query": "任务做完以后积分会自动到账吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "points-and-tasks",
+        "points-and-tasks",
+        "points-and-tasks"
+      ],
+      "top_score": 0.5735,
+      "raw_candidates": [
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.5735
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.5555
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.5365
+        }
+      ],
+      "elapsed_ms": 493.2,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR04",
+      "split": "calibration",
+      "category": "积分规则",
+      "query": "任务显示完成但还没领积分是什么意思？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "points-and-tasks",
+        "points-and-tasks",
+        "points-and-tasks"
+      ],
+      "top_score": 0.5942,
+      "raw_candidates": [
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.5942
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.5898
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.5693
+        }
+      ],
+      "elapsed_ms": 467.2,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR05",
+      "split": "calibration",
+      "category": "Agent边界",
+      "query": "积分兑换顾问可以替我修改库存吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "agent-service-guide",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "agent-service-guide",
+        "agent-service-guide",
+        "agent-service-guide"
+      ],
+      "top_score": 0.5217,
+      "raw_candidates": [
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "",
+          "score": 0.5217
+        },
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "",
+          "score": 0.4746
+        },
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "",
+          "score": 0.4673
+        }
+      ],
+      "elapsed_ms": 529.52,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR06",
+      "split": "calibration",
+      "category": "无关问题",
+      "query": "北京明天会下雨吗？",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE",
+      "expected_knowledge_id": null,
+      "actual_code": "NO_RELEVANT_KNOWLEDGE",
+      "actual_knowledge_ids": [],
+      "top_score": 0.054,
+      "raw_candidates": [
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "agent-service-guide:1.0.0:0002",
+          "score": 0.054
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "points-and-tasks:1.0.0:0003",
+          "score": 0.0
+        },
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "agent-service-guide:1.0.0:0000",
+          "score": 0.0
+        }
+      ],
+      "elapsed_ms": 947.3,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR07",
+      "split": "calibration",
+      "category": "无关问题",
+      "query": "帮我解释一下Java中的HashMap。",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE",
+      "expected_knowledge_id": null,
+      "actual_code": "NO_RELEVANT_KNOWLEDGE",
+      "actual_knowledge_ids": [],
+      "top_score": 0.0,
+      "raw_candidates": [
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "points-and-tasks:1.0.0:0003",
+          "score": 0.0
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "exchange-rules-and-status:1.0.0:0003",
+          "score": 0.0
+        },
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "agent-service-guide:1.0.0:0002",
+          "score": 0.0
+        }
+      ],
+      "elapsed_ms": 948.72,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR08",
+      "split": "calibration",
+      "category": "无关问题",
+      "query": "推荐一部适合周末看的电影。",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE",
+      "expected_knowledge_id": null,
+      "actual_code": "NO_RELEVANT_KNOWLEDGE",
+      "actual_knowledge_ids": [],
+      "top_score": 0.0,
+      "raw_candidates": [
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "agent-service-guide:1.0.0:0002",
+          "score": 0.0
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "points-and-tasks:1.0.0:0003",
+          "score": 0.0
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "exchange-rules-and-status:1.0.0:0003",
+          "score": 0.0
+        }
+      ],
+      "elapsed_ms": 1406.95,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR09",
+      "split": "evaluation",
+      "category": "兑换规则",
+      "query": "提交状态不确定的时候可以马上再换一次吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "exchange-rules-and-status",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "exchange-rules-and-status",
+        "exchange-rules-and-status",
+        "agent-service-guide"
+      ],
+      "top_score": 0.4367,
+      "raw_candidates": [
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.4367
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.4072
+        },
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "",
+          "score": 0.3745
+        }
+      ],
+      "elapsed_ms": 470.2,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR10",
+      "split": "evaluation",
+      "category": "兑换规则",
+      "query": "兑换请求受理后去哪里确认最终结果？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "exchange-rules-and-status",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "exchange-rules-and-status",
+        "exchange-rules-and-status",
+        "exchange-rules-and-status"
+      ],
+      "top_score": 0.563,
+      "raw_candidates": [
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.563
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.5366
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.4905
+        }
+      ],
+      "elapsed_ms": 474.15,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR11",
+      "split": "evaluation",
+      "category": "积分规则",
+      "query": "所有任务奖励加起来仍不够兑换时应该怎么说明？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "points-and-tasks",
+        "agent-service-guide",
+        "exchange-rules-and-status"
+      ],
+      "top_score": 0.5945,
+      "raw_candidates": [
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.5945
+        },
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "",
+          "score": 0.5634
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.5451
+        }
+      ],
+      "elapsed_ms": 484.12,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR12",
+      "split": "evaluation",
+      "category": "积分规则",
+      "query": "已经领取过奖励的任务还会再次推荐吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "points-and-tasks",
+        "points-and-tasks",
+        "agent-service-guide"
+      ],
+      "top_score": 0.5987,
+      "raw_candidates": [
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.5987
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.5055
+        },
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "",
+          "score": 0.4962
+        }
+      ],
+      "elapsed_ms": 1037.0,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR13",
+      "split": "evaluation",
+      "category": "Agent边界",
+      "query": "兑换顾问能不能跳过我的确认直接下单？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "agent-service-guide",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "agent-service-guide",
+        "agent-service-guide",
+        "exchange-rules-and-status"
+      ],
+      "top_score": 0.4393,
+      "raw_candidates": [
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "",
+          "score": 0.4393
+        },
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "",
+          "score": 0.4341
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.427
+        }
+      ],
+      "elapsed_ms": 571.32,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR14",
+      "split": "evaluation",
+      "category": "Agent边界",
+      "query": "这个顾问主要可以帮我做哪些事情？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "agent-service-guide",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "agent-service-guide"
+      ],
+      "top_score": 0.5052,
+      "raw_candidates": [
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "",
+          "score": 0.5052
+        }
+      ],
+      "elapsed_ms": 1485.8,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR15",
+      "split": "evaluation",
+      "category": "无关问题",
+      "query": "长沙有哪些值得去的景点？",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE",
+      "expected_knowledge_id": null,
+      "actual_code": "NO_RELEVANT_KNOWLEDGE",
+      "actual_knowledge_ids": [],
+      "top_score": 0.0,
+      "raw_candidates": [
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "agent-service-guide:1.0.0:0002",
+          "score": 0.0
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "exchange-rules-and-status:1.0.0:0002",
+          "score": 0.0
+        },
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "agent-service-guide:1.0.0:0000",
+          "score": 0.0
+        }
+      ],
+      "elapsed_ms": 1136.47,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR16",
+      "split": "evaluation",
+      "category": "无关问题",
+      "query": "写一首关于秋天的五言绝句。",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE",
+      "expected_knowledge_id": null,
+      "actual_code": "NO_RELEVANT_KNOWLEDGE",
+      "actual_knowledge_ids": [],
+      "top_score": 0.0,
+      "raw_candidates": [
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "agent-service-guide:1.0.0:0002",
+          "score": 0.0
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "exchange-rules-and-status:1.0.0:0000",
+          "score": 0.0
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "points-and-tasks:1.0.0:0001",
+          "score": 0.0
+        }
+      ],
+      "elapsed_ms": 1019.22,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR17",
+      "split": "evaluation",
+      "category": "无关问题",
+      "query": "如何计算一个圆的面积？",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE",
+      "expected_knowledge_id": null,
+      "actual_code": "NO_RELEVANT_KNOWLEDGE",
+      "actual_knowledge_ids": [],
+      "top_score": 0.0014,
+      "raw_candidates": [
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "agent-service-guide:1.0.0:0002",
+          "score": 0.0014
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "points-and-tasks:1.0.0:0003",
+          "score": 0.0
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "points-and-tasks:1.0.0:0002",
+          "score": 0.0
+        }
+      ],
+      "elapsed_ms": 1404.81,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR18",
+      "split": "evaluation",
+      "category": "积分规则",
+      "query": "任务完成但奖励还没领取是什么意思？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "points-and-tasks",
+        "exchange-rules-and-status",
+        "exchange-rules-and-status"
+      ],
+      "top_score": 0.5336,
+      "raw_candidates": [
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.5336
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.5327
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "",
+          "score": 0.5178
+        }
+      ],
+      "elapsed_ms": 526.51,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    }
+  ],
+  "agent_results": []
+}

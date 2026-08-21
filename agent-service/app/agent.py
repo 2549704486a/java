@@ -21,6 +21,68 @@ from app.trace import capture_tool_trace
 logger = logging.getLogger(__name__)
 
 
+def extract_message_text(content) -> str:
+    """兼容模型返回的纯文本和分块文本。"""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        text_parts = [
+            part.get("text", "")
+            for part in content
+            if isinstance(part, dict) and part.get("type") == "text"
+        ]
+        return "\n".join(part for part in text_parts if part)
+    return str(content)
+
+
+def _as_tool_payload(value) -> dict | None:
+    if isinstance(value, dict):
+        if value.get("type") == "text" and isinstance(value.get("text"), str):
+            return _as_tool_payload(value["text"])
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except (TypeError, json.JSONDecodeError):
+            return None
+        return parsed if isinstance(parsed, dict) else None
+    if isinstance(value, list):
+        for item in value:
+            payload = _as_tool_payload(item)
+            if payload is not None:
+                return payload
+    return None
+
+
+def collect_knowledge_citations(messages) -> list[str]:
+    """只从本轮知识检索 Tool 的真实返回值中提取用户可读引用。"""
+    citations: list[str] = []
+    for message in messages:
+        if (
+            getattr(message, "type", None) != "tool"
+            or getattr(message, "name", None) != "search_business_knowledge"
+        ):
+            continue
+        payload = _as_tool_payload(getattr(message, "artifact", None))
+        if payload is None:
+            payload = _as_tool_payload(getattr(message, "content", None))
+        data = payload.get("data") if payload else None
+        matches = data.get("matches", []) if isinstance(data, dict) else []
+        for match in matches:
+            citation = match.get("citation") if isinstance(match, dict) else None
+            if citation and citation not in citations:
+                citations.append(citation)
+    return citations
+
+
+def ensure_knowledge_citations(messages, response: str) -> str:
+    """模型漏引时补充本轮检索来源，不生成 Tool 未返回的来源。"""
+    citations = collect_knowledge_citations(messages)
+    if not citations or any(citation in response for citation in citations):
+        return response
+    return f"{response.rstrip()}\n\n检索来源：{'；'.join(citations)}"
+
+
 def build_agent(
     settings: Settings,
     client: BusinessApiClient,
@@ -84,18 +146,9 @@ def run_agent(
                     separators=(",", ":"),
                 ),
             )
-    final_message = result["messages"][-1]
-    content = final_message.content
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        text_parts = [
-            part.get("text", "")
-            for part in content
-            if isinstance(part, dict) and part.get("type") == "text"
-        ]
-        return "\n".join(part for part in text_parts if part)
-    return str(content)
+    messages = result["messages"]
+    response = extract_message_text(messages[-1].content)
+    return ensure_knowledge_citations(messages, response)
 
 
 def append_agent_turn(

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import json
 import unittest
 
-from app.agent import run_agent
+from langchain_core.messages import AIMessage, ToolMessage
+
+from app.agent import ensure_knowledge_citations, run_agent
 
 
 class FakeAgent:
@@ -31,6 +34,64 @@ class RunAgentTest(unittest.TestCase):
             "user:10:session:session-a",
             agent.config["configurable"]["thread_id"],
         )
+
+    def test_appends_real_tool_citations_when_model_omits_them(self):
+        payload = {
+            "data": {
+                "matches": [
+                    {"citation": "[积分与任务规则 / 规则说明]"},
+                    {"citation": "[兑换规则与状态 / 实时信息边界]"},
+                ]
+            }
+        }
+        messages = [
+            ToolMessage(
+                content=json.dumps(payload, ensure_ascii=False),
+                tool_call_id="call-1",
+                name="search_business_knowledge",
+            ),
+            AIMessage(content="任务完成后仍需要领取奖励。"),
+        ]
+
+        answer = ensure_knowledge_citations(messages, messages[-1].content)
+
+        self.assertIn("检索来源：", answer)
+        self.assertIn("[积分与任务规则 / 规则说明]", answer)
+
+    def test_does_not_duplicate_existing_tool_citation(self):
+        citation = "[积分与任务规则 / 规则说明]"
+        payload = {"data": {"matches": [{"citation": citation}]}}
+        messages = [
+            ToolMessage(
+                content=json.dumps(payload, ensure_ascii=False),
+                tool_call_id="call-1",
+                name="search_business_knowledge",
+            ),
+            AIMessage(content=f"任务完成后仍需要领取奖励。{citation}"),
+        ]
+
+        answer = ensure_knowledge_citations(messages, messages[-1].content)
+
+        self.assertEqual(1, answer.count(citation))
+
+    def test_reads_citations_from_block_tool_content(self):
+        citation = "[积分与任务规则 / 规则说明]"
+        payload = json.dumps(
+            {"data": {"matches": [{"citation": citation}]}},
+            ensure_ascii=False,
+        )
+        messages = [
+            ToolMessage(
+                content=[{"type": "text", "text": payload}],
+                tool_call_id="call-1",
+                name="search_business_knowledge",
+            ),
+            AIMessage(content="任务完成后仍需要领取奖励。"),
+        ]
+
+        answer = ensure_knowledge_citations(messages, messages[-1].content)
+
+        self.assertIn(citation, answer)
 
 
 if __name__ == "__main__":

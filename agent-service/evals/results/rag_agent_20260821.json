@@ -1,0 +1,579 @@
+{
+  "metadata": {
+    "created_at": "2026-08-21T23:48:45",
+    "embedding_model": "text-embedding-v4",
+    "chat_model": "deepseek-chat",
+    "relevance_threshold": 0.35,
+    "split": "all",
+    "case_ids": [
+      "RA01",
+      "RA02",
+      "RA03",
+      "RA04",
+      "RA05",
+      "RA06",
+      "RA07"
+    ]
+  },
+  "summary": {
+    "retrieval": {
+      "total": 0,
+      "passed": 0,
+      "top1_accuracy": 0.0,
+      "hit_at_3": 0.0,
+      "negative_rejection_rate": 0.0,
+      "citation_valid_rate": 0.0,
+      "positive_top_score": {
+        "min": null,
+        "average": null,
+        "max": null
+      },
+      "negative_top_score": {
+        "min": null,
+        "average": null,
+        "max": null
+      }
+    },
+    "agent": {
+      "total": 7,
+      "passed": 7,
+      "check_rates": {
+        "tool_selection": 1.0,
+        "tool_execution": 1.0,
+        "knowledge_hit": 1.0,
+        "citation": 1.0,
+        "required_content": 1.0
+      }
+    }
+  },
+  "retrieval_results": [],
+  "agent_results": [
+    {
+      "id": "RA01",
+      "category": "稳定规则",
+      "question": "处理中是否等于兑换成功？",
+      "response": "**处理中不等于兑换成功。**\n\n根据兑换规则，`EXCHANGE_PROCESSING` 只表示请求已经进入异步处理流程，并不代表兑换已经成功 [奖品兑换规则与状态 / 规则说明]。\n\n- **处理中（EXCHANGE_PROCESSING）**：请求已受理，正在异步处理，结果尚未确定。\n- **兑换成功**：需要到**订单页面**查看最终的成功或失败状态。\n\n另外请注意：\n- 如果状态为 `SUBMISSION_UNKNOWN`（无法确定是否已受理），不要自动重试，应先到订单页面核对。\n- 最终兑换结果由异步链路处理，请以订单页面显示的状态为准。\n\n建议你稍后到订单页面确认最终结果。",
+      "citation_fallback_applied": false,
+      "elapsed_ms": 6254.82,
+      "usage": {
+        "input_tokens": 5491,
+        "output_tokens": 218,
+        "total_tokens": 5709
+      },
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "search_business_knowledge",
+          "arguments": {
+            "query_chars": 13,
+            "limit": 3
+          },
+          "completed": true,
+          "business_success": true,
+          "result_code": "KNOWLEDGE_FOUND",
+          "elapsed_ms": 1605.9,
+          "error_type": null
+        }
+      ],
+      "knowledge_search_calls": [
+        {
+          "query": "兑换处理中是否等于兑换成功",
+          "limit": 3,
+          "result": {
+            "success": true,
+            "code": "KNOWLEDGE_FOUND",
+            "data": {
+              "matches": [
+                {
+                  "content": "# 奖品兑换规则与状态  \n## 适用问题  \n用于解释兑换需要满足哪些条件、为什么需要确认，以及“处理中”“成功”“失败”和“提交结果未知”分别意味着什么。",
+                  "score": 0.6581,
+                  "citation": "[奖品兑换规则与状态 / 适用问题]",
+                  "knowledgeId": "exchange-rules-and-status",
+                  "knowledgeVersion": "1.0.0",
+                  "title": "奖品兑换规则与状态",
+                  "section": "适用问题",
+                  "sourcePath": "documents/exchange-rules-and-status.md",
+                  "sourceRefs": [
+                    "incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java",
+                    "incentive/src/main/java/com/budou/incentive/service/AgentExchangeCommandService.java",
+                    "agent-service/app/skills/controlled_exchange.py"
+                  ]
+                },
+                {
+                  "content": "## 规则说明  \n- 兑换资格取决于用户、奖品、活动时间、库存、积分和既有兑换记录等条件，最终判断以资格查询 Tool 返回的原因码为准。\n- Agent 发起兑换前必须先生成包含奖品和积分信息的确认摘要；只有用户在同一会话明确确认后，系统才会提交兑换。\n- `EXCHANGE_PROCESSING` 只表示请求已经进入异步处理流程，不表示兑换成功。\n- `ALREADY_REDEEMED` 表示该奖品已经兑换成功，或已有不能重复提交的兑换记录。\n- `SUBMISSION_UNKNOWN` 表示系统无法确定请求是否已经受理。此时不能自动重试，应先到订单页面核对。\n- 最终兑换结果由旧事务消息链路异步处理，用户应在订单页面查看成功或失败状态。",
+                  "score": 0.6336,
+                  "citation": "[奖品兑换规则与状态 / 规则说明]",
+                  "knowledgeId": "exchange-rules-and-status",
+                  "knowledgeVersion": "1.0.0",
+                  "title": "奖品兑换规则与状态",
+                  "section": "规则说明",
+                  "sourcePath": "documents/exchange-rules-and-status.md",
+                  "sourceRefs": [
+                    "incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java",
+                    "incentive/src/main/java/com/budou/incentive/service/AgentExchangeCommandService.java",
+                    "agent-service/app/skills/controlled_exchange.py"
+                  ]
+                },
+                {
+                  "content": "## 实时信息边界  \n奖品价格、库存、活动起止时间、用户积分、兑换资格和订单状态都必须通过 `get_award_detail`、`check_exchange_eligibility` 等 Tool 或订单页面获取。本文档不能用于判断某次兑换现在是否成功。",
+                  "score": 0.5627,
+                  "citation": "[奖品兑换规则与状态 / 实时信息边界]",
+                  "knowledgeId": "exchange-rules-and-status",
+                  "knowledgeVersion": "1.0.0",
+                  "title": "奖品兑换规则与状态",
+                  "section": "实时信息边界",
+                  "sourcePath": "documents/exchange-rules-and-status.md",
+                  "sourceRefs": [
+                    "incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java",
+                    "incentive/src/main/java/com/budou/incentive/service/AgentExchangeCommandService.java",
+                    "agent-service/app/skills/controlled_exchange.py"
+                  ]
+                }
+              ]
+            },
+            "message": "已找到可引用的业务规则",
+            "retryable": false
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_execution": true,
+          "knowledge_hit": true,
+          "citation": true,
+          "required_content": true
+        },
+        "details": {
+          "actual_tools": [
+            "search_business_knowledge"
+          ],
+          "returned_knowledge_ids": [
+            "exchange-rules-and-status",
+            "exchange-rules-and-status",
+            "exchange-rules-and-status"
+          ],
+          "returned_citations": [
+            "[奖品兑换规则与状态 / 适用问题]",
+            "[奖品兑换规则与状态 / 规则说明]",
+            "[奖品兑换规则与状态 / 实时信息边界]"
+          ],
+          "expected_citations": [
+            "[奖品兑换规则与状态 / 适用问题]",
+            "[奖品兑换规则与状态 / 规则说明]",
+            "[奖品兑换规则与状态 / 实时信息边界]"
+          ],
+          "missing_content_groups": []
+        }
+      }
+    },
+    {
+      "id": "RA02",
+      "category": "稳定规则",
+      "question": "任务完成但奖励还没领取是什么意思？",
+      "response": "根据业务规则说明：\n\n**\"任务完成但奖励还没领取\"** 指的是任务的 **`COMPLETED_UNCLAIMED`** 状态，即任务已经完成，但对应的积分奖励尚未领取。\n\n具体含义如下：\n\n- **完成任务和领取积分是两个不同的动作**。任务完成只是满足了领取条件，还需要你主动去领取积分奖励，积分才会真正到账。[积分与任务规则 / 规则说明]\n- 任务状态分为三种：\n  - `AVAILABLE`：任务可以参与\n  - `COMPLETED_UNCLAIMED`：任务已完成，但积分尚未领取\n  - `REWARDED`：奖励已领取，不应再次推荐\n\n所以，如果你看到有任务显示\"已完成待领取\"，说明这个任务的积分奖励还没有计入你的账户，需要先领取这部分积分，才能用于兑换奖品。\n\n需要我帮你查看当前有哪些已完成待领取的任务吗？",
+      "citation_fallback_applied": false,
+      "elapsed_ms": 4113.85,
+      "usage": {
+        "input_tokens": 5409,
+        "output_tokens": 249,
+        "total_tokens": 5658
+      },
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "search_business_knowledge",
+          "arguments": {
+            "query_chars": 16,
+            "limit": 3
+          },
+          "completed": true,
+          "business_success": true,
+          "result_code": "KNOWLEDGE_FOUND",
+          "elapsed_ms": 479.31,
+          "error_type": null
+        }
+      ],
+      "knowledge_search_calls": [
+        {
+          "query": "任务完成但奖励还没领取是什么意思",
+          "limit": 3,
+          "result": {
+            "success": true,
+            "code": "KNOWLEDGE_FOUND",
+            "data": {
+              "matches": [
+                {
+                  "content": "# 奖品兑换规则与状态  \n## 适用问题  \n用于解释兑换需要满足哪些条件、为什么需要确认，以及“处理中”“成功”“失败”和“提交结果未知”分别意味着什么。",
+                  "score": 0.5336,
+                  "citation": "[奖品兑换规则与状态 / 适用问题]",
+                  "knowledgeId": "exchange-rules-and-status",
+                  "knowledgeVersion": "1.0.0",
+                  "title": "奖品兑换规则与状态",
+                  "section": "适用问题",
+                  "sourcePath": "documents/exchange-rules-and-status.md",
+                  "sourceRefs": [
+                    "incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java",
+                    "incentive/src/main/java/com/budou/incentive/service/AgentExchangeCommandService.java",
+                    "agent-service/app/skills/controlled_exchange.py"
+                  ]
+                },
+                {
+                  "content": "## 规则说明  \n- 用户通过完成有效任务并领取奖励获得积分，完成任务和领取积分是两个不同动作。\n- `AVAILABLE` 表示任务可以参与；`COMPLETED_UNCLAIMED` 表示任务已经完成但积分尚未领取；`REWARDED` 表示奖励已经领取，不应再次推荐。\n- Agent 可以根据目标奖品所需积分、用户当前积分和当前可用任务生成任务组合。\n- 当所有可用任务的奖励仍不能覆盖积分缺口时，Agent 应明确说明完成这些任务后仍差多少积分，不能虚构额外任务。",
+                  "score": 0.5248,
+                  "citation": "[积分与任务规则 / 规则说明]",
+                  "knowledgeId": "points-and-tasks",
+                  "knowledgeVersion": "1.0.0",
+                  "title": "积分与任务规则",
+                  "section": "规则说明",
+                  "sourcePath": "documents/points-and-tasks.md",
+                  "sourceRefs": [
+                    "incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java",
+                    "agent-service/app/skills/points_plan.py"
+                  ]
+                },
+                {
+                  "content": "## 实时信息边界  \n奖品价格、库存、活动起止时间、用户积分、兑换资格和订单状态都必须通过 `get_award_detail`、`check_exchange_eligibility` 等 Tool 或订单页面获取。本文档不能用于判断某次兑换现在是否成功。",
+                  "score": 0.5177,
+                  "citation": "[奖品兑换规则与状态 / 实时信息边界]",
+                  "knowledgeId": "exchange-rules-and-status",
+                  "knowledgeVersion": "1.0.0",
+                  "title": "奖品兑换规则与状态",
+                  "section": "实时信息边界",
+                  "sourcePath": "documents/exchange-rules-and-status.md",
+                  "sourceRefs": [
+                    "incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java",
+                    "incentive/src/main/java/com/budou/incentive/service/AgentExchangeCommandService.java",
+                    "agent-service/app/skills/controlled_exchange.py"
+                  ]
+                }
+              ]
+            },
+            "message": "已找到可引用的业务规则",
+            "retryable": false
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_execution": true,
+          "knowledge_hit": true,
+          "citation": true,
+          "required_content": true
+        },
+        "details": {
+          "actual_tools": [
+            "search_business_knowledge"
+          ],
+          "returned_knowledge_ids": [
+            "exchange-rules-and-status",
+            "points-and-tasks",
+            "exchange-rules-and-status"
+          ],
+          "returned_citations": [
+            "[奖品兑换规则与状态 / 适用问题]",
+            "[积分与任务规则 / 规则说明]",
+            "[奖品兑换规则与状态 / 实时信息边界]"
+          ],
+          "expected_citations": [
+            "[积分与任务规则 / 规则说明]"
+          ],
+          "missing_content_groups": []
+        }
+      }
+    },
+    {
+      "id": "RA03",
+      "category": "稳定规则",
+      "question": "兑换顾问能帮我做什么？",
+      "response": "根据积分兑换顾问使用说明，我可以为您提供以下帮助：\n\n## 我能为您做什么\n\n**✅ 可以帮您：**\n1. **查询积分** — 查看您当前的实时积分余额\n2. **查询任务** — 查看您可参与或已完成待领奖的有效任务\n3. **查询奖品** — 查看奖品列表、价格、库存和活动时间\n4. **检查兑换资格** — 判断某个奖品当前是否可兑换，以及积分缺口\n5. **生成积分规划** — 积分不足时，为您规划完成哪些任务来攒够积分\n6. **推荐奖品** — 根据您的积分推荐当前真正可兑换的奖品\n7. **准备兑换** — 您明确想兑换时，生成兑换摘要供您确认\n\n**⚠️ 我不能做的：**\n- 不能跳过您的确认直接提交兑换（必须经过\"准备摘要 → 您确认 → 一次性凭证\"三步）\n- 不能修改您的积分、库存、任务状态或消息状态\n- 不能执行任意数据库或缓存命令\n- 不能把\"请求已受理\"说成\"兑换成功\"——最终结果以订单页面为准\n\n---\n\n您现在想做什么呢？比如查询积分、看看能兑换什么奖品，或者指定某个奖品让我帮您规划？😊\n\n[积分兑换顾问使用说明 / 适用问题] [积分兑换顾问使用说明 / 规则说明]",
+      "citation_fallback_applied": false,
+      "elapsed_ms": 4428.39,
+      "usage": {
+        "input_tokens": 5362,
+        "output_tokens": 356,
+        "total_tokens": 5718
+      },
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "search_business_knowledge",
+          "arguments": {
+            "query_chars": 8,
+            "limit": 3
+          },
+          "completed": true,
+          "business_success": true,
+          "result_code": "KNOWLEDGE_FOUND",
+          "elapsed_ms": 479.85,
+          "error_type": null
+        }
+      ],
+      "knowledge_search_calls": [
+        {
+          "query": "兑换顾问能做什么",
+          "limit": 3,
+          "result": {
+            "success": true,
+            "code": "KNOWLEDGE_FOUND",
+            "data": {
+              "matches": [
+                {
+                  "content": "# 积分兑换顾问使用说明  \n## 适用问题  \n用于说明积分兑换顾问可以帮助用户做什么、哪些操作不能代替用户完成，以及遇到异常时应该如何处理。",
+                  "score": 0.52,
+                  "citation": "[积分兑换顾问使用说明 / 适用问题]",
+                  "knowledgeId": "agent-service-guide",
+                  "knowledgeVersion": "1.0.0",
+                  "title": "积分兑换顾问使用说明",
+                  "section": "适用问题",
+                  "sourcePath": "documents/agent-service-guide.md",
+                  "sourceRefs": [
+                    "agent-service/app/prompt.py",
+                    "agent-service/app/tools.py",
+                    "docs/agent-context/07_Agent接入边界.md"
+                  ]
+                },
+                {
+                  "content": "## 来源  \n- Java 查询服务定义兑换资格及原因码。\n- Java 命令服务定义受理、幂等重放和提交结果未知的语义。\n- Python 受控兑换 Skill 定义准备、确认、取消和一次性凭证边界。",
+                  "score": 0.4484,
+                  "citation": "[奖品兑换规则与状态 / 来源]",
+                  "knowledgeId": "exchange-rules-and-status",
+                  "knowledgeVersion": "1.0.0",
+                  "title": "奖品兑换规则与状态",
+                  "section": "来源",
+                  "sourcePath": "documents/exchange-rules-and-status.md",
+                  "sourceRefs": [
+                    "incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java",
+                    "incentive/src/main/java/com/budou/incentive/service/AgentExchangeCommandService.java",
+                    "agent-service/app/skills/controlled_exchange.py"
+                  ]
+                },
+                {
+                  "content": "## 规则说明  \n- Agent 可以查询当前积分、有效任务、奖品信息和兑换资格，并生成积分规划或奖品推荐。\n- 用户明确想兑换奖品时，Agent 可以先准备兑换摘要，但不能跳过用户确认直接提交。\n- Agent 不能按用户要求修改积分、库存、任务状态或消息状态，也不能执行任意数据库和缓存命令。\n- Agent 的推荐和解释不改变业务事实；资格、库存和最终结果仍由业务系统决定。\n- 普通订单列表和兑换结果由页面承载，Agent 不把“请求已受理”描述为“兑换成功”。",
+                  "score": 0.441,
+                  "citation": "[积分兑换顾问使用说明 / 规则说明]",
+                  "knowledgeId": "agent-service-guide",
+                  "knowledgeVersion": "1.0.0",
+                  "title": "积分兑换顾问使用说明",
+                  "section": "规则说明",
+                  "sourcePath": "documents/agent-service-guide.md",
+                  "sourceRefs": [
+                    "agent-service/app/prompt.py",
+                    "agent-service/app/tools.py",
+                    "docs/agent-context/07_Agent接入边界.md"
+                  ]
+                }
+              ]
+            },
+            "message": "已找到可引用的业务规则",
+            "retryable": false
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_execution": true,
+          "knowledge_hit": true,
+          "citation": true,
+          "required_content": true
+        },
+        "details": {
+          "actual_tools": [
+            "search_business_knowledge"
+          ],
+          "returned_knowledge_ids": [
+            "agent-service-guide",
+            "exchange-rules-and-status",
+            "agent-service-guide"
+          ],
+          "returned_citations": [
+            "[积分兑换顾问使用说明 / 适用问题]",
+            "[奖品兑换规则与状态 / 来源]",
+            "[积分兑换顾问使用说明 / 规则说明]"
+          ],
+          "expected_citations": [
+            "[积分兑换顾问使用说明 / 适用问题]",
+            "[积分兑换顾问使用说明 / 规则说明]"
+          ],
+          "missing_content_groups": []
+        }
+      }
+    },
+    {
+      "id": "RA04",
+      "category": "实时边界",
+      "question": "我现在有多少积分？",
+      "response": "您当前有 **300 积分**。",
+      "citation_fallback_applied": false,
+      "elapsed_ms": 2494.04,
+      "usage": {
+        "input_tokens": 4718,
+        "output_tokens": 37,
+        "total_tokens": 4755
+      },
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "get_user_points",
+          "arguments": {},
+          "completed": true,
+          "business_success": true,
+          "result_code": "POINTS_FOUND",
+          "elapsed_ms": 5.79,
+          "error_type": null
+        }
+      ],
+      "knowledge_search_calls": [],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_execution": true,
+          "knowledge_hit": true,
+          "citation": true,
+          "required_content": true
+        },
+        "details": {
+          "actual_tools": [
+            "get_user_points"
+          ],
+          "returned_knowledge_ids": [],
+          "returned_citations": [],
+          "expected_citations": [],
+          "missing_content_groups": []
+        }
+      }
+    },
+    {
+      "id": "RA05",
+      "category": "实时边界",
+      "question": "我现在能兑换什么奖品？",
+      "response": "根据你当前的积分情况，以下是可兑换的奖品推荐：\n\n**当前积分：300 分**\n\n| 奖品 | 所需积分 | 兑换后剩余 |\n|------|---------|-----------|\n| 🕐 手表（ID: 6） | 200 分 | 100 分 |\n\n目前你**可以兑换手表**，兑换后还剩 100 分。\n\n如果你对这款手表感兴趣，告诉我\"兑换手表\"或\"兑换 6 号奖品\"，我可以为你生成兑换确认摘要。需要我帮你推荐其他方案吗？",
+      "citation_fallback_applied": false,
+      "elapsed_ms": 2894.47,
+      "usage": {
+        "input_tokens": 4781,
+        "output_tokens": 144,
+        "total_tokens": 4925
+      },
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "recommend_awards",
+          "arguments": {
+            "limit": 3
+          },
+          "completed": true,
+          "business_success": null,
+          "result_code": "RECOMMENDATIONS_READY",
+          "elapsed_ms": 0.62,
+          "error_type": null
+        }
+      ],
+      "knowledge_search_calls": [],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_execution": true,
+          "knowledge_hit": true,
+          "citation": true,
+          "required_content": true
+        },
+        "details": {
+          "actual_tools": [
+            "recommend_awards"
+          ],
+          "returned_knowledge_ids": [],
+          "returned_citations": [],
+          "expected_citations": [],
+          "missing_content_groups": []
+        }
+      }
+    },
+    {
+      "id": "RA06",
+      "category": "实时边界",
+      "question": "我现在能兑换6号奖品吗？",
+      "response": "**可以兑换 6 号奖品。**\n\n- 当前积分：300\n- 所需积分：200\n- 积分缺口：0\n\n你已满足兑换条件。如需兑换，请告诉我，我可以为你生成兑换确认摘要。",
+      "citation_fallback_applied": false,
+      "elapsed_ms": 2781.55,
+      "usage": {
+        "input_tokens": 4805,
+        "output_tokens": 109,
+        "total_tokens": 4914
+      },
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "check_exchange_eligibility",
+          "arguments": {
+            "award_id": 6
+          },
+          "completed": true,
+          "business_success": true,
+          "result_code": "ELIGIBILITY_CHECKED",
+          "elapsed_ms": 0.06,
+          "error_type": null
+        }
+      ],
+      "knowledge_search_calls": [],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_execution": true,
+          "knowledge_hit": true,
+          "citation": true,
+          "required_content": true
+        },
+        "details": {
+          "actual_tools": [
+            "check_exchange_eligibility"
+          ],
+          "returned_knowledge_ids": [],
+          "returned_citations": [],
+          "expected_citations": [],
+          "missing_content_groups": []
+        }
+      }
+    },
+    {
+      "id": "RA07",
+      "category": "领域外问题",
+      "question": "北京明天天气怎么样？",
+      "response": "我无法查询天气信息。我的职责范围是积分、任务和奖品兑换相关的服务，无法获取天气数据。\n\n如果你需要查询积分、查看可兑换的奖品，或者了解任务情况，我很乐意帮忙。请问有什么可以帮你的吗？",
+      "citation_fallback_applied": false,
+      "elapsed_ms": 1693.06,
+      "usage": {
+        "input_tokens": 2319,
+        "output_tokens": 51,
+        "total_tokens": 2370
+      },
+      "tool_execution_trace": [],
+      "knowledge_search_calls": [],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_execution": true,
+          "knowledge_hit": true,
+          "citation": true,
+          "required_content": true
+        },
+        "details": {
+          "actual_tools": [],
+          "returned_knowledge_ids": [],
+          "returned_citations": [],
+          "expected_citations": [],
+          "missing_content_groups": []
+        }
+      }
+    }
+  ]
+}
