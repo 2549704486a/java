@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 import chromadb
+from langchain_chroma import Chroma
 from langchain_core.embeddings import Embeddings
 
 from app.knowledge_catalog import KnowledgeCatalog
@@ -30,6 +31,14 @@ class KeywordEmbeddings(Embeddings):
     def _vector(self, text: str) -> list[float]:
         vector = [float(text.count(keyword)) for keyword in self.keywords]
         return vector if any(vector) else [0.01] * len(self.keywords)
+
+
+class FailingEmbeddings(Embeddings):
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        raise RuntimeError("embedding provider unavailable")
+
+    def embed_query(self, text: str) -> list[float]:
+        raise RuntimeError("embedding provider unavailable")
 
 
 class KnowledgeIndexTest(unittest.TestCase):
@@ -95,6 +104,41 @@ class KnowledgeIndexTest(unittest.TestCase):
         self.assertEqual(first_report.chunk_count, second_report.chunk_count)
         self.assertTrue(results)
         self.assertEqual("exchange-rules-and-status", results[0].metadata["knowledge_id"])
+
+    def test_failed_rebuild_keeps_previous_collection_available(self):
+        client = chromadb.EphemeralClient()
+        builder = KnowledgeIndexBuilder(
+            KnowledgeChunker(chunk_size=260, chunk_overlap=40)
+        )
+        original_store = None
+        reopened_store = None
+        try:
+            report, original_store = builder.build(
+                snapshot=self.snapshot,
+                embeddings=KeywordEmbeddings(),
+                index_dir=Path("unused-in-memory-index"),
+                collection_name="failure-safe-rules",
+                client=client,
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "provider unavailable"):
+                builder.build(
+                    snapshot=self.snapshot,
+                    embeddings=FailingEmbeddings(),
+                    index_dir=Path("unused-in-memory-index"),
+                    collection_name="failure-safe-rules",
+                    client=client,
+                )
+
+            reopened_store = Chroma(
+                collection_name="failure-safe-rules",
+                embedding_function=KeywordEmbeddings(),
+                client=client,
+            )
+            self.assertEqual(report.chunk_count, len(reopened_store.get()["ids"]))
+        finally:
+            close_vector_store(original_store)
+            close_vector_store(reopened_store)
 
 
 if __name__ == "__main__":

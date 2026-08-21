@@ -12,6 +12,7 @@ from app.agent import build_agent, run_agent
 from app.api_client import BusinessApiClient
 from app.config import Settings
 from app.logging_config import configure_logging
+from app.knowledge_search import open_knowledge_search
 from app.skills.award_recommendation import AwardRecommendationSkill
 from app.skills.points_plan import PointsPlanningSkill
 from app.skills.registry import SkillRegistry
@@ -103,21 +104,34 @@ def main() -> None:
             settings.llm_model,
             log_path,
         )
-        agent = build_agent(settings, client, args.user_id, skill_registry)
-        cli_thread_id = f"user:{args.user_id}:session:cli"
-        if args.message:
-            print(run_agent(agent, args.message, cli_thread_id, uuid.uuid4().hex))
-            return
-
-        print("积分规划顾问已启动，输入 exit 退出。")
-        while True:
-            message = input("你：").strip()
-            if message.lower() in {"exit", "quit"}:
+        knowledge_search = (
+            open_knowledge_search(settings) if settings.rag_enabled else None
+        )
+        try:
+            agent = build_agent(
+                settings,
+                client,
+                args.user_id,
+                skill_registry,
+                knowledge_search=knowledge_search,
+            )
+            cli_thread_id = f"user:{args.user_id}:session:cli"
+            if args.message:
+                print(run_agent(agent, args.message, cli_thread_id, uuid.uuid4().hex))
                 return
-            if message:
-                print(
-                    f"顾问：{run_agent(agent, message, cli_thread_id, uuid.uuid4().hex)}"
-                )
+
+            print("积分规划顾问已启动，输入 exit 退出。")
+            while True:
+                message = input("你：").strip()
+                if message.lower() in {"exit", "quit"}:
+                    return
+                if message:
+                    print(
+                        f"顾问：{run_agent(agent, message, cli_thread_id, uuid.uuid4().hex)}"
+                    )
+        finally:
+            if knowledge_search is not None:
+                knowledge_search.close()
 
 
 if __name__ == "__main__":

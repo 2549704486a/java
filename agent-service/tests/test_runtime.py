@@ -86,9 +86,11 @@ class AgentRuntimeTest(unittest.TestCase):
             skill_registry,
             actual_checkpointer,
             confirmation_store,
+            knowledge_search,
         ):
             built_user_ids.append(user_id)
             self.assertIs(checkpointer, actual_checkpointer)
+            self.assertIsNone(knowledge_search)
             return {"user_id": user_id}
 
         def runner(agent, message, thread_id, request_id):
@@ -156,6 +158,7 @@ class AgentRuntimeTest(unittest.TestCase):
             skill_registry,
             checkpointer,
             confirmation_store,
+            knowledge_search,
         ):
             return {"user_id": user_id}
 

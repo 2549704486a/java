@@ -4,6 +4,18 @@ import os
 from dataclasses import dataclass
 
 
+def env_bool(name: str, default: bool = False) -> bool:
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return default
+    normalized = raw_value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError(f"{name} 只能填写 true 或 false")
+
+
 @dataclass(frozen=True)
 class Settings:
     business_api_base_url: str = "http://127.0.0.1:8088"
@@ -20,6 +32,9 @@ class Settings:
     rag_chunk_overlap: int = 60
     rag_index_dir: str = "knowledge/index"
     rag_collection_name: str = "incentive-business-rules"
+    rag_enabled: bool = False
+    rag_relevance_threshold: float = 0.35
+    rag_top_k: int = 3
     agent_host: str = "127.0.0.1"
     agent_port: int = 8090
     agent_cache_size: int = 128
@@ -70,6 +85,11 @@ class Settings:
             rag_collection_name=os.getenv(
                 "RAG_COLLECTION_NAME", "incentive-business-rules"
             ).strip(),
+            rag_enabled=env_bool("RAG_ENABLED", False),
+            rag_relevance_threshold=float(
+                os.getenv("RAG_RELEVANCE_THRESHOLD", "0.35")
+            ),
+            rag_top_k=int(os.getenv("RAG_TOP_K", "3")),
             agent_host=os.getenv("AGENT_HOST", "127.0.0.1"),
             agent_port=int(os.getenv("AGENT_PORT", "8090")),
             agent_cache_size=int(os.getenv("AGENT_CACHE_SIZE", "128")),

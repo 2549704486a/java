@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from chromadb.api import ClientAPI
+from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -101,7 +102,7 @@ class KnowledgeChunker:
 
 
 class KnowledgeIndexBuilder:
-    """构建本地 Chroma 集合；同名集合每次先清空再完整重建。"""
+    """先构建临时集合，成功后再替换正式集合。"""
 
     def __init__(self, chunker: KnowledgeChunker) -> None:
         self.chunker = chunker
@@ -123,31 +124,46 @@ class KnowledgeIndexBuilder:
         chunks = self.chunker.split(snapshot)
         ids = [str(chunk.metadata["chunk_id"]) for chunk in chunks]
 
-        # 删除的是当前命名集合，不删除目录中的其他集合或用户文件。
+        staging_collection = f"{normalized_collection}__staging"
         store_options = {
             "collection_name": normalized_collection,
             "embedding_function": embeddings,
         }
+        staging_store_options = {
+            "collection_name": staging_collection,
+            "embedding_function": embeddings,
+        }
         document_store_options = {
-            "collection_name": normalized_collection,
+            "collection_name": staging_collection,
             "embedding": embeddings,
         }
         if client is None:
             store_options["persist_directory"] = str(resolved_index_dir)
+            staging_store_options["persist_directory"] = str(resolved_index_dir)
             document_store_options["persist_directory"] = str(resolved_index_dir)
         else:
             store_options["client"] = client
+            staging_store_options["client"] = client
             document_store_options["client"] = client
 
-        existing = Chroma(
-            **store_options,
-        )
+        existing = Chroma(**store_options)
+        stale_staging = Chroma(**staging_store_options)
+        stale_staging.delete_collection()
+        try:
+            vector_store = Chroma.from_documents(
+                documents=list(chunks),
+                ids=ids,
+                **document_store_options,
+            )
+        except Exception:
+            # 外部向量化失败时只清理临时集合，正式集合仍可继续提供检索。
+            failed_staging = Chroma(**staging_store_options)
+            failed_staging.delete_collection()
+            raise
+
+        # 临时集合完整写入后才切换名称，避免半成品覆盖当前可用索引。
         existing.delete_collection()
-        vector_store = Chroma.from_documents(
-            documents=list(chunks),
-            ids=ids,
-            **document_store_options,
-        )
+        vector_store._collection.modify(name=normalized_collection)
         report = KnowledgeIndexReport(
             catalog_version=snapshot.version,
             document_count=len(snapshot.documents),
@@ -183,6 +199,7 @@ def build_openai_embeddings(settings: Settings) -> OpenAIEmbeddings:
 
 
 def main() -> None:
+    load_dotenv(dotenv_path=AGENT_SERVICE_ROOT / ".env")
     parser = argparse.ArgumentParser(description="构建本地 RAG 向量索引")
     parser.add_argument(
         "command",

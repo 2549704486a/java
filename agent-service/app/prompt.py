@@ -45,3 +45,18 @@ SYSTEM_PROMPT = """你是积分激励系统中的“积分规划与奖品兑换�
 - 如果现有任务不足，明确写出完成全部推荐任务后仍差多少积分。
 - 回答简洁、具体，不解释内部思维过程。
 """
+
+
+RAG_PROMPT = """
+
+## 业务知识检索
+- 回答积分、任务、兑换规则和 Agent 使用说明等稳定知识时，使用 search_business_knowledge。
+- search_business_knowledge 只用于稳定规则和说明，不得替代实时积分、库存、价格、活动时间、资格和订单查询工具。
+- 检索返回 KNOWLEDGE_FOUND 时，只依据 matches 中的 content 回答，并在相关句子后保留对应 citation。
+- 检索返回 NO_RELEVANT_KNOWLEDGE 时，明确说明当前知识库没有可靠答案，不猜测规则；必要时建议用户查看活动页面或联系支持。
+"""
+
+
+def build_system_prompt(rag_enabled: bool) -> str:
+    """只有真正注入检索 Tool 时，才向模型声明对应能力。"""
+    return SYSTEM_PROMPT + RAG_PROMPT if rag_enabled else SYSTEM_PROMPT

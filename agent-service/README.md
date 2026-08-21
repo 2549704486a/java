@@ -217,7 +217,9 @@ $outputPrice = [double](Read-Host "每百万输出 Token 的美元单价")
 .\.venv\Scripts\python.exe -m app.knowledge_index build
 ```
 
-校验器会检查清单契约、重复 ID、目录穿越、YAML Front Matter、固定章节和项目内来源；索引器会保留章节与来源元数据，并完整重建指定集合。详细设计见 `docs/agent-design/26_RAG知识源治理与Tool边界.md` 和 `27_RAG文档切分与本地向量索引.md`。
+建库成功后再设置 `RAG_ENABLED=true` 并重启 Agent。Runtime 会校验索引非空，然后按需注册只读 `search_business_knowledge` Tool；低相关查询返回无答案，不会让模型猜测规则。聊天兼容接口不一定提供 Embedding，请以服务商实际模型能力为准。
+
+校验器会检查清单契约、重复 ID、目录穿越、YAML Front Matter、固定章节和项目内来源；索引器会保留章节与来源元数据，并通过临时集合保护当前正式索引。详细设计见 `docs/agent-design/26_RAG知识源治理与Tool边界.md`、`27_RAG文档切分与本地向量索引.md` 和 `28_RAG只读检索与来源引用.md`。
 
 ## 9. 日志与耗时
 

@@ -15,6 +15,7 @@ from app.agent import append_agent_turn, build_agent, run_agent
 from app.api_client import BusinessApiClient
 from app.confirmation_store import ConfirmationStore, ConfirmationStoreBackend
 from app.config import Settings
+from app.knowledge_search import KnowledgeSearchService, open_knowledge_search
 from app.models import PendingExchangeData, ToolEnvelope
 from app.redis_confirmation_store import RedisConfirmationStore
 from app.skills.controlled_exchange import (
@@ -27,7 +28,15 @@ from app.trace import capture_tool_trace, execute_traced
 
 logger = logging.getLogger(__name__)
 AgentBuilder = Callable[
-    [Settings, BusinessApiClient, int, SkillRegistry, Any, ConfirmationStoreBackend],
+    [
+        Settings,
+        BusinessApiClient,
+        int,
+        SkillRegistry,
+        Any,
+        ConfirmationStoreBackend,
+        KnowledgeSearchService | None,
+    ],
     Any,
 ]
 AgentRunner = Callable[[Any, str, str, str | None], str]
@@ -51,6 +60,7 @@ class AgentRuntime:
         agent_builder: AgentBuilder = build_agent,
         agent_runner: AgentRunner = run_agent,
         confirmation_store: ConfirmationStoreBackend | None = None,
+        knowledge_search: KnowledgeSearchService | None = None,
     ) -> None:
         settings.require_llm_api_key()
         self.settings = settings
@@ -65,6 +75,11 @@ class AgentRuntime:
         self.confirmation_store = confirmation_store or build_confirmation_store(
             settings
         )
+        self.knowledge_search = knowledge_search
+        self._owns_knowledge_search = False
+        if self.knowledge_search is None and settings.rag_enabled:
+            self.knowledge_search = open_knowledge_search(settings)
+            self._owns_knowledge_search = True
         self._controlled_exchange = ControlledExchangeSkill(
             self.client,
             self.confirmation_store,
@@ -155,6 +170,7 @@ class AgentRuntime:
             "session_cache_size": self._session_cache_size,
             "skills": self.skill_registry.trace_metadata(),
             "exchange_confirmations": self.confirmation_store.stats(),
+            "rag_enabled": self.knowledge_search is not None,
         }
 
     def close(self) -> None:
@@ -163,6 +179,8 @@ class AgentRuntime:
             self._sessions.clear()
         # Redis Store 是多实例共享资源，停机只能关闭连接，不能清空业务状态。
         self.confirmation_store.close()
+        if self._owns_knowledge_search and self.knowledge_search is not None:
+            self.knowledge_search.close()
         if self._owns_client:
             self.client.close()
 
@@ -181,6 +199,7 @@ class AgentRuntime:
                 self.skill_registry,
                 self.checkpointer,
                 self.confirmation_store,
+                self.knowledge_search,
             )
             self._agents[user_id] = agent
             logger.info("agent_cache_miss user_id=%s", user_id)

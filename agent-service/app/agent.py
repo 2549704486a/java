@@ -11,7 +11,8 @@ from app.api_client import BusinessApiClient
 from app.confirmation_store import ConfirmationStoreBackend
 from app.config import Settings
 from app.execution_context import bind_execution_context
-from app.prompt import SYSTEM_PROMPT
+from app.knowledge_search import KnowledgeSearchService
+from app.prompt import build_system_prompt
 from app.skills.registry import SkillRegistry
 from app.tools import build_tools
 from app.trace import capture_tool_trace
@@ -27,6 +28,7 @@ def build_agent(
     skill_registry: SkillRegistry | None = None,
     checkpointer=None,
     confirmation_store: ConfirmationStoreBackend | None = None,
+    knowledge_search: KnowledgeSearchService | None = None,
 ):
     registry = skill_registry or SkillRegistry()
     model = ChatOpenAI(
@@ -39,8 +41,14 @@ def build_agent(
     )
     return create_agent(
         model=model,
-        tools=build_tools(client, user_id, registry, confirmation_store),
-        system_prompt=SYSTEM_PROMPT,
+        tools=build_tools(
+            client,
+            user_id,
+            registry,
+            confirmation_store,
+            knowledge_search,
+        ),
+        system_prompt=build_system_prompt(knowledge_search is not None),
         checkpointer=checkpointer,
     )
 

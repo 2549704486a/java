@@ -44,7 +44,7 @@ manifest.json
 
 ## 3. 可重复建库
 
-`KnowledgeIndexBuilder` 每次构建时只删除指定的同名集合，再完整写入当前 active 文档，不会删除目录中的其他集合和用户文件。这样可以避免新旧 Chunk 混在同一集合中，同时保留不同集合并存的能力。
+`KnowledgeIndexBuilder` 先把当前 active 文档完整写入临时集合，全部成功后才替换指定的正式集合，不会删除目录中的其他集合和用户文件。这样既能避免新旧 Chunk 混在一起，也能保证外部向量化失败时继续保留上一版可用索引。
 
 本地索引目录默认为 `agent-service/knowledge/index/`，它属于可重新生成的派生产物，已加入 `.gitignore`，不提交到 Git。
 

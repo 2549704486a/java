@@ -10,6 +10,7 @@ from langchain.tools import tool
 from app.api_client import BusinessApiClient, BusinessApiError
 from app.confirmation_store import ConfirmationStore, ConfirmationStoreBackend
 from app.execution_context import current_thread_id
+from app.knowledge_search import KnowledgeSearchError, KnowledgeSearchService
 from app.skills.award_recommendation import AwardRecommendationSkill
 from app.skills.controlled_exchange import ControlledExchangeSkill
 from app.skills.points_plan import PointsPlanningSkill
@@ -47,11 +48,21 @@ class RecommendAwardsInput(BaseModel):
     )
 
 
+class KnowledgeSearchInput(BaseModel):
+    query: str = Field(
+        min_length=2,
+        max_length=300,
+        description="需要查询的稳定业务规则或操作说明，保留用户问题中的关键语义",
+    )
+    limit: int = Field(default=3, ge=1, le=5, description="最多返回的知识片段数")
+
+
 def build_tools(
     client: BusinessApiClient,
     user_id: int,
     skill_registry: SkillRegistry | None = None,
     confirmation_store: ConfirmationStoreBackend | None = None,
+    knowledge_search: KnowledgeSearchService | None = None,
 ):
     registry = skill_registry or SkillRegistry()
     points_manifest = registry.require_manifest("points-planning")
@@ -233,7 +244,7 @@ def build_tools(
 
         return execute_traced("cancel_exchange", {}, execute)
 
-    return [
+    available_tools = [
         get_user_points,
         list_available_tasks,
         get_award_detail,
@@ -244,3 +255,27 @@ def build_tools(
         prepare_exchange,
         cancel_exchange,
     ]
+    if knowledge_search is not None:
+        @tool(args_schema=KnowledgeSearchInput)
+        def search_business_knowledge(query: str, limit: int = 3) -> dict:
+            """查询稳定的积分、任务、兑换规则和 Agent 使用说明。不得用于查询实时积分、库存、活动时间、资格或订单状态。"""
+            # 用户问题可能包含隐私，轨迹只保留长度和数量，不复制查询正文。
+            arguments = {"query_chars": len(query), "limit": limit}
+
+            def execute() -> dict:
+                try:
+                    return knowledge_search.search(query, limit).as_dict()
+                except KnowledgeSearchError:
+                    logger.warning("knowledge_search_unavailable", exc_info=True)
+                    return {
+                        "success": False,
+                        "code": "KNOWLEDGE_SEARCH_FAILED",
+                        "data": None,
+                        "message": "业务知识检索暂时不可用",
+                        "retryable": True,
+                    }
+
+            return execute_traced("search_business_knowledge", arguments, execute)
+
+        available_tools.append(search_business_knowledge)
+    return available_tools
