@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
+import statistics
 import time
 from collections import Counter, defaultdict
 from datetime import datetime
@@ -25,7 +27,21 @@ from evals.fixtures import FixtureBusinessApiClient
 
 
 ROOT = Path(__file__).resolve().parent
-CASES_PATH = ROOT / "cases.json"
+TUNING_CASES_PATH = ROOT / "cases.json"
+BLIND_CASES_PATH = ROOT / "blind_cases.json"
+# Keep the old constant for offline result files created before dataset isolation.
+CASES_PATH = TUNING_CASES_PATH
+DATASET_PATHS = {
+    "tuning": TUNING_CASES_PATH,
+    "blind": BLIND_CASES_PATH,
+}
+
+
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("必须是大于 0 的整数")
+    return parsed
 
 
 def parse_args() -> argparse.Namespace:
@@ -36,14 +52,31 @@ def parse_args() -> argparse.Namespace:
         default="fixture",
         help="选择固定场景、真实 Java 服务或全部用例",
     )
+    parser.add_argument(
+        "--dataset",
+        choices=tuple(DATASET_PATHS),
+        default="tuning",
+        help="tuning 为公开调优/回归集，blind 为冻结盲测集",
+    )
+    parser.add_argument(
+        "--repeat",
+        type=positive_int,
+        default=1,
+        help="每个用例重复运行次数；关键用例建议至少 3 次",
+    )
     parser.add_argument("--ids", help="只运行指定编号，多个编号使用逗号分隔")
     parser.add_argument("--user-id", type=int, default=10)
     parser.add_argument("--output", help="指定结果 JSON 路径")
     return parser.parse_args()
 
 
-def load_cases(suite: str, ids: set[str] | None) -> list[dict[str, Any]]:
-    cases = json.loads(CASES_PATH.read_text(encoding="utf-8"))
+def load_cases(
+    suite: str,
+    ids: set[str] | None,
+    dataset: str = "tuning",
+) -> list[dict[str, Any]]:
+    cases_path = DATASET_PATHS[dataset]
+    cases = json.loads(cases_path.read_text(encoding="utf-8"))
     if suite != "all":
         cases = [case for case in cases if case["source"] == suite]
     if ids:
@@ -205,6 +238,7 @@ def run_one(
     case: dict[str, Any],
     user_id: int,
     skill_registry: SkillRegistry,
+    attempt: int = 1,
 ) -> dict[str, Any]:
     fixture_client: FixtureBusinessApiClient | None = None
     live_client: BusinessApiClient | None = None
@@ -232,10 +266,10 @@ def run_one(
             system_prompt=SYSTEM_PROMPT,
         )
         started = time.perf_counter()
-        thread_id = f"eval:{case['id']}:user:{user_id}"
-        with capture_tool_trace(f"eval:{case['id']}") as trace_session, bind_execution_context(
-            thread_id
-        ):
+        thread_id = f"eval:{case['id']}:attempt:{attempt}:user:{user_id}"
+        with capture_tool_trace(
+            f"eval:{case['id']}:attempt:{attempt}"
+        ) as trace_session, bind_execution_context(thread_id):
             result = agent.invoke(
                 {"messages": [{"role": "user", "content": case["question"]}]},
                 config={"recursion_limit": 12},
@@ -265,6 +299,7 @@ def run_one(
         )
         return {
             "id": case["id"],
+            "attempt": attempt,
             "category": case["category"],
             "source": case["source"],
             "fixture": case.get("fixture"),
@@ -282,6 +317,7 @@ def run_one(
     except Exception as exc:
         return {
             "id": case["id"],
+            "attempt": attempt,
             "category": case["category"],
             "source": case["source"],
             "fixture": case.get("fixture"),
@@ -294,10 +330,91 @@ def run_one(
             live_client.close()
 
 
+def percentile(values: list[float], percentile_value: float) -> float:
+    if not values:
+        return 0
+    ordered = sorted(values)
+    rank = max(1, math.ceil(percentile_value * len(ordered)))
+    return ordered[rank - 1]
+
+
+def summarize_stability(results: list[dict[str, Any]]) -> dict[str, Any]:
+    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for result in results:
+        grouped[result["id"]].append(result)
+
+    cases: dict[str, dict[str, Any]] = {}
+    stable_passed = 0
+    flaky = 0
+    stable_failed = 0
+    single_passed = 0
+    single_failed = 0
+    for case_id, attempts in grouped.items():
+        passed = sum(bool(item["evaluation"]["passed"]) for item in attempts)
+        total = len(attempts)
+        if total == 1 and passed == 1:
+            status = "single_pass"
+            single_passed += 1
+        elif total == 1:
+            status = "single_fail"
+            single_failed += 1
+        elif passed == total:
+            status = "stable_pass"
+            stable_passed += 1
+        elif passed == 0:
+            status = "stable_fail"
+            stable_failed += 1
+        else:
+            status = "flaky"
+            flaky += 1
+        elapsed_values = [
+            float(item["elapsed_ms"])
+            for item in attempts
+            if isinstance(item.get("elapsed_ms"), (int, float))
+        ]
+        cases[case_id] = {
+            "attempts": total,
+            "passed": passed,
+            "pass_rate": round(passed / total, 4),
+            "status": status,
+            "average_elapsed_ms": round(statistics.mean(elapsed_values), 2)
+            if elapsed_values
+            else 0,
+            "p95_elapsed_ms": round(percentile(elapsed_values, 0.95), 2),
+            "elapsed_stddev_ms": round(statistics.pstdev(elapsed_values), 2)
+            if len(elapsed_values) > 1
+            else 0,
+        }
+
+    return {
+        "repeat_count": max((len(items) for items in grouped.values()), default=0),
+        "case_count": len(grouped),
+        "attempt_count": len(results),
+        "attempt_pass_rate": round(
+            sum(bool(result["evaluation"]["passed"]) for result in results)
+            / len(results),
+            4,
+        )
+        if results
+        else 0,
+        "single_passed_cases": single_passed,
+        "single_failed_cases": single_failed,
+        "stable_passed_cases": stable_passed,
+        "flaky_cases": flaky,
+        "stable_failed_cases": stable_failed,
+        "cases": cases,
+    }
+
+
 def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
     category_results: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for result in results:
         category_results[result["category"]].append(result)
+    elapsed_values = [
+        float(result["elapsed_ms"])
+        for result in results
+        if isinstance(result.get("elapsed_ms"), (int, float))
+    ]
 
     checks: Counter[str] = Counter()
     check_totals: Counter[str] = Counter()
@@ -342,12 +459,32 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
             for name, total in check_totals.items()
         },
         "tool_metrics": tool_metrics,
-        "average_elapsed_ms": round(
-            sum(result.get("elapsed_ms", 0) for result in results) / len(results),
-            2,
-        )
-        if results
+        "average_elapsed_ms": round(statistics.mean(elapsed_values), 2)
+        if elapsed_values
         else 0,
+        "p95_elapsed_ms": round(
+            percentile(elapsed_values, 0.95),
+            2,
+        ),
+        "stability": summarize_stability(results),
+    }
+
+
+def redact_blind_result(result: dict[str, Any]) -> dict[str, Any]:
+    """Keep release-gate evidence without leaking blind prompts or answers."""
+    evaluation = result.get("evaluation", {})
+    return {
+        "id": result["id"],
+        "attempt": result.get("attempt", 1),
+        "category": result["category"],
+        "source": result["source"],
+        "elapsed_ms": result.get("elapsed_ms"),
+        "usage": result.get("usage", {}),
+        "error_type": result.get("error", "").partition(":")[0] or None,
+        "evaluation": {
+            "passed": bool(evaluation.get("passed", False)),
+            "checks": evaluation.get("checks", {}),
+        },
     }
 
 
@@ -355,7 +492,7 @@ def main() -> None:
     load_dotenv()
     args = parse_args()
     ids = {item.strip() for item in args.ids.split(",")} if args.ids else None
-    cases = load_cases(args.suite, ids)
+    cases = load_cases(args.suite, ids, args.dataset)
     if not cases:
         raise SystemExit("没有匹配的评测用例")
 
@@ -363,33 +500,58 @@ def main() -> None:
     skill_registry = SkillRegistry()
     model = build_model(settings)
     print(
-        f"开始评测 model={settings.llm_model} suite={args.suite} cases={len(cases)}",
+        f"开始评测 model={settings.llm_model} dataset={args.dataset} "
+        f"suite={args.suite} cases={len(cases)} repeat={args.repeat}",
         flush=True,
     )
     results = []
-    for index, case in enumerate(cases, start=1):
-        print(f"[{index}/{len(cases)}] {case['id']} {case['question']}", flush=True)
-        result = run_one(model, settings, case, args.user_id, skill_registry)
-        results.append(result)
-        status = "PASS" if result["evaluation"]["passed"] else "FAIL"
-        print(
-            f"  {status} elapsed_ms={result.get('elapsed_ms', 0)} "
-            f"tools={[call['name'] for call in result.get('tool_calls', [])]}",
-            flush=True,
-        )
+    total_runs = len(cases) * args.repeat
+    completed = 0
+    for attempt in range(1, args.repeat + 1):
+        print(f"第 {attempt}/{args.repeat} 轮", flush=True)
+        for case in cases:
+            completed += 1
+            label = case["id"]
+            if args.dataset == "tuning":
+                label = f"{label} {case['question']}"
+            print(f"[{completed}/{total_runs}] {label}", flush=True)
+            result = run_one(
+                model,
+                settings,
+                case,
+                args.user_id,
+                skill_registry,
+                attempt,
+            )
+            results.append(result)
+            status = "PASS" if result["evaluation"]["passed"] else "FAIL"
+            detail = ""
+            if args.dataset == "tuning":
+                detail = (
+                    " tools="
+                    f"{[call['name'] for call in result.get('tool_calls', [])]}"
+                )
+            print(
+                f"  {status} elapsed_ms={result.get('elapsed_ms', 0)}{detail}",
+                flush=True,
+            )
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_path = (
         Path(args.output)
         if args.output
-        else ROOT / "results" / f"baseline_{args.suite}_{timestamp}.json"
+        else ROOT
+        / "results"
+        / f"baseline_{args.dataset}_{args.suite}_{timestamp}.json"
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "metadata": {
             "created_at": datetime.now().isoformat(timespec="seconds"),
             "model": settings.llm_model,
+            "dataset": args.dataset,
             "suite": args.suite,
+            "repeat": args.repeat,
             "user_id": args.user_id,
             "temperature": 0,
             "system_prompt_sha256": hashlib.sha256(
@@ -397,9 +559,17 @@ def main() -> None:
             ).hexdigest(),
             "skills": skill_registry.trace_metadata(),
             "case_ids": [case["id"] for case in cases],
+            "case_set_sha256": hashlib.sha256(
+                DATASET_PATHS[args.dataset].read_bytes()
+            ).hexdigest(),
+            "blind_details_redacted": args.dataset == "blind",
         },
         "summary": summarize(results),
-        "results": results,
+        "results": (
+            [redact_blind_result(result) for result in results]
+            if args.dataset == "blind"
+            else results
+        ),
     }
     output_path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"

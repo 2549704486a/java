@@ -6,13 +6,19 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from evals.runner import CASES_PATH, evaluate_case, summarize
+from evals.runner import DATASET_PATHS, evaluate_case, summarize
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="使用最新规则离线重评已有结果")
     parser.add_argument("--input", nargs="+", required=True, help="一个或多个结果 JSON")
     parser.add_argument("--output", required=True, help="重评分结果 JSON")
+    parser.add_argument(
+        "--dataset",
+        choices=tuple(DATASET_PATHS),
+        default="tuning",
+        help="选择原始结果所属的用例集",
+    )
     return parser.parse_args()
 
 
@@ -20,13 +26,17 @@ def main() -> None:
     args = parse_args()
     cases = {
         case["id"]: case
-        for case in json.loads(CASES_PATH.read_text(encoding="utf-8"))
+        for case in json.loads(
+            DATASET_PATHS[args.dataset].read_text(encoding="utf-8")
+        )
     }
     results: list[dict[str, Any]] = []
     source_files = []
     for input_name in args.input:
         input_path = Path(input_name)
         payload = json.loads(input_path.read_text(encoding="utf-8"))
+        if payload.get("metadata", {}).get("blind_details_redacted"):
+            raise SystemExit("盲测结果默认已脱敏，缺少回答和轨迹，不能离线重评分")
         source_files.append(str(input_path))
         for result in payload["results"]:
             case = cases[result["id"]]
@@ -44,6 +54,7 @@ def main() -> None:
         "metadata": {
             "rescored_at": datetime.now().isoformat(timespec="seconds"),
             "source_files": source_files,
+            "dataset": args.dataset,
             "case_ids": [result["id"] for result in results],
         },
         "summary": summarize(results),
@@ -58,4 +69,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import unittest
 
-from evals.runner import evaluate_case
+from evals.runner import (
+    evaluate_case,
+    load_cases,
+    redact_blind_result,
+    summarize,
+)
 
 
 class EvalRunnerTest(unittest.TestCase):
@@ -83,6 +88,82 @@ class EvalRunnerTest(unittest.TestCase):
             ["get_user_points"],
             evaluation["details"]["tool_execution_failures"],
         )
+
+    def test_tuning_and_blind_cases_are_physically_separated(self):
+        tuning_ids = {case["id"] for case in load_cases("fixture", None, "tuning")}
+        blind_ids = {case["id"] for case in load_cases("fixture", None, "blind")}
+
+        self.assertTrue(tuning_ids)
+        self.assertTrue(blind_ids)
+        self.assertTrue(tuning_ids.isdisjoint(blind_ids))
+
+    def test_repeated_results_report_flaky_case_and_latency_variation(self):
+        results = [
+            self._result("B01", 1, True, 10),
+            self._result("B01", 2, False, 20),
+            self._result("B01", 3, True, 30),
+            self._result("B02", 1, True, 15),
+            self._result("B02", 2, True, 15),
+            self._result("B02", 3, True, 15),
+        ]
+
+        summary = summarize(results)
+        stability = summary["stability"]
+
+        self.assertEqual(1, stability["flaky_cases"])
+        self.assertEqual(1, stability["stable_passed_cases"])
+        self.assertEqual("flaky", stability["cases"]["B01"]["status"])
+        self.assertEqual(0.6667, stability["cases"]["B01"]["pass_rate"])
+        self.assertEqual(30, stability["cases"]["B01"]["p95_elapsed_ms"])
+        self.assertGreater(stability["cases"]["B01"]["elapsed_stddev_ms"], 0)
+
+    def test_single_run_is_not_misreported_as_stable(self):
+        stability = summarize([self._result("B01", 1, True, 10)])["stability"]
+
+        self.assertEqual("single_pass", stability["cases"]["B01"]["status"])
+        self.assertEqual(1, stability["single_passed_cases"])
+        self.assertEqual(0, stability["stable_passed_cases"])
+
+    def test_blind_result_redaction_removes_prompt_answer_and_trace(self):
+        result = self._result("B01", 1, True, 10)
+        result.update(
+            {
+                "question": "隐藏问题",
+                "response": "隐藏回答",
+                "trace": [{"content": "隐藏轨迹"}],
+                "tool_calls": [{"name": "get_user_points", "args": {}}],
+            }
+        )
+
+        redacted = redact_blind_result(result)
+
+        self.assertNotIn("question", redacted)
+        self.assertNotIn("response", redacted)
+        self.assertNotIn("trace", redacted)
+        self.assertNotIn("tool_calls", redacted)
+        self.assertEqual({"tool_selection": True}, redacted["evaluation"]["checks"])
+
+    @staticmethod
+    def _result(
+        case_id: str,
+        attempt: int,
+        passed: bool,
+        elapsed_ms: float,
+    ) -> dict:
+        return {
+            "id": case_id,
+            "attempt": attempt,
+            "category": "测试分类",
+            "source": "fixture",
+            "elapsed_ms": elapsed_ms,
+            "usage": {},
+            "tool_execution_trace": [],
+            "evaluation": {
+                "passed": passed,
+                "checks": {"tool_selection": passed},
+                "details": {},
+            },
+        }
 
 
 if __name__ == "__main__":

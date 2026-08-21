@@ -175,6 +175,15 @@ Remove-Item Env:RUN_REDIS_INTEGRATION_TESTS
 .\.venv\Scripts\python.exe -m evals.multiturn_runner
 ```
 
+公开调优集用于日常回归；冻结盲测集只在阶段验收时运行。关键用例应重复至少 3 次，汇总会输出逐用例通过率、稳定/波动状态、耗时 P95 和标准差：
+
+```powershell
+.\.venv\Scripts\python.exe -m evals.runner --dataset tuning --suite fixture --repeat 3
+.\.venv\Scripts\python.exe -m evals.runner --dataset blind --suite fixture --repeat 3
+```
+
+盲测结果默认脱敏，不保存问题、回答、期望内容和完整轨迹，不能用于离线重评分。具体治理规则见 `docs/agent-design/24_评测集隔离与重复试验.md`。
+
 结果保存在 `evals/results/`，包含最终回答、模型声明调用、实际 Tool 执行轨迹、参数、结果码、Tool 耗时、后端路径和消息轨迹。汇总区会按 Tool 统计调用次数、执行失败数、平均耗时和最大耗时。修改评分规则后可以对同一模型输出离线重评，避免反复调用模型碰结果：
 
 ```powershell
