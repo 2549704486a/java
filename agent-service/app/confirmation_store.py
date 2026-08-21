@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from enum import Enum
+from typing import Protocol
 
 
 class ConfirmationStatus(str, Enum):
@@ -43,6 +44,40 @@ class ClaimResult:
     @property
     def claimed(self) -> bool:
         return self.record is not None
+
+
+class ConfirmationStoreBackend(Protocol):
+    """确认凭证存储契约；内存和 Redis 实现必须保持相同的业务语义。"""
+
+    def create(self, **kwargs) -> ConfirmationRecord: ...
+
+    def claim(self, confirmation_id: str, **kwargs) -> ClaimResult: ...
+
+    def finish(
+        self,
+        confirmation_id: str,
+        status: ConfirmationStatus,
+        result_code: str,
+    ) -> ConfirmationRecord | None: ...
+
+    def cancel_pending(self, *, user_id: int, session_id: str) -> int: ...
+
+    def cancel_pending_by_session(self, session_id: str) -> int: ...
+
+    def snapshot(self, confirmation_id: str) -> ConfirmationRecord | None: ...
+
+    def pending_for(
+        self,
+        *,
+        user_id: int,
+        session_id: str,
+    ) -> ConfirmationRecord | None: ...
+
+    def stats(self) -> dict[str, int]: ...
+
+    def clear(self) -> None: ...
+
+    def close(self) -> None: ...
 
 
 class ConfirmationStore:
@@ -212,6 +247,10 @@ class ConfirmationStore:
     def clear(self) -> None:
         with self._lock:
             self._records.clear()
+
+    def close(self) -> None:
+        """内存实现由当前进程独占，关闭时可以直接释放全部记录。"""
+        self.clear()
 
     def _cancel_pending_locked(self, user_id: int, session_id: str) -> int:
         cancelled = 0

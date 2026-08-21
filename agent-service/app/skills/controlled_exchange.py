@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import ValidationError
 
 from app.api_client import BusinessApiClient, BusinessApiError
-from app.confirmation_store import ConfirmationStatus, ConfirmationStore
+from app.confirmation_store import ConfirmationStatus, ConfirmationStoreBackend
 from app.models import (
     AwardData,
     EligibilityData,
@@ -54,7 +54,7 @@ class ControlledExchangeSkill:
     def __init__(
         self,
         client: BusinessApiClient,
-        confirmation_store: ConfirmationStore,
+        confirmation_store: ConfirmationStoreBackend,
     ) -> None:
         self.client = client
         self.confirmation_store = confirmation_store

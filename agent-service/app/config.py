@@ -19,6 +19,10 @@ class Settings:
     agent_session_cache_size: int = 1024
     exchange_confirmation_ttl_seconds: int = 120
     exchange_confirmation_capacity: int = 10_000
+    exchange_confirmation_store: str = "memory"
+    exchange_confirmation_redis_url: str = "redis://127.0.0.1:6379/0"
+    exchange_confirmation_redis_prefix: str = "agent:exchange:confirmation"
+    exchange_confirmation_retention_seconds: int = 3600
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -47,6 +51,19 @@ class Settings:
             ),
             exchange_confirmation_capacity=int(
                 os.getenv("EXCHANGE_CONFIRMATION_CAPACITY", "10000")
+            ),
+            exchange_confirmation_store=os.getenv(
+                "EXCHANGE_CONFIRMATION_STORE", "redis"
+            ).strip().lower(),
+            exchange_confirmation_redis_url=os.getenv(
+                "EXCHANGE_CONFIRMATION_REDIS_URL", "redis://127.0.0.1:6379/0"
+            ).strip(),
+            exchange_confirmation_redis_prefix=os.getenv(
+                "EXCHANGE_CONFIRMATION_REDIS_PREFIX",
+                "agent:exchange:confirmation",
+            ).strip(),
+            exchange_confirmation_retention_seconds=int(
+                os.getenv("EXCHANGE_CONFIRMATION_RETENTION_SECONDS", "3600")
             ),
         )
 

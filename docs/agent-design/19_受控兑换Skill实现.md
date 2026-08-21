@@ -25,7 +25,8 @@
 
 | 位置 | 作用 |
 | --- | --- |
-| `app/confirmation_store.py` | 保存确认摘要和凭证，处理 TTL、取消、身份绑定及原子占用 |
+| `app/confirmation_store.py` | 定义统一存储契约，并提供供单元测试使用的内存实现 |
+| `app/redis_confirmation_store.py` | 使用 Redis 和 Lua 保存共享凭证并完成跨实例原子状态迁移 |
 | `app/skills/controlled_exchange.py` | 编排准备、确认和取消；用保守短语白名单识别明确动作 |
 | `app/runtime.py` | 有待确认记录时确定性路由确认或取消，不让模型猜测高风险授权 |
 | `app/tools.py` | 向模型暴露 prepare/cancel，移除 prepare 结果中的一次性凭证 |
@@ -34,7 +35,7 @@
 | `app/api_client.py` | 单次发送兑换 POST；超时、断连、5xx 和格式异常均不自动重试 |
 | `AgentCommandController.java` | 将稳定 Agent POST 契约映射到原有旧事务消息链路 |
 
-`Idempotency-Key` 由确认凭证生成并随 POST 发送。Java 端现在会先写入 `agent_exchange_request` 占位，再调用旧链路；同键同参数会重放已持久化响应，同键异参会明确冲突，异常和过期执行会进入未知状态且不自动重放。详细实现见 `21_Java兑换请求持久化幂等.md`。Python 确认记录仍需迁移到 Redis，才能支持多 Agent 实例共享。
+`Idempotency-Key` 由确认凭证生成并随 POST 发送。Java 端会先写入 `agent_exchange_request` 占位，再调用旧链路；同键同参数会重放已持久化响应，同键异参会明确冲突，异常和过期执行会进入未知状态且不自动重放。Python 确认记录已迁移到 Redis，使用 Lua 保证多 Agent 实例之间最多只有一个实例能将凭证从 `PREPARED` 改为 `EXECUTING`。两层实现分别见 `21_Java兑换请求持久化幂等.md` 和 `22_Redis确认凭证共享存储.md`。
 
 ## 3. 状态语义
 
@@ -70,11 +71,11 @@
 
 ## 5. 验证证据与边界
 
-- Python 确定性测试 `47/47` 通过，覆盖 TTL、身份/会话绑定、凭证隐藏、确定性确认路由、重复/并发确认、未知结果和 HTTP 契约。
+- Python 全量测试 `54/54` 通过，其中 Redis 专项测试使用两个独立客户端验证配置接入、共享可见和跨实例原子消费。
 - Java `mvn test` 通过，新增 `RDSBinlogTest` 直接验证积分写入 `user:currency:7`。
 - React TypeScript 校验与 Vite 生产构建通过。
 - 模型完整回归 `23/25`，安全检查 `25/25`；受控兑换定向复验 `2/2`。两个剩余失败分别是拒绝措辞评分和多调用一次资格查询，不属于越权写入。
 - 只接入旧事务消息链路，没有恢复或引入 Redis 预扣新链路。
-- 确认状态仍是单进程内存数据，服务重启即失效；这符合安全默认，但不支持多实例共享。
+- HTTP 服务默认使用 Redis 共享确认状态；内存实现仅用于显式配置和快速单元测试。Redis 不可用时启动失败，不静默降级为单进程状态。
 - Java 写入口已具备持久化请求级幂等；它与消费侧业务幂等分层，重复 HTTP 请求不会再次调用旧兑换链路。
 - 本地演示身份来自前端用户 ID；生产系统必须改为由登录态或网关注入可信身份。

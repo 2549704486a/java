@@ -15,6 +15,38 @@
 
 ## 2. 状态机
 
+```mermaid
+flowchart TD
+    A[收到兑换请求] --> B{校验 Idempotency-Key}
+    B --> B1[校验失败 返回 INVALID_IDEMPOTENCY_KEY]
+    B --> C[校验通过 计算 userId 和 awardId 请求指纹]
+    C --> D{查询幂等记录}
+
+    D --> E[记录不存在 插入 EXECUTING 占位]
+    D --> G[记录已存在 读取历史记录]
+    E --> F{是否成功占位}
+    F --> H[占位成功 调用旧兑换链路]
+    F --> G[唯一键竞争失败 读取胜出记录]
+
+    G --> I{校验请求指纹}
+    I --> I1[指纹不一致 返回 IDEMPOTENCY_KEY_CONFLICT]
+    I --> J[指纹一致 读取持久化状态]
+
+    J --> J1[COMPLETED 重放响应快照]
+    J --> K1[UNKNOWN 返回 SUBMISSION_UNKNOWN]
+    J --> L{EXECUTING 是否超过 30 秒}
+    L --> L1[未超时 返回 IDEMPOTENCY_REQUEST_IN_PROGRESS]
+    L --> K[已超时 标记为 UNKNOWN]
+
+    H --> M{旧兑换链路是否返回明确响应}
+    M --> N[得到响应 保存 COMPLETED 和响应快照]
+    N --> N1[返回本次兑换响应]
+    M --> K[调用异常 标记为 UNKNOWN]
+    K --> K1
+```
+
+图中的 `UNKNOWN` 表示旧兑换链路可能已经产生副作用，但入口没有得到可以安全重放的明确结果。此时只能查询订单或进行对账，不能再次调用兑换入口。
+
 ```text
 首次请求
   -> INSERT EXECUTING（idempotency_key 唯一）
@@ -67,6 +99,5 @@
 
 ## 6. 尚未解决的问题
 
-- Python `ConfirmationStore` 仍是单进程内存状态，多 Agent 实例之间不能共享确认凭证。
 - 演示环境的用户身份仍由请求参数传入，生产环境需要登录态或网关注入可信身份。
 - `UNKNOWN` 目前只要求用户到订单页面核对，尚未实现按订单自动对账和状态收敛。

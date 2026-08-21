@@ -13,9 +13,10 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from app.agent import build_agent, run_agent
 from app.api_client import BusinessApiClient
-from app.confirmation_store import ConfirmationStore
+from app.confirmation_store import ConfirmationStore, ConfirmationStoreBackend
 from app.config import Settings
 from app.models import PendingExchangeData, ToolEnvelope
+from app.redis_confirmation_store import RedisConfirmationStore
 from app.skills.controlled_exchange import (
     ControlledExchangeSkill,
     explicit_exchange_action,
@@ -26,7 +27,8 @@ from app.trace import capture_tool_trace, execute_traced
 
 logger = logging.getLogger(__name__)
 AgentBuilder = Callable[
-    [Settings, BusinessApiClient, int, SkillRegistry, Any, ConfirmationStore], Any
+    [Settings, BusinessApiClient, int, SkillRegistry, Any, ConfirmationStoreBackend],
+    Any,
 ]
 AgentRunner = Callable[[Any, str, str, str | None], str]
 
@@ -48,7 +50,7 @@ class AgentRuntime:
         checkpointer: Any | None = None,
         agent_builder: AgentBuilder = build_agent,
         agent_runner: AgentRunner = run_agent,
-        confirmation_store: ConfirmationStore | None = None,
+        confirmation_store: ConfirmationStoreBackend | None = None,
     ) -> None:
         settings.require_llm_api_key()
         self.settings = settings
@@ -60,9 +62,8 @@ class AgentRuntime:
         self._owns_client = client is None
         self.skill_registry = skill_registry or SkillRegistry()
         self.checkpointer = checkpointer or InMemorySaver()
-        self.confirmation_store = confirmation_store or ConfirmationStore(
-            ttl_seconds=settings.exchange_confirmation_ttl_seconds,
-            capacity=settings.exchange_confirmation_capacity,
+        self.confirmation_store = confirmation_store or build_confirmation_store(
+            settings
         )
         self._controlled_exchange = ControlledExchangeSkill(
             self.client,
@@ -152,7 +153,8 @@ class AgentRuntime:
         with self._lock:
             self._agents.clear()
             self._sessions.clear()
-            self.confirmation_store.clear()
+        # Redis Store 是多实例共享资源，停机只能关闭连接，不能清空业务状态。
+        self.confirmation_store.close()
         if self._owns_client:
             self.client.close()
 
@@ -274,3 +276,24 @@ class AgentRuntime:
             # 会话记忆淘汰时同步撤销待确认授权，避免孤立凭证继续可用。
             self.confirmation_store.cancel_pending_by_session(evicted_thread_id)
             logger.info("session_evicted thread_id=%s", evicted_thread_id)
+
+
+def build_confirmation_store(settings: Settings) -> ConfirmationStoreBackend:
+    backend = settings.exchange_confirmation_store
+    if backend == "memory":
+        return ConfirmationStore(
+            ttl_seconds=settings.exchange_confirmation_ttl_seconds,
+            capacity=settings.exchange_confirmation_capacity,
+        )
+    if backend == "redis":
+        return RedisConfirmationStore.from_url(
+            settings.exchange_confirmation_redis_url,
+            ttl_seconds=settings.exchange_confirmation_ttl_seconds,
+            capacity=settings.exchange_confirmation_capacity,
+            retention_seconds=settings.exchange_confirmation_retention_seconds,
+            key_prefix=settings.exchange_confirmation_redis_prefix,
+        )
+    raise ValueError(
+        "EXCHANGE_CONFIRMATION_STORE 仅支持 memory 或 redis，"
+        f"当前值为 {backend!r}"
+    )

@@ -7,7 +7,7 @@ from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 
 from app.api_client import BusinessApiClient
-from app.confirmation_store import ConfirmationStore
+from app.confirmation_store import ConfirmationStoreBackend
 from app.config import Settings
 from app.execution_context import bind_execution_context
 from app.prompt import SYSTEM_PROMPT
@@ -25,7 +25,7 @@ def build_agent(
     user_id: int,
     skill_registry: SkillRegistry | None = None,
     checkpointer=None,
-    confirmation_store: ConfirmationStore | None = None,
+    confirmation_store: ConfirmationStoreBackend | None = None,
 ):
     registry = skill_registry or SkillRegistry()
     model = ChatOpenAI(

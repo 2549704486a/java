@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from langchain.tools import tool
 
 from app.api_client import BusinessApiClient, BusinessApiError
-from app.confirmation_store import ConfirmationStore
+from app.confirmation_store import ConfirmationStore, ConfirmationStoreBackend
 from app.execution_context import current_thread_id
 from app.skills.award_recommendation import AwardRecommendationSkill
 from app.skills.controlled_exchange import ControlledExchangeSkill
@@ -51,7 +51,7 @@ def build_tools(
     client: BusinessApiClient,
     user_id: int,
     skill_registry: SkillRegistry | None = None,
-    confirmation_store: ConfirmationStore | None = None,
+    confirmation_store: ConfirmationStoreBackend | None = None,
 ):
     registry = skill_registry or SkillRegistry()
     points_manifest = registry.require_manifest("points-planning")

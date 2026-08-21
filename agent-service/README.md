@@ -12,13 +12,13 @@
 - 提供 FastAPI HTTP 接口，支持请求校验、请求 ID、错误脱敏和有界 Agent 缓存。
 - Tool 层只对 GET 请求的瞬时网络错误做有限重试；兑换 POST 绝不自动重试。
 - 兑换必须经过“准备摘要 -> 用户明确确认 -> 服务端确定性路由 -> 原子消费一次性凭证”，确认凭证不进入模型上下文，受理后仍由旧事务消息链路异步完成。
-- 不直连 MySQL、Redis、RocketMQ，也不提供修改积分、库存和任务状态的 Tool。
+- 不直连业务 MySQL 和 RocketMQ；只使用独立 Redis Key 前缀保存 Agent 自己的确认授权状态，不直接修改积分、库存和任务状态。
 
 课程讲义中的 `langgraph.prebuilt.create_react_agent` 在当前版本已由 `langchain.agents.create_agent` 取代，二者承担相同的“模型决定工具 -> 执行工具 -> 返回结果 -> 继续推理”循环。
 
 ## 2. 环境准备
 
-要求 Python 3.11。先启动 Java 服务，默认地址为 `http://127.0.0.1:8088`。
+要求 Python 3.11。先启动 Redis 和 Java 服务，默认地址分别为 `127.0.0.1:6379` 和 `http://127.0.0.1:8088`。
 
 ```powershell
 cd D:\工作\incentive-事务消息\agent-service
@@ -140,6 +140,14 @@ Invoke-RestMethod `
 ```
 
 离线测试不需要 Java 服务和模型密钥，覆盖 Skill 发现、规划与推荐分支、一次性凭证 TTL、用户/会话绑定、重复与并发确认、POST 禁止重试、轨迹脱敏和 HTTP 契约。
+
+Redis 多实例原子消费属于集成测试，需先启动 Redis 后显式开启：
+
+```powershell
+$env:RUN_REDIS_INTEGRATION_TESTS = '1'
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+Remove-Item Env:RUN_REDIS_INTEGRATION_TESTS
+```
 
 ## 7. Agent 评测
 
