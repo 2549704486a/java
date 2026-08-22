@@ -145,6 +145,44 @@ class PointsPlan(BaseModel):
     recommended_tasks: list[RecommendedTask] = Field(default_factory=list)
 
 
+class SavedGoalAwardCandidate(BaseModel):
+    award_id: int
+    name: str
+    required_points: int
+    inventory: int
+
+
+class SavedGoalCandidate(BaseModel):
+    raw_text: str
+    subject: str | None = None
+    time_expression: str | None = None
+    target_date: date | None = None
+    target_year: int | None = None
+
+
+class SavedGoalPointsPlan(BaseModel):
+    """从长期目标解析奖品后生成的实时积分规划结果。"""
+
+    status: Literal[
+        "TARGET_RESOLVED",
+        "NO_SAVED_GOAL",
+        "GOAL_NEEDS_SELECTION",
+        "GOAL_EXPIRED",
+        "AWARD_NEEDS_SELECTION",
+        "TARGET_NOT_AVAILABLE",
+        "QUERY_FAILED",
+    ]
+    reason_code: str
+    message: str
+    goal_raw_text: str | None = None
+    goal_time_expression: str | None = None
+    target_date: date | None = None
+    target_year: int | None = None
+    goal_candidates: list[SavedGoalCandidate] = Field(default_factory=list)
+    candidates: list[SavedGoalAwardCandidate] = Field(default_factory=list)
+    plan: PointsPlan | None = None
+
+
 class RedemptionGoalData(BaseModel):
     """用户明确要求保存的跨会话兑换目标。"""
 

@@ -51,8 +51,8 @@ class SkillRegistryTest(unittest.TestCase):
         manifest = registry.require_manifest("points-planning")
         definition = registry.activate("points-planning")
 
-        self.assertEqual("1.0.0", manifest.version)
-        self.assertIn("生成任务积分方案", manifest.description)
+        self.assertEqual("1.1.0", manifest.version)
+        self.assertIn("实时积分方案", manifest.description)
         self.assertIn("## 执行步骤", definition.instructions)
         self.assertEqual(64, len(manifest.sha256))
         self.assertEqual(
@@ -80,7 +80,7 @@ class SkillRegistryTest(unittest.TestCase):
 
         self.assertEqual(manifest.tool_description, plan_tool.description)
         self.assertEqual("points-planning", plan_tool.extras["skill_name"])
-        self.assertEqual("1.0.0", plan_tool.extras["skill_version"])
+        self.assertEqual("1.1.0", plan_tool.extras["skill_version"])
         self.assertEqual("READY_TO_EXCHANGE", result["status"])
         activate.assert_called_once_with("points-planning")
 

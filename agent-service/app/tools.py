@@ -18,6 +18,7 @@ from app.skills.award_recommendation import AwardRecommendationSkill
 from app.skills.controlled_exchange import ControlledExchangeSkill
 from app.skills.growth_memory import GrowthMemorySkill
 from app.skills.points_plan import PointsPlanningSkill
+from app.skills.saved_goal_plan import SavedGoalPlanningSkill
 from app.skills.registry import SkillRegistry
 from app.trace import current_correlation_id, execute_traced
 
@@ -37,6 +38,18 @@ class ListAwardsInput(BaseModel):
 
 class PlanPointsInput(BaseModel):
     award_id: int = Field(gt=0, description="目标奖品 ID")
+    excluded_task_ids: list[int] = Field(
+        default_factory=list,
+        description="用户明确不想参与的任务 ID；没有时传空数组",
+    )
+
+
+class PlanSavedGoalInput(BaseModel):
+    goal_query: str | None = Field(
+        default=None,
+        max_length=300,
+        description="用户对已保存目标的称呼，例如手环目标；只有一个目标时可留空",
+    )
     excluded_task_ids: list[int] = Field(
         default_factory=list,
         description="用户明确不想参与的任务 ID；没有时传空数组",
@@ -152,7 +165,13 @@ def build_tools(
     recommendation_manifest = registry.require_manifest("award-recommendation")
     exchange_manifest = registry.require_manifest("controlled-exchange")
     memory_manifest = registry.require_manifest("growth-memory")
+    active_memory_store = growth_memory_store or GrowthMemoryStore()
     points_skill = PointsPlanningSkill(client)
+    saved_goal_skill = SavedGoalPlanningSkill(
+        client,
+        active_memory_store,
+        points_skill,
+    )
     recommendation_skill = AwardRecommendationSkill(client)
     controlled_exchange_skill = ControlledExchangeSkill(
         client,
@@ -160,7 +179,7 @@ def build_tools(
     )
     growth_memory_skill = GrowthMemorySkill(
         client,
-        growth_memory_store or GrowthMemoryStore(),
+        active_memory_store,
     )
 
     def safe_result(tool_name: str, arguments: dict, callable_):
@@ -243,6 +262,44 @@ def build_tools(
             return plan.model_dump(mode="json")
 
         return execute_traced("plan_points_for_award", arguments, execute)
+
+    @tool(
+        args_schema=PlanSavedGoalInput,
+        description=(
+            "用户要求为已经保存的长期目标制定积分计划时使用。"
+            "该 Skill 会读取目标、确定性解析当前奖品并查询实时积分、资格和任务；"
+            "不要在前后重复调用 get_growth_memory、list_awards 或 plan_points_for_award。"
+        ),
+        extras=points_manifest.trace_metadata(),
+    )
+    def plan_points_for_saved_goal(
+        goal_query: str | None = None,
+        excluded_task_ids: list[int] | None = None,
+    ) -> dict:
+        arguments = {
+            "goal_query_chars": len(goal_query or ""),
+            "excluded_task_ids": excluded_task_ids or [],
+        }
+
+        def execute() -> dict:
+            started = time.perf_counter()
+            active_definition = registry.activate(points_manifest.name)
+            result = saved_goal_skill.plan(
+                user_id=user_id,
+                goal_query=goal_query,
+                excluded_task_ids=excluded_task_ids or [],
+            )
+            logger.info(
+                "skill_complete name=%s version=%s operation=saved_goal_plan "
+                "status=%s elapsed_ms=%.2f",
+                active_definition.manifest.name,
+                active_definition.manifest.version,
+                result.status,
+                (time.perf_counter() - started) * 1000,
+            )
+            return result.model_dump(mode="json")
+
+        return execute_traced("plan_points_for_saved_goal", arguments, execute)
 
     @tool(
         args_schema=RecommendAwardsInput,
@@ -499,6 +556,7 @@ def build_tools(
         list_awards,
         check_exchange_eligibility,
         plan_points_for_award,
+        plan_points_for_saved_goal,
         recommend_awards,
         prepare_exchange,
         cancel_exchange,

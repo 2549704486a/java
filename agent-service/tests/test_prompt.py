@@ -17,6 +17,7 @@ class PromptTest(unittest.TestCase):
         self.assertIn("save_redemption_goal", prompt)
         self.assertIn("remember_user_memory", prompt)
         self.assertIn("forget_growth_memory", prompt)
+        self.assertIn("plan_points_for_saved_goal", prompt)
         self.assertIn("不再要求二次确认", prompt)
         self.assertIn("不要求用户额外说“请记住”", prompt)
         self.assertIn("允许信息宽泛或不完整", prompt)
