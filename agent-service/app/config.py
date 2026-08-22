@@ -40,6 +40,9 @@ class Settings:
     agent_port: int = 8090
     agent_cache_size: int = 128
     agent_session_cache_size: int = 1024
+    agent_session_ttl_seconds: int = 3600
+    agent_context_max_tokens: int = 6000
+    agent_context_max_turns: int = 12
     agent_auth_secret: str | None = None
     agent_auth_issuer: str = "incentive-agent"
     agent_auth_audience: str = "incentive-agent-web"
@@ -99,6 +102,15 @@ class Settings:
             agent_cache_size=int(os.getenv("AGENT_CACHE_SIZE", "128")),
             agent_session_cache_size=int(
                 os.getenv("AGENT_SESSION_CACHE_SIZE", "1024")
+            ),
+            agent_session_ttl_seconds=int(
+                os.getenv("AGENT_SESSION_TTL_SECONDS", "3600")
+            ),
+            agent_context_max_tokens=int(
+                os.getenv("AGENT_CONTEXT_MAX_TOKENS", "6000")
+            ),
+            agent_context_max_turns=int(
+                os.getenv("AGENT_CONTEXT_MAX_TURNS", "12")
             ),
             agent_auth_secret=os.getenv("AGENT_AUTH_SECRET") or None,
             agent_auth_issuer=os.getenv("AGENT_AUTH_ISSUER", "incentive-agent"),

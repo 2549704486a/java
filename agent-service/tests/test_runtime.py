@@ -135,6 +135,9 @@ class AgentRuntimeTest(unittest.TestCase):
         self.assertEqual([10, 11, 12], built_user_ids)
         self.assertEqual(2, runtime.health()["cached_agents"])
         self.assertEqual(2, runtime.health()["cached_sessions"])
+        self.assertEqual(3600, runtime.health()["session_ttl_seconds"])
+        self.assertEqual(6000, runtime.health()["context_max_tokens"])
+        self.assertEqual(12, runtime.health()["context_max_turns"])
         self.assertEqual(
             ["user:10:session:session-a"],
             checkpointer.deleted_thread_ids,
@@ -147,6 +150,54 @@ class AgentRuntimeTest(unittest.TestCase):
         runtime.answer(10, "session-d", "重新创建")
         self.assertEqual([10, 11, 12, 10], built_user_ids)
         runtime.close()
+
+    def test_expires_idle_session_and_cancels_pending_confirmation(self):
+        current_time = [100.0]
+        checkpointer = FakeCheckpointer()
+        store = ConfirmationStore(token_factory=lambda: "expired-session-token")
+
+        def builder(*args):
+            return {"agent": "used"}
+
+        def runner(agent, message, thread_id, request_id):
+            return "ok"
+
+        runtime = AgentRuntime(
+            Settings(
+                llm_api_key="test-key",
+                agent_session_ttl_seconds=5,
+            ),
+            client=FakeClient(),
+            skill_registry=FakeSkillRegistry(),
+            checkpointer=checkpointer,
+            agent_builder=builder,
+            agent_runner=runner,
+            confirmation_store=store,
+            clock=lambda: current_time[0],
+        )
+        runtime.answer(10, "session-a", "第一次")
+        pending = store.create(
+            user_id=10,
+            session_id="user:10:session:session-a",
+            award_id=6,
+            award_name="智能手表",
+            current_points=900,
+            required_points=600,
+            request_id="request-prepare",
+        )
+
+        current_time[0] = 106.0
+        runtime.answer(11, "session-b", "触发过期清理")
+
+        self.assertIn(
+            "user:10:session:session-a",
+            checkpointer.deleted_thread_ids,
+        )
+        self.assertEqual(
+            ConfirmationStatus.CANCELLED,
+            store.snapshot(pending.confirmation_id).status,
+        )
+        self.assertEqual(1, runtime.health()["cached_sessions"])
 
     def test_same_session_id_is_isolated_by_user_id(self):
         thread_ids: list[str] = []

@@ -10,6 +10,7 @@
 - `recommend_awards` 使用确定性代码过滤并排序当前真正可兑换的奖品。
 - 启动时发现并校验 `skills/*/SKILL.md`，Tool 描述、Skill 版本和哈希来自声明文件。
 - 提供 FastAPI HTTP 接口，支持请求校验、请求 ID、错误脱敏和有界 Agent 缓存。
+- 使用空闲 TTL 回收会话，并在每次模型调用前按完整轮次和估算 token 裁剪可见上下文；裁剪指标与模型实际 token 写入日志。
 - 使用签名 JWT 验证用户身份，查询、会话和兑换不接受浏览器自行指定用户 ID。
 - 建立受控 RAG 知识源目录，使用文档版本、来源引用和结构校验管理索引输入；已实现文档切分与本地 Chroma 索引，当前尚未接入在线检索。
 - Tool 层只对 GET 请求的瞬时网络错误做有限重试；兑换 POST 绝不自动重试。
@@ -65,6 +66,9 @@ AGENT_AUTH_SECRET=至少32字符的本地随机密钥
 AGENT_AUTH_ISSUER=incentive-agent
 AGENT_AUTH_AUDIENCE=incentive-agent-web
 AGENT_ACCESS_TOKEN_TTL_SECONDS=3600
+AGENT_SESSION_TTL_SECONDS=3600
+AGENT_CONTEXT_MAX_TOKENS=6000
+AGENT_CONTEXT_MAX_TURNS=12
 ```
 
 ## 3. 先验证业务 Skill

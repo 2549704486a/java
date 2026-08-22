@@ -46,6 +46,7 @@ AgentRunner = Callable[[Any, str, str, str | None], str]
 class SessionSlot:
     lock: threading.Lock
     in_use: int = 0
+    last_access_monotonic: float = 0.0
 
 
 class AgentRuntime:
@@ -61,6 +62,7 @@ class AgentRuntime:
         agent_runner: AgentRunner = run_agent,
         confirmation_store: ConfirmationStoreBackend | None = None,
         knowledge_search: KnowledgeSearchService | None = None,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         settings.require_llm_api_key()
         self.settings = settings
@@ -88,6 +90,8 @@ class AgentRuntime:
         self._agent_runner = agent_runner
         self._cache_size = max(1, settings.agent_cache_size)
         self._session_cache_size = max(1, settings.agent_session_cache_size)
+        self._session_ttl_seconds = max(1, settings.agent_session_ttl_seconds)
+        self._clock = clock
         self._agents: OrderedDict[int, Any] = OrderedDict()
         self._sessions: OrderedDict[str, SessionSlot] = OrderedDict()
         self._lock = threading.Lock()
@@ -134,6 +138,7 @@ class AgentRuntime:
             slot.lock.release()
             with self._lock:
                 slot.in_use -= 1
+                slot.last_access_monotonic = self._clock()
                 self._evict_sessions()
 
     def pending_exchange(
@@ -168,6 +173,9 @@ class AgentRuntime:
             "agent_cache_size": self._cache_size,
             "cached_sessions": cached_sessions,
             "session_cache_size": self._session_cache_size,
+            "session_ttl_seconds": self._session_ttl_seconds,
+            "context_max_tokens": self.settings.agent_context_max_tokens,
+            "context_max_turns": self.settings.agent_context_max_turns,
             "skills": self.skill_registry.trace_metadata(),
             "exchange_confirmations": self.confirmation_store.stats(),
             "rag_enabled": self.knowledge_search is not None,
@@ -215,9 +223,14 @@ class AgentRuntime:
     ) -> tuple[str, SessionSlot]:
         thread_id = self._thread_id(user_id, session_id)
         with self._lock:
+            now = self._clock()
+            self._evict_sessions(now=now)
             slot = self._sessions.pop(thread_id, None)
             if slot is None:
-                slot = SessionSlot(lock=threading.Lock())
+                slot = SessionSlot(
+                    lock=threading.Lock(),
+                    last_access_monotonic=now,
+                )
                 logger.info("session_created thread_id=%s", thread_id)
             self._sessions[thread_id] = slot
             slot.in_use += 1
@@ -309,7 +322,22 @@ class AgentRuntime:
     def _thread_id(user_id: int, session_id: str) -> str:
         return f"user:{user_id}:session:{session_id}"
 
-    def _evict_sessions(self, excluded_thread_id: str | None = None) -> None:
+    def _evict_sessions(
+        self,
+        excluded_thread_id: str | None = None,
+        now: float | None = None,
+    ) -> None:
+        current = self._clock() if now is None else now
+        expired_thread_ids = [
+            thread_id
+            for thread_id, slot in self._sessions.items()
+            if thread_id != excluded_thread_id
+            and slot.in_use == 0
+            and current - slot.last_access_monotonic >= self._session_ttl_seconds
+        ]
+        for thread_id in expired_thread_ids:
+            self._remove_session(thread_id, reason="expired")
+
         while len(self._sessions) > self._session_cache_size:
             evicted_thread_id = next(
                 (
@@ -321,11 +349,14 @@ class AgentRuntime:
             )
             if evicted_thread_id is None:
                 return
-            self._sessions.pop(evicted_thread_id)
-            self.checkpointer.delete_thread(evicted_thread_id)
-            # 会话记忆淘汰时同步撤销待确认授权，避免孤立凭证继续可用。
-            self.confirmation_store.cancel_pending_by_session(evicted_thread_id)
-            logger.info("session_evicted thread_id=%s", evicted_thread_id)
+            self._remove_session(evicted_thread_id, reason="capacity")
+
+    def _remove_session(self, thread_id: str, *, reason: str) -> None:
+        self._sessions.pop(thread_id, None)
+        self.checkpointer.delete_thread(thread_id)
+        # 会话记忆淘汰时同步撤销待确认授权，避免孤立凭证继续可用。
+        self.confirmation_store.cancel_pending_by_session(thread_id)
+        logger.info("session_evicted thread_id=%s reason=%s", thread_id, reason)
 
 
 def build_confirmation_store(settings: Settings) -> ConfirmationStoreBackend:

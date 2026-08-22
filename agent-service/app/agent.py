@@ -10,6 +10,7 @@ from langchain_openai import ChatOpenAI
 from app.api_client import BusinessApiClient
 from app.confirmation_store import ConfirmationStoreBackend
 from app.config import Settings
+from app.context_window import ContextWindowPolicy, build_context_window_middleware
 from app.execution_context import bind_execution_context
 from app.knowledge_search import KnowledgeSearchService
 from app.prompt import build_system_prompt
@@ -124,6 +125,16 @@ def build_agent(
             knowledge_search,
         ),
         system_prompt=build_system_prompt(knowledge_search is not None),
+        middleware=[
+            build_context_window_middleware(
+                policy=ContextWindowPolicy(
+                    max_tokens=settings.agent_context_max_tokens,
+                    max_turns=settings.agent_context_max_turns,
+                ),
+                user_id=user_id,
+                confirmation_store=confirmation_store,
+            )
+        ],
         checkpointer=checkpointer,
     )
 
