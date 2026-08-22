@@ -44,7 +44,7 @@ class GrowthMemorySkillTest(unittest.TestCase):
         )
 
         self.assertEqual("REDEMPTION_GOAL_SAVED", saved.code)
-        queried = self.skill.get(10)
+        queried = self.skill.get(10, include_all=True)
         self.assertEqual(6, queried.data["goal"]["targetAwardId"])
         self.assertNotIn("sourceSession", queried.data["goal"])
 
@@ -146,9 +146,111 @@ class GrowthMemorySkillTest(unittest.TestCase):
 
         self.assertEqual("MEMORY_ADDED", result["code"])
         self.assertEqual("我打算明年换一个手环", result["data"]["memory"]["rawText"])
-        queried = by_name["get_growth_memory"].invoke({})
+        queried = by_name["get_growth_memory"].invoke(
+            {"query": "我的手环计划", "memory_types": ["goal"], "limit": 3}
+        )
         self.assertEqual(1, len(queried["data"]["memories"]))
         self.assertNotIn("sourceSession", queried["data"]["memories"][0])
+
+    def test_query_returns_only_relevant_memory(self):
+        self.skill.remember(
+            user_id=10,
+            session_id="user:10:session:a",
+            memory_type="preference",
+            raw_text="我喜欢小鸟",
+            subject="小鸟",
+            polarity="LIKE",
+        )
+        self.skill.remember(
+            user_id=10,
+            session_id="user:10:session:a",
+            memory_type="goal",
+            raw_text="我打算明年换一个手环",
+            subject="手环",
+            time_expression="明年",
+            target_year=2027,
+        )
+
+        queried = self.skill.get(
+            10,
+            query="帮我看看手环计划",
+            memory_types=["goal"],
+            limit=3,
+        )
+
+        self.assertEqual("FILTERED", queried.data["retrieval"]["mode"])
+        self.assertEqual(2, queried.data["retrieval"]["totalActive"])
+        self.assertEqual(1, queried.data["retrieval"]["returned"])
+        self.assertEqual("我打算明年换一个手环", queried.data["memories"][0]["rawText"])
+        self.assertIsNone(queried.data["goal"])
+        self.assertIsNone(queried.data["preferences"])
+
+    def test_type_filter_handles_generic_preference_question(self):
+        for subject in ["数码类商品", "小鸟"]:
+            self.skill.remember(
+                user_id=10,
+                session_id="user:10:session:a",
+                memory_type="preference",
+                raw_text=f"我喜欢{subject}",
+                subject=subject,
+                polarity="LIKE",
+            )
+        self.skill.remember(
+            user_id=10,
+            session_id="user:10:session:a",
+            memory_type="profile",
+            raw_text="我是一名 Java 开发者",
+            subject="职业",
+        )
+
+        queried = self.skill.get(
+            10,
+            query="你记得我喜欢什么吗",
+            memory_types=["preference"],
+            limit=5,
+        )
+
+        self.assertEqual(2, queried.data["retrieval"]["returned"])
+        self.assertTrue(
+            all(item["memoryType"] == "preference" for item in queried.data["memories"])
+        )
+
+    def test_unrelated_query_does_not_inject_memory_without_type_filter(self):
+        self.skill.remember(
+            user_id=10,
+            session_id="user:10:session:a",
+            memory_type="preference",
+            raw_text="我喜欢小鸟",
+            subject="小鸟",
+            polarity="LIKE",
+        )
+
+        queried = self.skill.get(10, query="查询当前订单状态", limit=5)
+
+        self.assertEqual("GROWTH_MEMORY_EMPTY", queried.code)
+        self.assertEqual([], queried.data["memories"])
+
+    def test_explicit_all_returns_every_memory_and_legacy_projection(self):
+        self.skill.save_goal(
+            user_id=10,
+            session_id="user:10:session:a",
+            award_id=6,
+            target_date=date(2026, 9, 1),
+        )
+        self.skill.remember(
+            user_id=10,
+            session_id="user:10:session:a",
+            memory_type="preference",
+            raw_text="我喜欢数码类商品",
+            subject="数码类商品",
+            polarity="LIKE",
+        )
+
+        queried = self.skill.get(10, include_all=True, limit=1)
+
+        self.assertEqual("ALL", queried.data["retrieval"]["mode"])
+        self.assertEqual(2, queried.data["retrieval"]["returned"])
+        self.assertEqual(6, queried.data["goal"]["targetAwardId"])
 
 
 if __name__ == "__main__":

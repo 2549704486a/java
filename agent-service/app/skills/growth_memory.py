@@ -14,7 +14,8 @@ from app.growth_memory_store import (
     MemoryType,
     MemoryWriteResult,
 )
-from app.models import AwardData, ToolEnvelope
+from app.memory_retrieval import select_memories
+from app.models import AwardData, GrowthMemoryData, MemoryItem, ToolEnvelope
 
 
 class GrowthMemorySkill:
@@ -30,13 +31,39 @@ class GrowthMemorySkill:
         self.store = store
         self._today = today_provider
 
-    def get(self, user_id: int) -> ToolEnvelope:
-        data = self._public_memory(user_id)
+    def get(
+        self,
+        user_id: int,
+        *,
+        query: str | None = None,
+        memory_types: list[MemoryType] | None = None,
+        limit: int = 5,
+        include_all: bool = False,
+    ) -> ToolEnvelope:
+        current = self.store.get(user_id)
+        selected = select_memories(
+            current.memories,
+            query=query,
+            memory_types=memory_types,
+            limit=limit,
+            include_all=include_all,
+        )
+        data = self._public_memory(
+            current=current,
+            selected=selected,
+            query=query,
+            memory_types=memory_types or [],
+            limit=limit,
+            include_all=include_all,
+        )
+        found = bool(selected) or (
+            include_all and (current.goal is not None or current.preferences is not None)
+        )
         return ToolEnvelope(
             success=True,
-            code="GROWTH_MEMORY_FOUND" if any(data.values()) else "GROWTH_MEMORY_EMPTY",
+            code="GROWTH_MEMORY_FOUND" if found else "GROWTH_MEMORY_EMPTY",
             data=data,
-            message="已读取用户长期目标与偏好" if any(data.values()) else "当前还没有长期目标或偏好",
+            message="已按当前问题读取相关长期记忆" if found else "没有找到与当前问题相关的长期记忆",
         )
 
     def remember(
@@ -161,8 +188,32 @@ class GrowthMemorySkill:
         result = self.store.forget(user_id=user_id, scope=scope)
         return self._changed(result)
 
-    def _public_memory(self, user_id: int) -> dict:
-        data = self.store.get(user_id).model_dump(mode="json", by_alias=True)
+    def _public_memory(
+        self,
+        *,
+        current: GrowthMemoryData,
+        selected: list[MemoryItem],
+        query: str | None,
+        memory_types: list[MemoryType],
+        limit: int,
+        include_all: bool,
+    ) -> dict:
+        data = current.model_dump(mode="json", by_alias=True)
+        data["memories"] = [
+            item.model_dump(mode="json", by_alias=True) for item in selected
+        ]
+        # 旧聚合视图可能包含未命中的其他偏好，只在用户明确查看全部记忆时返回。
+        if not include_all:
+            data["goal"] = None
+            data["preferences"] = None
+        data["retrieval"] = {
+            "mode": "ALL" if include_all else ("FILTERED" if query or memory_types else "RECENT"),
+            "queryApplied": bool(query and query.strip()),
+            "memoryTypes": memory_types,
+            "totalActive": len(current.memories),
+            "returned": len(selected),
+            "limit": None if include_all else limit,
+        }
         # 来源会话用于服务端追踪，不交给模型，也不应出现在用户回答中。
         for value in data.values():
             if isinstance(value, dict):

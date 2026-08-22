@@ -97,6 +97,24 @@ class RememberUserMemoryInput(BaseModel):
     )
 
 
+class GetGrowthMemoryInput(BaseModel):
+    query: str | None = Field(
+        default=None,
+        max_length=300,
+        description="当前问题或任务中的记忆检索语义；读取相关记忆时应传入",
+    )
+    memory_types: list[Literal["preference", "goal", "profile", "episode"]] = Field(
+        default_factory=list,
+        max_length=4,
+        description="当前任务真正需要的记忆类型；不确定时传空数组",
+    )
+    limit: int = Field(default=5, ge=1, le=20, description="最多返回的相关记忆条数")
+    include_all: bool = Field(
+        default=False,
+        description="只有用户明确要求查看全部长期记忆时才设为 true",
+    )
+
+
 class SaveUserPreferencesInput(BaseModel):
     preferred_categories: list[str] = Field(
         default_factory=list,
@@ -315,17 +333,36 @@ def build_tools(
         return execute_traced("cancel_exchange", {}, execute)
 
     @tool(
+        args_schema=GetGrowthMemoryInput,
         description=(
-            "读取当前用户直接表达并跨会话保存的兑换目标、奖品偏好和任务偏好。"
+            "按当前问题读取少量相关长期记忆。业务过程中传 query、需要的 memory_types 和较小 limit；"
+            "只有用户明确要求查看全部记忆时才设置 include_all=true。"
             "不得用它查询实时积分、库存、任务完成状态或订单状态。"
         ),
         extras=memory_manifest.trace_metadata(),
     )
-    def get_growth_memory() -> dict:
+    def get_growth_memory(
+        query: str | None = None,
+        memory_types: list[str] | None = None,
+        limit: int = 5,
+        include_all: bool = False,
+    ) -> dict:
+        arguments = {
+            "query_chars": len(query or ""),
+            "memory_types": memory_types or [],
+            "limit": limit,
+            "include_all": include_all,
+        }
         return execute_traced(
             "get_growth_memory",
-            {},
-            lambda: growth_memory_skill.get(user_id).model_dump(mode="json"),
+            arguments,
+            lambda: growth_memory_skill.get(
+                user_id,
+                query=query,
+                memory_types=memory_types,
+                limit=limit,
+                include_all=include_all,
+            ).model_dump(mode="json"),
         )
 
     @tool(
