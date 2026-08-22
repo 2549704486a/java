@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from app.api_client import BusinessApiClient
 from app.auth import JwtAuthenticator
 from app.campaign_data import HttpCampaignDataProvider, StaticCampaignDataProvider
+from app.knowledge_search import KnowledgeSearchResult
 from app.models import (
     CampaignAwardSnapshot,
     CampaignPlanningSnapshot,
@@ -32,8 +33,9 @@ USER_AUTHENTICATOR = JwtAuthenticator(
 
 
 class FakeRuntime:
-    def __init__(self) -> None:
+    def __init__(self, operator_knowledge_search=None) -> None:
         self.client = object()
+        self.operator_knowledge_search = operator_knowledge_search
 
     def health(self) -> dict:
         return {"status": "UP"}
@@ -85,10 +87,27 @@ def snapshot() -> CampaignPlanningSnapshot:
     )
 
 
-def create_operator_app(permissions: frozenset[str]):
+class FakeOperatorKnowledgeSearch:
+    def search(
+        self,
+        query: str,
+        limit: int | None = None,
+        business_types: tuple[str, ...] | None = None,
+    ) -> KnowledgeSearchResult:
+        return KnowledgeSearchResult(
+            code="KNOWLEDGE_FOUND",
+            message="已找到可引用的业务规则",
+            matches=(),
+        )
+
+
+def create_operator_app(
+    permissions: frozenset[str],
+    operator_knowledge_search=None,
+):
     provider = StaticCampaignDataProvider({SEGMENT_KEY: snapshot()})
     return create_app(
-        lambda: FakeRuntime(),
+        lambda: FakeRuntime(operator_knowledge_search),
         lambda: USER_AUTHENTICATOR,
         lambda: OperatorAuthenticator("operator-token", "operator-01", permissions),
         lambda runtime: provider,
@@ -96,6 +115,35 @@ def create_operator_app(permissions: frozenset[str]):
 
 
 class OperatorApiTest(unittest.TestCase):
+    def test_operator_knowledge_search_requires_operator_token(self):
+        app = create_operator_app(
+            frozenset({CAMPAIGN_READ}),
+            FakeOperatorKnowledgeSearch(),
+        )
+
+        with TestClient(app) as client:
+            rejected = client.post(
+                "/v1/operator/knowledge/search",
+                json={
+                    "query": "活动预算口径",
+                    "scope": "campaign_policy",
+                    "limit": 2,
+                },
+            )
+            accepted = client.post(
+                "/v1/operator/knowledge/search",
+                headers={"Authorization": "Bearer operator-token"},
+                json={
+                    "query": "活动预算口径",
+                    "scope": "campaign_policy",
+                    "limit": 2,
+                },
+            )
+
+        self.assertEqual(401, rejected.status_code)
+        self.assertEqual(200, accepted.status_code)
+        self.assertEqual("KNOWLEDGE_FOUND", accepted.json()["code"])
+
     def test_operator_snapshot_uses_separate_token(self):
         app = create_operator_app(frozenset({CAMPAIGN_READ}))
         user_token = USER_AUTHENTICATOR.issue_token(10, 60)

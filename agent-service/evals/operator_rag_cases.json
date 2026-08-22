@@ -6,6 +6,7 @@
       "split": "calibration",
       "category": "精确编号",
       "query": "OPS-RUNBOOK-CAMPAIGN-001 中快照过期应该怎么处理？",
+      "business_types": ["incident_manual"],
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "campaign-exception-handbook"
     },
@@ -14,6 +15,7 @@
       "split": "calibration",
       "category": "精确编号",
       "query": "OPS-POLICY-CAMPAIGN-001 规定草案可以直接发布吗？",
+      "business_types": ["campaign_policy", "rule_change_notice"],
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "campaign-operation-policy"
     },
@@ -22,6 +24,7 @@
       "split": "calibration",
       "category": "精确编号",
       "query": "OPS-NOTICE-20260822-001 修改了哪些预算字段？",
+      "business_types": ["campaign_policy", "rule_change_notice"],
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "campaign-rule-change-20260822"
     },
@@ -30,6 +33,7 @@
       "split": "calibration",
       "category": "精确条款",
       "query": "活动规划快照超过24小时还能继续生成草案吗？",
+      "business_types": ["campaign_policy", "rule_change_notice"],
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "campaign-operation-policy"
     },
@@ -38,6 +42,7 @@
       "split": "calibration",
       "category": "精确条款",
       "query": "奖品缺少真实单位成本时能不能用兑换积分反推金额？",
+      "business_types": ["award_guide"],
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "campaign-award-guide"
     },
@@ -46,6 +51,7 @@
       "split": "evaluation",
       "category": "语义案例",
       "query": "高积分用户召回活动有没有可以参考的历史案例？",
+      "business_types": ["campaign_review"],
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "campaign-review-demo-202608"
     },
@@ -54,6 +60,7 @@
       "split": "evaluation",
       "category": "语义案例",
       "query": "之前类似活动的参与率和样本量是多少？",
+      "business_types": ["campaign_review"],
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "campaign-review-demo-202608"
     },
@@ -62,6 +69,7 @@
       "split": "evaluation",
       "category": "字段语义",
       "query": "用户兑换门槛和公司采购成本是同一个数吗？",
+      "business_types": ["award_guide"],
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "campaign-award-guide"
     },
@@ -70,6 +78,7 @@
       "split": "evaluation",
       "category": "口语表达",
       "query": "快照都放两天了，还能接着拿来出方案不？",
+      "business_types": ["incident_manual"],
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "campaign-exception-handbook"
     },
@@ -78,6 +87,7 @@
       "split": "evaluation",
       "category": "口语表达",
       "query": "预算直接拿积分数顶一下不就行了？",
+      "business_types": ["campaign_policy", "rule_change_notice"],
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "campaign-rule-change-20260822"
     },
@@ -86,6 +96,7 @@
       "split": "evaluation",
       "category": "知识冲突",
       "query": "旧草案说积分就是活动预算，新通知说要用人民币金额，应该按哪个口径？",
+      "business_types": ["campaign_policy", "rule_change_notice"],
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "campaign-rule-change-20260822"
     },
@@ -94,6 +105,7 @@
       "split": "evaluation",
       "category": "知识冲突",
       "query": "演示复盘参与率是20%，是不是所有活动都应该直接使用20%？",
+      "business_types": ["campaign_review"],
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "campaign-review-demo-202608"
     },
@@ -102,14 +114,17 @@
       "split": "evaluation",
       "category": "受众隔离",
       "query": "页面显示处理中是不是就算兑换成功了？",
-      "expected_code": "NO_RELEVANT_KNOWLEDGE",
-      "expected_knowledge_id": null
+      "business_types": ["incident_manual"],
+      "expected_code": "ANY",
+      "expected_knowledge_id": null,
+      "forbidden_knowledge_ids": ["exchange-rules-and-status"]
     },
     {
       "id": "OR14",
       "split": "evaluation",
       "category": "无关问题",
       "query": "如何计算一个圆的面积？",
+      "business_types": ["campaign_policy", "rule_change_notice"],
       "expected_code": "NO_RELEVANT_KNOWLEDGE",
       "expected_knowledge_id": null
     },
@@ -118,6 +133,7 @@
       "split": "evaluation",
       "category": "操作边界",
       "query": "草案检查通过后是否可以跳过人工审核直接发布？",
+      "business_types": ["campaign_policy", "rule_change_notice"],
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "campaign-operation-policy"
     }

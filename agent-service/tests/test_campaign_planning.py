@@ -4,6 +4,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 
 from app.campaign_data import StaticCampaignDataProvider
+from app.knowledge_search import KnowledgeSearchResult
 from app.models import (
     CampaignAwardSnapshot,
     CampaignBrief,
@@ -24,6 +25,20 @@ from app.skills.campaign_planning import CampaignPlanningSkill
 TZ = timezone(timedelta(hours=8))
 NOW = datetime(2026, 8, 22, 12, 0, tzinfo=TZ)
 SEGMENT = "近30天未登录且历史积分大于500"
+
+
+class FakeOperatorKnowledgeSearch:
+    def search(
+        self,
+        query: str,
+        limit: int | None = None,
+        business_types: tuple[str, ...] | None = None,
+    ) -> KnowledgeSearchResult:
+        return KnowledgeSearchResult(
+            code="KNOWLEDGE_FOUND",
+            message="已找到可引用的业务规则",
+            matches=(),
+        )
 
 
 def planning_snapshot(
@@ -204,6 +219,29 @@ class CampaignPlanningSkillTest(unittest.TestCase):
 
 
 class OperatorToolsTest(unittest.TestCase):
+    def test_operator_knowledge_tool_uses_server_scoped_search(self):
+        provider = StaticCampaignDataProvider(
+            {"inactive-30d-points-500": planning_snapshot()}
+        )
+        operator = AuthenticatedOperator(
+            operator_id="operator-knowledge",
+            permissions=frozenset({CAMPAIGN_READ}),
+        )
+
+        tools = build_operator_tools(
+            provider,
+            operator,
+            knowledge_search=FakeOperatorKnowledgeSearch(),
+        )
+        knowledge_tool = next(
+            item for item in tools if item.name == "search_operator_knowledge"
+        )
+        result = knowledge_tool.invoke(
+            {"query": "活动预算口径", "scope": "campaign_policy", "limit": 2}
+        )
+
+        self.assertEqual("KNOWLEDGE_FOUND", result["code"])
+
     def test_builds_separate_read_only_and_draft_tools(self):
         provider = StaticCampaignDataProvider(
             {"inactive-30d-points-500": planning_snapshot()}

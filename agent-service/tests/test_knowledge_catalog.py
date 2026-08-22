@@ -15,13 +15,14 @@ class KnowledgeCatalogTest(unittest.TestCase):
     def test_current_catalog_is_valid_and_versioned(self):
         snapshot = KnowledgeCatalog().load()
 
-        self.assertEqual("2026.08.22.2", snapshot.version)
+        self.assertEqual("2026.08.22.3", snapshot.version)
         self.assertEqual(
             {
                 "agent-service-guide",
                 "exchange-rules-and-status",
                 "points-and-tasks",
                 "campaign-operation-policy",
+                "campaign-budget-policy-legacy",
                 "campaign-award-guide",
                 "campaign-review-demo-202608",
                 "campaign-exception-handbook",
@@ -34,6 +35,14 @@ class KnowledgeCatalogTest(unittest.TestCase):
         )
         self.assertTrue(all(document.metadata.business_type for document in snapshot.documents))
         self.assertTrue(all(document.metadata.effective_from for document in snapshot.documents))
+        self.assertEqual(
+            "campaign_budget_semantics",
+            next(
+                document.metadata.policy_key
+                for document in snapshot.documents
+                if document.metadata.knowledge_id == "campaign-rule-change-20260822"
+            ),
+        )
 
     def test_rejects_document_path_outside_knowledge_directory(self):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as temp_dir:

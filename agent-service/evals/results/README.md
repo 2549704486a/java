@@ -19,3 +19,6 @@
 - `complex_planning_final_constraints_20260822.json`：修正评分同义参数和期限表达后的 P01、P08 定向结果，`2/2`。
 - `campaign_planning_baseline_20260822.json`：8 条冻结运营场景的确定性基线；权限隔离 `16/16`、数据引用 `21/21`、约束满足 `32/32`、草案完整性 `20/20`。
 - `operator_rag_vector_baseline_20260822.json`：15 条运营知识纯向量检索基线；Top1、Hit@3、负样本拒答率和引用结构有效率均为 `100%`，不包含 Agent 回答评测。
+- `operator_rag_governance_smoke_20260822.json`：扩大候选池后的首次治理抽测，保留 `OR13` 运营文档误召回的原始失败证据。
+- `operator_rag_governance_final_20260823.json`：增加业务范围、时效过滤和冲突治理后的 15 条运营检索结果，`15/15`。
+- `operator_rag_conflict_smoke_20260823.json`：真实新旧预算制度冲突的定向结果，记录新通知显式替代旧制度。

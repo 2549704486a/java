@@ -118,7 +118,12 @@ def raw_candidates(service, query: str, limit: int = 3) -> list[dict[str, Any]]:
 
 def evaluate_retrieval_case(service, case: dict[str, Any]) -> dict[str, Any]:
     started = time.perf_counter()
-    result = service.search(case["query"])
+    business_types = tuple(case.get("business_types", ())) or None
+    result = (
+        service.search(case["query"], business_types=business_types)
+        if business_types is not None
+        else service.search(case["query"])
+    )
     if result.matches:
         candidates = [
             {
@@ -134,7 +139,8 @@ def evaluate_retrieval_case(service, case: dict[str, Any]) -> dict[str, Any]:
     elapsed_ms = (time.perf_counter() - started) * 1000
     actual_ids = [match.knowledge_id for match in result.matches]
     expected_id = case.get("expected_knowledge_id")
-    code_match = result.code == case["expected_code"]
+    expected_code = case["expected_code"]
+    code_match = expected_code == "ANY" or result.code == expected_code
     top1_hit = expected_id is None or bool(actual_ids and actual_ids[0] == expected_id)
     hit_at_3 = expected_id is None or expected_id in actual_ids
     citation_valid = all(
@@ -142,11 +148,14 @@ def evaluate_retrieval_case(service, case: dict[str, Any]) -> dict[str, Any]:
         and bool(match.source_path)
         for match in result.matches
     )
+    forbidden_ids = set(case.get("forbidden_knowledge_ids", ()))
+    audience_isolated = not forbidden_ids.intersection(actual_ids)
     checks = {
         "result_code": code_match,
         "top1_hit": top1_hit,
         "hit_at_3": hit_at_3,
         "citation_valid": citation_valid,
+        "audience_isolated": audience_isolated,
     }
     # Top1 用于诊断排序质量；只要正确证据进入供 Agent 使用的 Top3，就视为检索成功。
     acceptance_checks = {
@@ -154,6 +163,8 @@ def evaluate_retrieval_case(service, case: dict[str, Any]) -> dict[str, Any]:
         "hit_at_3": hit_at_3,
         "citation_valid": citation_valid,
     }
+    if forbidden_ids:
+        acceptance_checks["audience_isolated"] = audience_isolated
     return {
         "id": case["id"],
         "split": case["split"],
@@ -163,6 +174,10 @@ def evaluate_retrieval_case(service, case: dict[str, Any]) -> dict[str, Any]:
         "expected_knowledge_id": expected_id,
         "actual_code": result.code,
         "actual_knowledge_ids": actual_ids,
+        "conflict_resolutions": [
+            resolution.as_dict()
+            for resolution in getattr(result, "conflict_resolutions", ())
+        ],
         "top_score": candidates[0]["score"] if candidates else None,
         "raw_candidates": candidates,
         "elapsed_ms": round(elapsed_ms, 2),

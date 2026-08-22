@@ -66,6 +66,7 @@ class AgentRuntime:
         agent_runner: AgentRunner = run_agent,
         confirmation_store: ConfirmationStoreBackend | None = None,
         knowledge_search: KnowledgeSearchService | None = None,
+        operator_knowledge_search: KnowledgeSearchService | None = None,
         growth_memory_store: GrowthMemoryStoreBackend | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
@@ -90,6 +91,14 @@ class AgentRuntime:
         if self.knowledge_search is None and settings.rag_enabled:
             self.knowledge_search = open_knowledge_search(settings)
             self._owns_knowledge_search = True
+        self.operator_knowledge_search = operator_knowledge_search
+        self._owns_operator_knowledge_search = False
+        if self.operator_knowledge_search is None and settings.rag_enabled:
+            self.operator_knowledge_search = open_knowledge_search(
+                settings,
+                allowed_audiences=("operator",),
+            )
+            self._owns_operator_knowledge_search = True
         self._controlled_exchange = ControlledExchangeSkill(
             self.client,
             self.confirmation_store,
@@ -188,6 +197,7 @@ class AgentRuntime:
             "exchange_confirmations": self.confirmation_store.stats(),
             "growth_memory": self.growth_memory_store.stats(),
             "rag_enabled": self.knowledge_search is not None,
+            "operator_rag_enabled": self.operator_knowledge_search is not None,
         }
 
     def close(self) -> None:
@@ -199,6 +209,11 @@ class AgentRuntime:
         self.growth_memory_store.close()
         if self._owns_knowledge_search and self.knowledge_search is not None:
             self.knowledge_search.close()
+        if (
+            self._owns_operator_knowledge_search
+            and self.operator_knowledge_search is not None
+        ):
+            self.operator_knowledge_search.close()
         if self._owns_client:
             self.client.close()
 

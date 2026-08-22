@@ -1,0 +1,784 @@
+{
+  "metadata": {
+    "created_at": "2026-08-23T00:09:41",
+    "embedding_model": "text-embedding-v4",
+    "chat_model": null,
+    "relevance_threshold": 0.3,
+    "split": "all",
+    "audience": "operator",
+    "case_file": "evals\\operator_rag_cases.json",
+    "case_ids": [
+      "OR01",
+      "OR02",
+      "OR03",
+      "OR04",
+      "OR05",
+      "OR06",
+      "OR07",
+      "OR08",
+      "OR09",
+      "OR10",
+      "OR11",
+      "OR12",
+      "OR13",
+      "OR14",
+      "OR15"
+    ]
+  },
+  "summary": {
+    "retrieval": {
+      "total": 15,
+      "passed": 15,
+      "top1_accuracy": 1.0,
+      "hit_at_3": 1.0,
+      "negative_rejection_rate": 1.0,
+      "citation_valid_rate": 1.0,
+      "positive_top_score": {
+        "min": 0.4216,
+        "average": 0.6034,
+        "max": 0.7686
+      },
+      "negative_top_score": {
+        "min": 0.0022,
+        "average": 0.0022,
+        "max": 0.0022
+      }
+    },
+    "agent": {
+      "total": 0,
+      "passed": 0,
+      "check_rates": {},
+      "check_counts": {}
+    }
+  },
+  "retrieval_results": [
+    {
+      "id": "OR01",
+      "split": "calibration",
+      "category": "精确编号",
+      "query": "OPS-RUNBOOK-CAMPAIGN-001 中快照过期应该怎么处理？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-exception-handbook",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-exception-handbook",
+        "campaign-exception-handbook",
+        "campaign-exception-handbook"
+      ],
+      "conflict_resolutions": [],
+      "top_score": 0.6585,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-exception-handbook",
+          "chunk_id": "",
+          "score": 0.6585
+        },
+        {
+          "knowledge_id": "campaign-exception-handbook",
+          "chunk_id": "",
+          "score": 0.479
+        },
+        {
+          "knowledge_id": "campaign-exception-handbook",
+          "chunk_id": "",
+          "score": 0.4293
+        }
+      ],
+      "elapsed_ms": 2903.83,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR02",
+      "split": "calibration",
+      "category": "精确编号",
+      "query": "OPS-POLICY-CAMPAIGN-001 规定草案可以直接发布吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-operation-policy",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-operation-policy",
+        "campaign-operation-policy",
+        "campaign-rule-change-20260822"
+      ],
+      "conflict_resolutions": [
+        {
+          "policyKey": "campaign_budget_semantics",
+          "selectedKnowledgeId": "campaign-rule-change-20260822",
+          "suppressedKnowledgeId": "campaign-budget-policy-legacy",
+          "reason": "EXPLICIT_SUPERSEDES"
+        }
+      ],
+      "top_score": 0.7144,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.7144
+        },
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.4313
+        },
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.3967
+        }
+      ],
+      "elapsed_ms": 477.24,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR03",
+      "split": "calibration",
+      "category": "精确编号",
+      "query": "OPS-NOTICE-20260822-001 修改了哪些预算字段？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-rule-change-20260822",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-rule-change-20260822",
+        "campaign-rule-change-20260822",
+        "campaign-rule-change-20260822"
+      ],
+      "conflict_resolutions": [
+        {
+          "policyKey": "campaign_budget_semantics",
+          "selectedKnowledgeId": "campaign-rule-change-20260822",
+          "suppressedKnowledgeId": "campaign-budget-policy-legacy",
+          "reason": "EXPLICIT_SUPERSEDES"
+        }
+      ],
+      "top_score": 0.535,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.535
+        },
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.3786
+        },
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.3365
+        }
+      ],
+      "elapsed_ms": 484.17,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR04",
+      "split": "calibration",
+      "category": "精确条款",
+      "query": "活动规划快照超过24小时还能继续生成草案吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-operation-policy",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-operation-policy",
+        "campaign-operation-policy",
+        "campaign-operation-policy"
+      ],
+      "conflict_resolutions": [
+        {
+          "policyKey": "campaign_budget_semantics",
+          "selectedKnowledgeId": "campaign-rule-change-20260822",
+          "suppressedKnowledgeId": "campaign-budget-policy-legacy",
+          "reason": "EXPLICIT_SUPERSEDES"
+        }
+      ],
+      "top_score": 0.6012,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.6012
+        },
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.5917
+        },
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.547
+        }
+      ],
+      "elapsed_ms": 528.58,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR05",
+      "split": "calibration",
+      "category": "精确条款",
+      "query": "奖品缺少真实单位成本时能不能用兑换积分反推金额？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-award-guide",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-award-guide",
+        "campaign-award-guide",
+        "campaign-award-guide"
+      ],
+      "conflict_resolutions": [],
+      "top_score": 0.7058,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-award-guide",
+          "chunk_id": "",
+          "score": 0.7058
+        },
+        {
+          "knowledge_id": "campaign-award-guide",
+          "chunk_id": "",
+          "score": 0.6662
+        },
+        {
+          "knowledge_id": "campaign-award-guide",
+          "chunk_id": "",
+          "score": 0.6584
+        }
+      ],
+      "elapsed_ms": 464.72,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR06",
+      "split": "evaluation",
+      "category": "语义案例",
+      "query": "高积分用户召回活动有没有可以参考的历史案例？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-review-demo-202608",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-review-demo-202608",
+        "campaign-review-demo-202608"
+      ],
+      "conflict_resolutions": [],
+      "top_score": 0.7686,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-review-demo-202608",
+          "chunk_id": "",
+          "score": 0.7686
+        },
+        {
+          "knowledge_id": "campaign-review-demo-202608",
+          "chunk_id": "",
+          "score": 0.534
+        }
+      ],
+      "elapsed_ms": 581.23,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR07",
+      "split": "evaluation",
+      "category": "语义案例",
+      "query": "之前类似活动的参与率和样本量是多少？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-review-demo-202608",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-review-demo-202608",
+        "campaign-review-demo-202608",
+        "campaign-review-demo-202608"
+      ],
+      "conflict_resolutions": [],
+      "top_score": 0.5577,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-review-demo-202608",
+          "chunk_id": "",
+          "score": 0.5577
+        },
+        {
+          "knowledge_id": "campaign-review-demo-202608",
+          "chunk_id": "",
+          "score": 0.5234
+        },
+        {
+          "knowledge_id": "campaign-review-demo-202608",
+          "chunk_id": "",
+          "score": 0.4634
+        }
+      ],
+      "elapsed_ms": 469.28,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR08",
+      "split": "evaluation",
+      "category": "字段语义",
+      "query": "用户兑换门槛和公司采购成本是同一个数吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-award-guide",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-award-guide",
+        "campaign-award-guide",
+        "campaign-award-guide"
+      ],
+      "conflict_resolutions": [],
+      "top_score": 0.538,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-award-guide",
+          "chunk_id": "",
+          "score": 0.538
+        },
+        {
+          "knowledge_id": "campaign-award-guide",
+          "chunk_id": "",
+          "score": 0.453
+        },
+        {
+          "knowledge_id": "campaign-award-guide",
+          "chunk_id": "",
+          "score": 0.4239
+        }
+      ],
+      "elapsed_ms": 453.88,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR09",
+      "split": "evaluation",
+      "category": "口语表达",
+      "query": "快照都放两天了，还能接着拿来出方案不？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-exception-handbook",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-exception-handbook",
+        "campaign-exception-handbook",
+        "campaign-exception-handbook"
+      ],
+      "conflict_resolutions": [],
+      "top_score": 0.4216,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-exception-handbook",
+          "chunk_id": "",
+          "score": 0.4216
+        },
+        {
+          "knowledge_id": "campaign-exception-handbook",
+          "chunk_id": "",
+          "score": 0.3931
+        },
+        {
+          "knowledge_id": "campaign-exception-handbook",
+          "chunk_id": "",
+          "score": 0.3696
+        }
+      ],
+      "elapsed_ms": 477.76,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR10",
+      "split": "evaluation",
+      "category": "口语表达",
+      "query": "预算直接拿积分数顶一下不就行了？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-rule-change-20260822",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-rule-change-20260822",
+        "campaign-rule-change-20260822",
+        "campaign-rule-change-20260822"
+      ],
+      "conflict_resolutions": [
+        {
+          "policyKey": "campaign_budget_semantics",
+          "selectedKnowledgeId": "campaign-rule-change-20260822",
+          "suppressedKnowledgeId": "campaign-budget-policy-legacy",
+          "reason": "EXPLICIT_SUPERSEDES"
+        }
+      ],
+      "top_score": 0.5191,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.5191
+        },
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.4572
+        },
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.4471
+        }
+      ],
+      "elapsed_ms": 714.78,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR11",
+      "split": "evaluation",
+      "category": "知识冲突",
+      "query": "旧草案说积分就是活动预算，新通知说要用人民币金额，应该按哪个口径？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-rule-change-20260822",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-rule-change-20260822",
+        "campaign-rule-change-20260822",
+        "campaign-rule-change-20260822"
+      ],
+      "conflict_resolutions": [
+        {
+          "policyKey": "campaign_budget_semantics",
+          "selectedKnowledgeId": "campaign-rule-change-20260822",
+          "suppressedKnowledgeId": "campaign-budget-policy-legacy",
+          "reason": "EXPLICIT_SUPERSEDES"
+        }
+      ],
+      "top_score": 0.7276,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.7276
+        },
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.6471
+        },
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.5985
+        }
+      ],
+      "elapsed_ms": 463.16,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR12",
+      "split": "evaluation",
+      "category": "知识冲突",
+      "query": "演示复盘参与率是20%，是不是所有活动都应该直接使用20%？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-review-demo-202608",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-review-demo-202608",
+        "campaign-review-demo-202608",
+        "campaign-review-demo-202608"
+      ],
+      "conflict_resolutions": [],
+      "top_score": 0.6555,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-review-demo-202608",
+          "chunk_id": "",
+          "score": 0.6555
+        },
+        {
+          "knowledge_id": "campaign-review-demo-202608",
+          "chunk_id": "",
+          "score": 0.505
+        },
+        {
+          "knowledge_id": "campaign-review-demo-202608",
+          "chunk_id": "",
+          "score": 0.4612
+        }
+      ],
+      "elapsed_ms": 477.78,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR13",
+      "split": "evaluation",
+      "category": "受众隔离",
+      "query": "页面显示处理中是不是就算兑换成功了？",
+      "expected_code": "ANY",
+      "expected_knowledge_id": null,
+      "actual_code": "NO_RELEVANT_KNOWLEDGE",
+      "actual_knowledge_ids": [],
+      "conflict_resolutions": [],
+      "top_score": 0.6413,
+      "raw_candidates": [
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "exchange-rules-and-status:1.1.0:0001",
+          "score": 0.6413
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "exchange-rules-and-status:1.1.0:0000",
+          "score": 0.5862
+        },
+        {
+          "knowledge_id": "exchange-rules-and-status",
+          "chunk_id": "exchange-rules-and-status:1.1.0:0002",
+          "score": 0.5696
+        }
+      ],
+      "elapsed_ms": 914.66,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR14",
+      "split": "evaluation",
+      "category": "无关问题",
+      "query": "如何计算一个圆的面积？",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE",
+      "expected_knowledge_id": null,
+      "actual_code": "NO_RELEVANT_KNOWLEDGE",
+      "actual_knowledge_ids": [],
+      "conflict_resolutions": [],
+      "top_score": 0.0022,
+      "raw_candidates": [
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "points-and-tasks:1.1.0:0002",
+          "score": 0.0022
+        },
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "agent-service-guide:1.1.0:0002",
+          "score": 0.0014
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "points-and-tasks:1.1.0:0003",
+          "score": 0.0
+        }
+      ],
+      "elapsed_ms": 1534.32,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR15",
+      "split": "evaluation",
+      "category": "操作边界",
+      "query": "草案检查通过后是否可以跳过人工审核直接发布？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-operation-policy",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-operation-policy",
+        "campaign-operation-policy",
+        "campaign-operation-policy"
+      ],
+      "conflict_resolutions": [],
+      "top_score": 0.4415,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.4415
+        },
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.3818
+        },
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.34
+        }
+      ],
+      "elapsed_ms": 456.66,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    }
+  ],
+  "agent_results": []
+}

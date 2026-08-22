@@ -9,6 +9,7 @@ fact_scope: stable_rules_only
 business_type: campaign_policy
 authority_level: official_policy
 effective_from: 2026-08-22
+policy_key: campaign_operation_governance
 source_refs:
   - agent-service/app/skills/campaign_planning.py
   - agent-service/app/operator_tools.py

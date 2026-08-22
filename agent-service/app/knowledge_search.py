@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any, Protocol
+from datetime import date
+from typing import Any, Callable, Protocol
 
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
@@ -54,6 +55,7 @@ class KnowledgeMatch:
     authority_level: str
     effective_from: str
     effective_until: str | None
+    policy_key: str | None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -70,6 +72,23 @@ class KnowledgeMatch:
             "authorityLevel": self.authority_level,
             "effectiveFrom": self.effective_from,
             "effectiveUntil": self.effective_until,
+            "policyKey": self.policy_key,
+        }
+
+
+@dataclass(frozen=True)
+class KnowledgeConflictResolution:
+    policy_key: str
+    selected_knowledge_id: str
+    suppressed_knowledge_id: str
+    reason: str
+
+    def as_dict(self) -> dict[str, str]:
+        return {
+            "policyKey": self.policy_key,
+            "selectedKnowledgeId": self.selected_knowledge_id,
+            "suppressedKnowledgeId": self.suppressed_knowledge_id,
+            "reason": self.reason,
         }
 
 
@@ -78,6 +97,7 @@ class KnowledgeSearchResult:
     code: str
     message: str
     matches: tuple[KnowledgeMatch, ...]
+    conflict_resolutions: tuple[KnowledgeConflictResolution, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -85,6 +105,10 @@ class KnowledgeSearchResult:
             "code": self.code,
             "data": {
                 "matches": [match.as_dict() for match in self.matches],
+                "conflictResolutions": [
+                    resolution.as_dict()
+                    for resolution in self.conflict_resolutions
+                ],
             },
             "message": self.message,
             "retryable": False,
@@ -101,6 +125,7 @@ class KnowledgeSearchService:
         default_limit: int = 3,
         allowed_audiences: tuple[str, ...] = ("end_user",),
         owns_vector_store: bool = False,
+        today_provider: Callable[[], date] = date.today,
     ) -> None:
         if not 0 <= relevance_threshold <= 1:
             raise ValueError("relevance_threshold 必须位于 0 到 1 之间")
@@ -113,15 +138,22 @@ class KnowledgeSearchService:
         if not self.allowed_audiences:
             raise ValueError("allowed_audiences 不能为空")
         self._owns_vector_store = owns_vector_store
+        self._today_provider = today_provider
 
-    def search(self, query: str, limit: int | None = None) -> KnowledgeSearchResult:
+    def search(
+        self,
+        query: str,
+        limit: int | None = None,
+        business_types: tuple[str, ...] | None = None,
+    ) -> KnowledgeSearchResult:
         query_normalization = normalize_business_query(query)
         actual_limit = self.default_limit if limit is None else limit
         if actual_limit <= 0:
             raise ValueError("limit 必须大于 0")
 
         try:
-            candidate_limit = max(actual_limit * 2, actual_limit)
+            # 治理过滤会淘汰越权、未生效和被替代文档，多取候选避免过滤后无结果。
+            candidate_limit = max(actual_limit * 4, actual_limit)
             candidate_groups = [
                 self.vector_store.similarity_search_with_relevance_scores(
                     query_variant,
@@ -141,7 +173,7 @@ class KnowledgeSearchService:
                 if current is None or score > current[1]:
                     merged_candidates[candidate_key] = (document, score)
 
-        matches: list[KnowledgeMatch] = []
+        eligible_candidates: list[tuple[Document, float]] = []
         seen_chunk_ids: set[str] = set()
         for document, score in sorted(
             merged_candidates.values(),
@@ -152,14 +184,24 @@ class KnowledgeSearchService:
                 continue
             if not self._is_audience_allowed(document):
                 continue
+            if not self._is_business_type_allowed(document, business_types):
+                continue
+            if not self._is_effective(document, self._today_provider()):
+                continue
             chunk_id = str(document.metadata.get("chunk_id", "")).strip()
             if chunk_id and chunk_id in seen_chunk_ids:
                 continue
             if chunk_id:
                 seen_chunk_ids.add(chunk_id)
-            matches.append(self._to_match(document, score))
-            if len(matches) >= actual_limit:
-                break
+            eligible_candidates.append((document, score))
+
+        governed_candidates, conflict_resolutions = self._resolve_conflicts(
+            eligible_candidates
+        )
+        matches = [
+            self._to_match(document, score)
+            for document, score in governed_candidates[:actual_limit]
+        ]
 
         if not matches:
             return KnowledgeSearchResult(
@@ -171,6 +213,7 @@ class KnowledgeSearchService:
             code="KNOWLEDGE_FOUND",
             message="已找到可引用的业务规则",
             matches=tuple(matches),
+            conflict_resolutions=tuple(conflict_resolutions),
         )
 
     @staticmethod
@@ -192,6 +235,127 @@ class KnowledgeSearchService:
         return bool(audiences & self.allowed_audiences)
 
     @staticmethod
+    def _is_business_type_allowed(
+        document: Document,
+        business_types: tuple[str, ...] | None,
+    ) -> bool:
+        if business_types is None:
+            return True
+        allowed = {item.strip() for item in business_types if item.strip()}
+        return str(document.metadata.get("business_type", "")).strip() in allowed
+
+    @staticmethod
+    def _is_effective(document: Document, as_of: date) -> bool:
+        metadata = document.metadata
+        try:
+            effective_from = date.fromisoformat(
+                str(metadata.get("effective_from", "")).strip()
+            )
+            raw_until = str(metadata.get("effective_until", "")).strip()
+            effective_until = date.fromisoformat(raw_until) if raw_until else None
+        except ValueError:
+            # 索引元数据不完整时失败关闭，不能把时效未知的制度交给模型。
+            return False
+        return effective_from <= as_of and (
+            effective_until is None or as_of <= effective_until
+        )
+
+    @classmethod
+    def _resolve_conflicts(
+        cls,
+        candidates: list[tuple[Document, float]],
+    ) -> tuple[
+        list[tuple[Document, float]],
+        list[KnowledgeConflictResolution],
+    ]:
+        documents_by_policy: dict[str, dict[str, Document]] = {}
+        for document, _ in candidates:
+            policy_key = str(document.metadata.get("policy_key", "")).strip()
+            knowledge_id = str(document.metadata.get("knowledge_id", "")).strip()
+            if policy_key and knowledge_id:
+                documents_by_policy.setdefault(policy_key, {})[knowledge_id] = document
+
+        suppressed: dict[str, tuple[str, str, str]] = {}
+        for policy_key, documents in documents_by_policy.items():
+            # 显式替代关系优先于通用排序，例如新通知明确替代旧制度。
+            for selected_id, document in documents.items():
+                supersedes = {
+                    item.strip()
+                    for item in str(document.metadata.get("supersedes", "")).split(",")
+                    if item.strip()
+                }
+                for suppressed_id in supersedes & documents.keys():
+                    current = suppressed.get(suppressed_id)
+                    if current is None or cls._governance_key(document) > cls._governance_key(
+                        documents[current[0]]
+                    ):
+                        suppressed[suppressed_id] = (
+                            selected_id,
+                            policy_key,
+                            "EXPLICIT_SUPERSEDES",
+                        )
+
+            remaining = {
+                knowledge_id: document
+                for knowledge_id, document in documents.items()
+                if knowledge_id not in suppressed
+            }
+            if len(remaining) <= 1:
+                continue
+            selected_id, selected_document = max(
+                remaining.items(),
+                key=lambda item: cls._governance_key(item[1]),
+            )
+            for suppressed_id in remaining:
+                if suppressed_id != selected_id:
+                    suppressed[suppressed_id] = (
+                        selected_id,
+                        policy_key,
+                        "AUTHORITY_AND_EFFECTIVE_DATE",
+                    )
+
+        governed = [
+            (document, score)
+            for document, score in candidates
+            if str(document.metadata.get("knowledge_id", "")).strip() not in suppressed
+        ]
+        resolutions = [
+            KnowledgeConflictResolution(
+                policy_key=policy_key,
+                selected_knowledge_id=selected_id,
+                suppressed_knowledge_id=suppressed_id,
+                reason=reason,
+            )
+            for suppressed_id, (selected_id, policy_key, reason) in sorted(
+                suppressed.items()
+            )
+        ]
+        return governed, resolutions
+
+    @staticmethod
+    def _governance_key(document: Document) -> tuple[int, date, tuple[int, ...]]:
+        authority_rank = {
+            "historical_case": 1,
+            "operations_manual": 2,
+            "system_contract": 3,
+            "official_policy": 4,
+        }
+        metadata = document.metadata
+        try:
+            effective_from = date.fromisoformat(str(metadata["effective_from"]))
+        except (KeyError, ValueError):
+            effective_from = date.min
+        version = tuple(
+            int(part) if part.isdigit() else 0
+            for part in str(metadata.get("knowledge_version", "0.0.0")).split(".")
+        )
+        return (
+            authority_rank.get(str(metadata.get("authority_level", "")), 0),
+            effective_from,
+            version,
+        )
+
+    @staticmethod
     def _to_match(document: Document, score: float) -> KnowledgeMatch:
         metadata = document.metadata
         title = str(metadata.get("title", "业务规则")).strip() or "业务规则"
@@ -206,6 +370,7 @@ class KnowledgeSearchService:
         raw_refs = str(metadata.get("source_refs", ""))
         source_refs = tuple(ref.strip() for ref in raw_refs.split("|") if ref.strip())
         effective_until = str(metadata.get("effective_until", "")).strip() or None
+        policy_key = str(metadata.get("policy_key", "")).strip() or None
         return KnowledgeMatch(
             content=document.page_content.strip(),
             score=float(score),
@@ -220,6 +385,7 @@ class KnowledgeSearchService:
             authority_level=str(metadata.get("authority_level", "")),
             effective_from=str(metadata.get("effective_from", "")),
             effective_until=effective_until,
+            policy_key=policy_key,
         )
 
 

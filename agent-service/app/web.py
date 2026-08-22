@@ -39,6 +39,7 @@ from app.operator_tools import (
     CAMPAIGN_DRAFT,
     CAMPAIGN_READ,
     CampaignDraftInput,
+    OperatorKnowledgeSearchInput,
     build_operator_tools,
 )
 from app.trace import capture_tool_trace
@@ -408,6 +409,11 @@ def create_app(
         tool = build_operator_tools(
             request.app.state.campaign_data_provider,
             operator,
+            knowledge_search=getattr(
+                request.app.state.runtime,
+                "operator_knowledge_search",
+                None,
+            ),
         )[0]
         with capture_tool_trace(request_id):
             result = tool.invoke({"target_segment_key": segment_key})
@@ -433,10 +439,61 @@ def create_app(
         tools = build_operator_tools(
             request.app.state.campaign_data_provider,
             operator,
+            knowledge_search=getattr(
+                request.app.state.runtime,
+                "operator_knowledge_search",
+                None,
+            ),
         )
         draft_tool = next(item for item in tools if item.name == "draft_campaign_plan")
         with capture_tool_trace(request_id):
             result = draft_tool.invoke(payload.model_dump())
+        return JSONResponse(content=result, headers={"X-Request-ID": request_id})
+
+    @application.post(
+        "/v1/operator/knowledge/search",
+        responses={
+            401: {"model": AuthenticationErrorResponse},
+            403: {"model": OperatorErrorResponse},
+            503: {"model": OperatorErrorResponse},
+        },
+    )
+    def search_operator_knowledge(
+        payload: OperatorKnowledgeSearchInput,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_READ)
+        tools = build_operator_tools(
+            request.app.state.campaign_data_provider,
+            operator,
+            knowledge_search=getattr(
+                request.app.state.runtime,
+                "operator_knowledge_search",
+                None,
+            ),
+        )
+        knowledge_tool = next(
+            (item for item in tools if item.name == "search_operator_knowledge"),
+            None,
+        )
+        if knowledge_tool is None:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "success": False,
+                    "code": "OPERATOR_KNOWLEDGE_NOT_CONFIGURED",
+                    "data": None,
+                    "message": "运营知识检索未启用",
+                    "retryable": True,
+                },
+                headers={"X-Request-ID": request_id},
+            )
+        with capture_tool_trace(request_id):
+            result = knowledge_tool.invoke(payload.model_dump())
         return JSONResponse(content=result, headers={"X-Request-ID": request_id})
 
     # API 路由必须先注册；根路径静态挂载放在最后，避免吞掉 /v1 和 /docs。

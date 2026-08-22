@@ -64,6 +64,8 @@ class KnowledgeIndexTest(unittest.TestCase):
             self.assertIn("authority_level", chunk.metadata)
             self.assertIn("effective_from", chunk.metadata)
             self.assertIn("effective_until", chunk.metadata)
+            self.assertIn("policy_key", chunk.metadata)
+            self.assertIn("supersedes", chunk.metadata)
             self.assertTrue(str(chunk.metadata["source_path"]).startswith("documents/"))
             self.assertTrue(
                 "heading_1" in chunk.metadata or "heading_2" in chunk.metadata

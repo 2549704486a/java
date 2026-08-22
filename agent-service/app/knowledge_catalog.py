@@ -55,12 +55,23 @@ class KnowledgeMetadata(BaseModel):
     ]
     effective_from: date
     effective_until: date | None = None
+    policy_key: str | None = Field(
+        default=None,
+        pattern=r"^[a-z0-9]+(?:_[a-z0-9]+)*$",
+    )
+    supersedes: list[str] = Field(default_factory=list)
     source_refs: list[str] = Field(min_length=1)
 
     @model_validator(mode="after")
     def validate_effective_window(self) -> "KnowledgeMetadata":
         if self.effective_until is not None and self.effective_until < self.effective_from:
             raise ValueError("知识失效日期不能早于生效日期")
+        if self.knowledge_id in self.supersedes:
+            raise ValueError("知识文档不能声明替代自身")
+        if self.supersedes and self.policy_key is None:
+            raise ValueError("声明 supersedes 时必须同时声明 policy_key")
+        if len(self.supersedes) != len(set(self.supersedes)):
+            raise ValueError("supersedes 不能包含重复知识 ID")
         return self
 
 
@@ -95,6 +106,7 @@ class KnowledgeCatalog:
             raise KnowledgeCatalogError("manifest.json 中存在重复知识 ID")
 
         validated_documents = tuple(self._load_document(entry) for entry in manifest.documents)
+        self._validate_supersedes(validated_documents)
         # retired/draft 文档仍要通过完整性校验，但不能进入后续切分和索引输入。
         documents = tuple(
             document
@@ -105,6 +117,26 @@ class KnowledgeCatalog:
             version=manifest.catalog_version,
             documents=documents,
         )
+
+    @staticmethod
+    def _validate_supersedes(documents: tuple[KnowledgeDocument, ...]) -> None:
+        documents_by_id = {
+            document.metadata.knowledge_id: document
+            for document in documents
+        }
+        for document in documents:
+            metadata = document.metadata
+            for target_id in metadata.supersedes:
+                target = documents_by_id.get(target_id)
+                if target is None:
+                    raise KnowledgeCatalogError(
+                        f"supersedes 指向不存在的知识：{metadata.knowledge_id} -> {target_id}"
+                    )
+                if target.metadata.policy_key != metadata.policy_key:
+                    raise KnowledgeCatalogError(
+                        "替代关系两端必须使用相同 policy_key："
+                        f"{metadata.knowledge_id} -> {target_id}"
+                    )
 
     def _load_manifest(self) -> CatalogManifest:
         manifest_path = self.knowledge_dir / "manifest.json"

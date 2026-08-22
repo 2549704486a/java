@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from langchain.tools import tool
 from pydantic import AwareDatetime, BaseModel, Field
 
 from app.campaign_data import CampaignDataProvider, CampaignDataUnavailable
+from app.knowledge_search import KnowledgeSearchError, KnowledgeSearchService
 from app.models import CampaignBrief
 from app.operator_auth import AuthenticatedOperator, OperatorPermissionError
 from app.skills.campaign_planning import CampaignPlanningSkill
@@ -15,6 +17,12 @@ from app.trace import execute_traced
 
 CAMPAIGN_READ = "campaign:read"
 CAMPAIGN_DRAFT = "campaign:draft"
+OPERATOR_KNOWLEDGE_SCOPES = {
+    "campaign_policy": ("campaign_policy", "rule_change_notice"),
+    "award_rules": ("award_guide",),
+    "operations": ("incident_manual",),
+    "review_cases": ("campaign_review",),
+}
 
 
 class CampaignSnapshotInput(BaseModel):
@@ -41,11 +49,27 @@ class CampaignDraftInput(CampaignSnapshotInput):
     max_awards: int = Field(default=2, ge=1, le=5)
 
 
+class OperatorKnowledgeSearchInput(BaseModel):
+    query: str = Field(
+        min_length=2,
+        max_length=300,
+        description="需要查询的运营制度、操作手册或历史案例",
+    )
+    scope: Literal[
+        "campaign_policy",
+        "award_rules",
+        "operations",
+        "review_cases",
+    ] = Field(description="运营知识范围，由调用端按当前任务固定选择")
+    limit: int = Field(default=3, ge=1, le=5)
+
+
 def build_operator_tools(
     data_provider: CampaignDataProvider,
     operator: AuthenticatedOperator,
     skill_registry: SkillRegistry | None = None,
     planning_skill: CampaignPlanningSkill | None = None,
+    knowledge_search: KnowledgeSearchService | None = None,
 ):
     """构建独立运营 Tool；普通用户 Agent 不会调用此函数。"""
 
@@ -82,6 +106,46 @@ def build_operator_tools(
         return execute_traced("get_campaign_planning_snapshot", arguments, execute)
 
     available_tools = [get_campaign_planning_snapshot]
+    if knowledge_search is not None:
+        @tool(args_schema=OperatorKnowledgeSearchInput)
+        def search_operator_knowledge(
+            query: str,
+            scope: Literal[
+                "campaign_policy",
+                "award_rules",
+                "operations",
+                "review_cases",
+            ],
+            limit: int = 3,
+        ) -> dict:
+            """查询当前有效的运营制度、操作手册与历史案例，不替代实时规划快照。"""
+            arguments = {
+                "operator_id": operator.operator_id,
+                "query_chars": len(query),
+                "scope": scope,
+                "limit": limit,
+            }
+
+            def execute() -> dict:
+                try:
+                    return knowledge_search.search(
+                        query,
+                        limit,
+                        business_types=OPERATOR_KNOWLEDGE_SCOPES[scope],
+                    ).as_dict()
+                except KnowledgeSearchError:
+                    return {
+                        "success": False,
+                        "code": "OPERATOR_KNOWLEDGE_SEARCH_FAILED",
+                        "data": None,
+                        "message": "运营知识检索暂时不可用",
+                        "retryable": True,
+                    }
+
+            return execute_traced("search_operator_knowledge", arguments, execute)
+
+        available_tools.append(search_operator_knowledge)
+
     if CAMPAIGN_DRAFT not in operator.permissions:
         return available_tools
 

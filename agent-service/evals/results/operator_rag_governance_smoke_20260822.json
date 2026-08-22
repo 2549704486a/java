@@ -1,0 +1,180 @@
+{
+  "metadata": {
+    "created_at": "2026-08-22T23:43:23",
+    "embedding_model": "text-embedding-v4",
+    "chat_model": null,
+    "relevance_threshold": 0.3,
+    "split": "all",
+    "audience": "operator",
+    "case_file": "evals\\operator_rag_cases.json",
+    "case_ids": [
+      "OR04",
+      "OR13",
+      "OR15"
+    ]
+  },
+  "summary": {
+    "retrieval": {
+      "total": 3,
+      "passed": 2,
+      "top1_accuracy": 1.0,
+      "hit_at_3": 1.0,
+      "negative_rejection_rate": 0.0,
+      "citation_valid_rate": 1.0,
+      "positive_top_score": {
+        "min": 0.4415,
+        "average": 0.5213,
+        "max": 0.6012
+      },
+      "negative_top_score": {
+        "min": 0.4483,
+        "average": 0.4483,
+        "max": 0.4483
+      }
+    },
+    "agent": {
+      "total": 0,
+      "passed": 0,
+      "check_rates": {},
+      "check_counts": {}
+    }
+  },
+  "retrieval_results": [
+    {
+      "id": "OR04",
+      "split": "calibration",
+      "category": "精确条款",
+      "query": "活动规划快照超过24小时还能继续生成草案吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-operation-policy",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-operation-policy",
+        "campaign-operation-policy",
+        "campaign-operation-policy"
+      ],
+      "top_score": 0.6012,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.6012
+        },
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.5917
+        },
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.547
+        }
+      ],
+      "elapsed_ms": 2747.58,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "OR13",
+      "split": "evaluation",
+      "category": "受众隔离",
+      "query": "页面显示处理中是不是就算兑换成功了？",
+      "expected_code": "NO_RELEVANT_KNOWLEDGE",
+      "expected_knowledge_id": null,
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-award-guide",
+        "campaign-rule-change-20260822",
+        "campaign-award-guide"
+      ],
+      "top_score": 0.4483,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-award-guide",
+          "chunk_id": "",
+          "score": 0.4483
+        },
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.3898
+        },
+        {
+          "knowledge_id": "campaign-award-guide",
+          "chunk_id": "",
+          "score": 0.3794
+        }
+      ],
+      "elapsed_ms": 483.03,
+      "checks": {
+        "result_code": false,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": false,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": false
+    },
+    {
+      "id": "OR15",
+      "split": "evaluation",
+      "category": "操作边界",
+      "query": "草案检查通过后是否可以跳过人工审核直接发布？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-operation-policy",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-operation-policy",
+        "campaign-operation-policy",
+        "campaign-operation-policy"
+      ],
+      "top_score": 0.4415,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.4415
+        },
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.3818
+        },
+        {
+          "knowledge_id": "campaign-operation-policy",
+          "chunk_id": "",
+          "score": 0.34
+        }
+      ],
+      "elapsed_ms": 579.06,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    }
+  ],
+  "agent_results": []
+}

@@ -9,6 +9,8 @@ fact_scope: stable_rules_only
 business_type: rule_change_notice
 authority_level: official_policy
 effective_from: 2026-08-22
+policy_key: campaign_budget_semantics
+supersedes: [campaign-budget-policy-legacy]
 source_refs:
   - agent-service/app/models.py
   - agent-service/app/operator_tools.py

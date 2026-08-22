@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "created_at": "2026-08-23T00:05:38",
+    "embedding_model": "text-embedding-v4",
+    "chat_model": null,
+    "relevance_threshold": 0.3,
+    "split": "all",
+    "audience": "operator",
+    "case_file": "evals\\operator_rag_cases.json",
+    "case_ids": [
+      "OR11"
+    ]
+  },
+  "summary": {
+    "retrieval": {
+      "total": 1,
+      "passed": 1,
+      "top1_accuracy": 1.0,
+      "hit_at_3": 1.0,
+      "negative_rejection_rate": 0.0,
+      "citation_valid_rate": 1.0,
+      "positive_top_score": {
+        "min": 0.7276,
+        "average": 0.7276,
+        "max": 0.7276
+      },
+      "negative_top_score": {
+        "min": null,
+        "average": null,
+        "max": null
+      }
+    },
+    "agent": {
+      "total": 0,
+      "passed": 0,
+      "check_rates": {},
+      "check_counts": {}
+    }
+  },
+  "retrieval_results": [
+    {
+      "id": "OR11",
+      "split": "evaluation",
+      "category": "知识冲突",
+      "query": "旧草案说积分就是活动预算，新通知说要用人民币金额，应该按哪个口径？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "campaign-rule-change-20260822",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "campaign-rule-change-20260822",
+        "campaign-rule-change-20260822",
+        "campaign-rule-change-20260822"
+      ],
+      "conflict_resolutions": [
+        {
+          "policyKey": "campaign_budget_semantics",
+          "selectedKnowledgeId": "campaign-rule-change-20260822",
+          "suppressedKnowledgeId": "campaign-budget-policy-legacy",
+          "reason": "EXPLICIT_SUPERSEDES"
+        }
+      ],
+      "top_score": 0.7276,
+      "raw_candidates": [
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.7276
+        },
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.6471
+        },
+        {
+          "knowledge_id": "campaign-rule-change-20260822",
+          "chunk_id": "",
+          "score": 0.5985
+        }
+      ],
+      "elapsed_ms": 2404.71,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true,
+        "audience_isolated": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    }
+  ],
+  "agent_results": []
+}

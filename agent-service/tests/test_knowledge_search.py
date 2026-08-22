@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 import unittest
 
 from langchain_core.documents import Document
@@ -143,7 +144,7 @@ class KnowledgeSearchServiceTest(unittest.TestCase):
 
         service.search("处理中是否等于兑换成功")
 
-        self.assertEqual([("处理中是否等于兑换成功", 6)], store.queries)
+        self.assertEqual([("处理中是否等于兑换成功", 12)], store.queries)
 
     def test_merges_raw_and_normalized_retrieval_by_highest_chunk_score(self):
         exchange = rule_document("exchange:1.0.0:0001")
@@ -199,7 +200,111 @@ class KnowledgeSearchServiceTest(unittest.TestCase):
         self.assertEqual("system_contract", match["authorityLevel"])
         self.assertEqual("2026-08-21", match["effectiveFrom"])
         self.assertIsNone(match["effectiveUntil"])
-        self.assertEqual([("处理中是否等于兑换成功", 4)], store.queries)
+        self.assertEqual([("处理中是否等于兑换成功", 8)], store.queries)
+
+    def test_filters_documents_outside_effective_window(self):
+        expired = rule_document("expired:1.0.0:0001").model_copy(deep=True)
+        expired.metadata.update(
+            {
+                "knowledge_id": "expired-policy",
+                "effective_from": "2026-08-01",
+                "effective_until": "2026-08-21",
+            }
+        )
+        future = rule_document("future:1.0.0:0001").model_copy(deep=True)
+        future.metadata.update(
+            {
+                "knowledge_id": "future-policy",
+                "effective_from": "2026-08-23",
+            }
+        )
+        current = rule_document()
+        service = KnowledgeSearchService(
+            FakeVectorStore([(expired, 0.95), (future, 0.93), (current, 0.80)]),
+            relevance_threshold=0.50,
+            today_provider=lambda: date(2026, 8, 22),
+        )
+
+        result = service.search("当前兑换制度")
+
+        self.assertEqual(
+            ["exchange-rules-and-status"],
+            [match.knowledge_id for match in result.matches],
+        )
+
+    def test_explicit_supersedes_wins_over_similarity_score(self):
+        old = rule_document("old:1.0.0:0001").model_copy(deep=True)
+        old.metadata.update(
+            {
+                "knowledge_id": "old-budget-policy",
+                "policy_key": "campaign_budget_semantics",
+                "authority_level": "official_policy",
+                "effective_from": "2026-08-01",
+            }
+        )
+        current = rule_document("current:2.0.0:0001").model_copy(deep=True)
+        current.metadata.update(
+            {
+                "knowledge_id": "current-budget-policy",
+                "knowledge_version": "2.0.0",
+                "policy_key": "campaign_budget_semantics",
+                "supersedes": "old-budget-policy",
+                "authority_level": "official_policy",
+                "effective_from": "2026-08-20",
+            }
+        )
+        service = KnowledgeSearchService(
+            FakeVectorStore([(old, 0.96), (current, 0.82)]),
+            relevance_threshold=0.50,
+            today_provider=lambda: date(2026, 8, 22),
+        )
+
+        result = service.search("活动预算口径")
+        payload = result.as_dict()
+
+        self.assertEqual(["current-budget-policy"], [item.knowledge_id for item in result.matches])
+        self.assertEqual(
+            {
+                "policyKey": "campaign_budget_semantics",
+                "selectedKnowledgeId": "current-budget-policy",
+                "suppressedKnowledgeId": "old-budget-policy",
+                "reason": "EXPLICIT_SUPERSEDES",
+            },
+            payload["data"]["conflictResolutions"][0],
+        )
+
+    def test_authority_and_effective_date_resolve_undeclared_conflict(self):
+        manual = rule_document("manual:1.0.0:0001").model_copy(deep=True)
+        manual.metadata.update(
+            {
+                "knowledge_id": "budget-manual",
+                "policy_key": "campaign_budget_semantics",
+                "authority_level": "operations_manual",
+                "effective_from": "2026-08-21",
+            }
+        )
+        policy = rule_document("policy:1.0.0:0001").model_copy(deep=True)
+        policy.metadata.update(
+            {
+                "knowledge_id": "budget-policy",
+                "policy_key": "campaign_budget_semantics",
+                "authority_level": "official_policy",
+                "effective_from": "2026-08-20",
+            }
+        )
+        service = KnowledgeSearchService(
+            FakeVectorStore([(manual, 0.95), (policy, 0.80)]),
+            relevance_threshold=0.50,
+            today_provider=lambda: date(2026, 8, 22),
+        )
+
+        result = service.search("活动预算口径")
+
+        self.assertEqual(["budget-policy"], [item.knowledge_id for item in result.matches])
+        self.assertEqual(
+            "AUTHORITY_AND_EFFECTIVE_DATE",
+            result.conflict_resolutions[0].reason,
+        )
 
     def test_filters_operator_knowledge_from_end_user_search(self):
         operator_document = rule_document("operator:1.0.0:0001")

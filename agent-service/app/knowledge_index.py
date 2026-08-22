@@ -88,6 +88,8 @@ class KnowledgeChunker:
                     if metadata.effective_until is not None
                     else ""
                 ),
+                "policy_key": metadata.policy_key or "",
+                "supersedes": ",".join(metadata.supersedes),
             }
 
             # 标题切分保留“这一段属于哪个章节”，递归切分只处理仍然过长的段落。
