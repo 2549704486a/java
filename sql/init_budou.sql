@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS `user_task`;
 DROP TABLE IF EXISTS `award_inventory_split`;
 DROP TABLE IF EXISTS `add_currency_record`;
 DROP TABLE IF EXISTS `inventory_log`;
+DROP TABLE IF EXISTS `campaign_metric_history`;
 DROP TABLE IF EXISTS `agent_long_term_memory`;
 DROP TABLE IF EXISTS `agent_exchange_request`;
 DROP TABLE IF EXISTS `idempotent_table`;
@@ -141,6 +142,20 @@ CREATE TABLE `agent_long_term_memory` (
   KEY `idx_agent_memory_user_updated` (`user_id`, `updated_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Agent 用户长期记忆';
 
+CREATE TABLE `campaign_metric_history` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `segment_key` varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '服务端支持的固定客群标识',
+  `metric_name` varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '指标名称',
+  `metric_value` decimal(10,6) NOT NULL COMMENT '指标值',
+  `sample_size` int NOT NULL COMMENT '统计样本数',
+  `measured_at` datetime(3) NOT NULL COMMENT '指标统计时间',
+  `source_ref` varchar(255) NOT NULL COMMENT '指标来源说明',
+  PRIMARY KEY (`id`),
+  KEY `idx_campaign_metric_segment_name_time` (`segment_key`, `metric_name`, `measured_at`),
+  CONSTRAINT `chk_campaign_metric_value` CHECK ((`metric_value` >= 0) AND (`metric_value` <= 1)),
+  CONSTRAINT `chk_campaign_metric_sample_size` CHECK (`sample_size` > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='运营活动历史指标';
+
 CREATE TABLE `award_inventory_split` (
   `splitId` bigint NOT NULL,
   `awardId` bigint NOT NULL COMMENT '奖品ID',
@@ -189,6 +204,11 @@ INSERT INTO `award_inventory_split` (`splitId`, `awardId`, `inventory`) VALUES
 
 INSERT INTO `task_config` (`taskId`, `taskName`, `currency`, `startTime`, `endTime`, `type`, `description`) VALUES
 (1, '分享链接', 10, '2024-10-16 16:57:26', '2027-07-13 16:57:26', 1, '完成分享任务后领取积分');
+
+INSERT INTO `campaign_metric_history`
+(`segment_key`, `metric_name`, `metric_value`, `sample_size`, `measured_at`, `source_ref`) VALUES
+('ALL_USERS', 'participation_rate', 0.180000, 10000, NOW(), 'demo_campaign_report:all_users'),
+('POINTS_AT_LEAST_500', 'participation_rate', 0.260000, 10000, NOW(), 'demo_campaign_report:points_at_least_500');
 
 SET SESSION cte_max_recursion_depth = 10000;
 

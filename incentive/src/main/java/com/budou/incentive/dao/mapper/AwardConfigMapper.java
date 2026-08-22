@@ -46,4 +46,7 @@ public interface AwardConfigMapper {
             "and (endTime is null or endTime >= #{now}) " +
             "and inventory > 0 order by price asc, awardId asc")
     List<AwardConfig> selectActiveAwards(@Param("now") Date now);
+
+    @Select("select * from award_config order by awardId asc")
+    List<AwardConfig> selectAllAwards();
 }

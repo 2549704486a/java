@@ -17,4 +17,7 @@ public interface AwardInventorySplitMapper {
             "where splitId = #{splitId} and awardId = #{awardId} and inventory > 0")
     int updateInventory(AwardInventorySplit awardInventorySplit);
 
+    @Select("select coalesce(sum(inventory), 0) from award_inventory_split where awardId = #{awardId}")
+    long selectTotalInventory(Long awardId);
+
 }

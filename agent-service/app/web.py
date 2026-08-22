@@ -22,12 +22,25 @@ from app.auth import (
     authenticator_from_settings,
 )
 from app.config import Settings
+from app.campaign_data import CampaignDataProvider, HttpCampaignDataProvider
 from app.models import (
     AwardOptionData,
     PendingExchangeData,
     UserPointsData,
 )
 from app.runtime import AgentRuntime
+from app.operator_auth import (
+    AuthenticatedOperator,
+    OperatorAuthenticator,
+    OperatorPermissionError,
+    operator_authenticator_from_settings,
+)
+from app.operator_tools import (
+    CAMPAIGN_DRAFT,
+    CAMPAIGN_READ,
+    CampaignDraftInput,
+    build_operator_tools,
+)
 from app.trace import capture_tool_trace
 
 
@@ -35,6 +48,8 @@ logger = logging.getLogger(__name__)
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 RuntimeFactory = Callable[[], AgentRuntime]
 AuthenticatorFactory = Callable[[], JwtAuthenticator]
+OperatorAuthenticatorFactory = Callable[[], OperatorAuthenticator]
+CampaignDataProviderFactory = Callable[[AgentRuntime], CampaignDataProvider]
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "web-ui" / "dist"
 
 
@@ -102,6 +117,12 @@ class AuthenticationErrorResponse(BaseModel):
     message: str
 
 
+class OperatorErrorResponse(BaseModel):
+    request_id: str
+    code: str
+    message: str
+
+
 def default_runtime_factory() -> AgentRuntime:
     load_dotenv()
     return AgentRuntime(Settings.from_env())
@@ -112,9 +133,26 @@ def default_authenticator_factory() -> JwtAuthenticator:
     return authenticator_from_settings(Settings.from_env())
 
 
+def default_operator_authenticator_factory() -> OperatorAuthenticator:
+    load_dotenv()
+    return operator_authenticator_from_settings(Settings.from_env())
+
+
+def default_campaign_data_provider_factory(
+    runtime: AgentRuntime,
+) -> CampaignDataProvider:
+    return HttpCampaignDataProvider(runtime.client)
+
+
 def create_app(
     runtime_factory: RuntimeFactory = default_runtime_factory,
     authenticator_factory: AuthenticatorFactory = default_authenticator_factory,
+    operator_authenticator_factory: OperatorAuthenticatorFactory = (
+        default_operator_authenticator_factory
+    ),
+    campaign_data_provider_factory: CampaignDataProviderFactory = (
+        default_campaign_data_provider_factory
+    ),
 ) -> FastAPI:
     @asynccontextmanager
     async def lifespan(application: FastAPI):
@@ -122,6 +160,8 @@ def create_app(
         runtime = runtime_factory()
         application.state.runtime = runtime
         application.state.authenticator = authenticator
+        application.state.operator_authenticator = operator_authenticator_factory()
+        application.state.campaign_data_provider = campaign_data_provider_factory(runtime)
         logger.info("agent_http_started health=%s", runtime.health())
         try:
             yield
@@ -147,12 +187,28 @@ def create_app(
             message=exc.message,
         )
         return JSONResponse(
-            status_code=401,
+            status_code=(
+                503 if exc.code == "OPERATOR_AUTH_NOT_CONFIGURED" else 401
+            ),
             content=body.model_dump(),
-            headers={
-                "X-Request-ID": request_id,
-                "WWW-Authenticate": "Bearer",
-            },
+            headers={"X-Request-ID": request_id, "WWW-Authenticate": "Bearer"},
+        )
+
+    @application.exception_handler(OperatorPermissionError)
+    def operator_permission_error_handler(
+        request: Request,
+        exc: OperatorPermissionError,
+    ) -> JSONResponse:
+        request_id = normalize_request_id(request.headers.get("X-Request-ID"))
+        body = OperatorErrorResponse(
+            request_id=request_id,
+            code="OPERATOR_PERMISSION_DENIED",
+            message=str(exc),
+        )
+        return JSONResponse(
+            status_code=403,
+            content=body.model_dump(),
+            headers={"X-Request-ID": request_id},
         )
 
     @application.get("/health")
@@ -332,6 +388,57 @@ def create_app(
             headers={"X-Request-ID": request_id},
         )
 
+    @application.get(
+        "/v1/operator/campaign/snapshots/{segment_key}",
+        responses={
+            401: {"model": AuthenticationErrorResponse},
+            403: {"model": OperatorErrorResponse},
+            503: {"model": OperatorErrorResponse},
+        },
+    )
+    def campaign_snapshot(
+        segment_key: str,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_READ)
+        tool = build_operator_tools(
+            request.app.state.campaign_data_provider,
+            operator,
+        )[0]
+        with capture_tool_trace(request_id):
+            result = tool.invoke({"target_segment_key": segment_key})
+        return JSONResponse(content=result, headers={"X-Request-ID": request_id})
+
+    @application.post(
+        "/v1/operator/campaign/drafts",
+        responses={
+            401: {"model": AuthenticationErrorResponse},
+            403: {"model": OperatorErrorResponse},
+            503: {"model": OperatorErrorResponse},
+        },
+    )
+    def draft_campaign(
+        payload: CampaignDraftInput,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_READ, CAMPAIGN_DRAFT)
+        tools = build_operator_tools(
+            request.app.state.campaign_data_provider,
+            operator,
+        )
+        draft_tool = next(item for item in tools if item.name == "draft_campaign_plan")
+        with capture_tool_trace(request_id):
+            result = draft_tool.invoke(payload.model_dump())
+        return JSONResponse(content=result, headers={"X-Request-ID": request_id})
+
     # API 路由必须先注册；根路径静态挂载放在最后，避免吞掉 /v1 和 /docs。
     if FRONTEND_DIST.is_dir():
         application.mount(
@@ -354,6 +461,22 @@ def authenticate_request(
     authorization: str | None,
 ) -> AuthenticatedUser:
     return request.app.state.authenticator.authenticate(authorization)
+
+
+def authenticate_operator_request(
+    request: Request,
+    authorization: str | None,
+) -> AuthenticatedOperator:
+    return request.app.state.operator_authenticator.authenticate(authorization)
+
+
+def require_operator_permission(
+    operator: AuthenticatedOperator,
+    *required: str,
+) -> None:
+    missing = [permission for permission in required if permission not in operator.permissions]
+    if missing:
+        raise OperatorPermissionError(f"运营身份缺少权限：{', '.join(missing)}")
 
 
 def dashboard_error(

@@ -15,9 +15,9 @@ from app.models import (
 from app.operator_tools import (
     CAMPAIGN_DRAFT,
     CAMPAIGN_READ,
-    OperatorContext,
     build_operator_tools,
 )
+from app.operator_auth import AuthenticatedOperator, OperatorPermissionError
 from app.skills.campaign_planning import CampaignPlanningSkill
 
 
@@ -98,6 +98,7 @@ def planning_snapshot(
 def brief(**overrides) -> CampaignBrief:
     values = {
         "objective": "召回长期未活跃用户",
+        "target_segment_key": "inactive-30d-points-500",
         "target_segment": SEGMENT,
         "budget_points": 50000,
         "start_at": NOW + timedelta(days=1),
@@ -157,11 +158,26 @@ class CampaignPlanningSkillTest(unittest.TestCase):
         self.assertEqual([], result.suggested_tasks)
         self.assertIn("NO_TASK_FITS_BUDGET", [risk.code for risk in result.risks])
 
+    def test_excludes_task_that_expires_before_campaign_ends(self):
+        source = planning_snapshot()
+        source.tasks = [
+            source.tasks[0].model_copy(
+                update={"available_until": NOW + timedelta(days=2)}
+            )
+        ]
+
+        result = self.skill.create_draft(brief(), source)
+
+        self.assertEqual("CONSTRAINT_CONFLICT", result.status)
+        self.assertEqual([], result.suggested_tasks)
+
 
 class OperatorToolsTest(unittest.TestCase):
     def test_builds_separate_read_only_and_draft_tools(self):
-        provider = StaticCampaignDataProvider({SEGMENT: planning_snapshot()})
-        operator = OperatorContext(
+        provider = StaticCampaignDataProvider(
+            {"inactive-30d-points-500": planning_snapshot()}
+        )
+        operator = AuthenticatedOperator(
             operator_id="operator-01",
             permissions=frozenset({CAMPAIGN_READ, CAMPAIGN_DRAFT}),
         )
@@ -178,7 +194,7 @@ class OperatorToolsTest(unittest.TestCase):
         draft_tool = next(item for item in tools if item.name == "draft_campaign_plan")
         result = draft_tool.invoke(
             {
-                "target_segment": SEGMENT,
+                "target_segment_key": "inactive-30d-points-500",
                 "objective": "召回长期未活跃用户",
                 "budget_points": 50000,
                 "start_at": NOW + timedelta(days=1),
@@ -189,8 +205,10 @@ class OperatorToolsTest(unittest.TestCase):
         self.assertFalse(result["publishable"])
 
     def test_read_only_operator_cannot_build_draft_tool(self):
-        provider = StaticCampaignDataProvider({SEGMENT: planning_snapshot()})
-        operator = OperatorContext(
+        provider = StaticCampaignDataProvider(
+            {"inactive-30d-points-500": planning_snapshot()}
+        )
+        operator = AuthenticatedOperator(
             operator_id="operator-02",
             permissions=frozenset({CAMPAIGN_READ}),
         )
@@ -203,13 +221,15 @@ class OperatorToolsTest(unittest.TestCase):
         )
 
     def test_rejects_operator_without_read_permission(self):
-        provider = StaticCampaignDataProvider({SEGMENT: planning_snapshot()})
-        operator = OperatorContext(
+        provider = StaticCampaignDataProvider(
+            {"inactive-30d-points-500": planning_snapshot()}
+        )
+        operator = AuthenticatedOperator(
             operator_id="operator-03",
             permissions=frozenset({CAMPAIGN_DRAFT}),
         )
 
-        with self.assertRaises(PermissionError):
+        with self.assertRaises(OperatorPermissionError):
             build_operator_tools(provider, operator)
 
 

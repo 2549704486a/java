@@ -8,6 +8,7 @@ START TRANSACTION;
 -- Step 1: 按依赖关系从业务流水向配置表清理，避免违反外键约束。
 DELETE FROM `inventory_log`;
 DELETE FROM `add_currency_record`;
+DELETE FROM `campaign_metric_history`;
 DELETE FROM `agent_exchange_request`;
 DELETE FROM `idempotent_table`;
 DELETE FROM `user_award`;
@@ -135,5 +136,13 @@ INSERT INTO `idempotent_table` (`idempotent_key`, `create_time`) VALUES
 INSERT INTO `inventory_log` (`userId`, `awardId`, `inventory`, `splitId`, `creatTime`) VALUES
 (8, 1, 9, 1, DATE_SUB(NOW(), INTERVAL 7 DAY)),
 (11, 6, 1, 1, DATE_SUB(NOW(), INTERVAL 4 DAY));
+
+-- 演示环境的历史活动指标。草案只读取已有记录，缺失时不会自行猜测参与率。
+INSERT INTO `campaign_metric_history`
+(`segment_key`, `metric_name`, `metric_value`, `sample_size`, `measured_at`, `source_ref`) VALUES
+('ALL_USERS', 'participation_rate', 0.180000, 20, DATE_SUB(NOW(), INTERVAL 7 DAY),
+ 'demo_campaign_report:all_users:202608'),
+('POINTS_AT_LEAST_500', 'participation_rate', 0.260000, 16, DATE_SUB(NOW(), INTERVAL 7 DAY),
+ 'demo_campaign_report:points_at_least_500:202608');
 
 COMMIT;

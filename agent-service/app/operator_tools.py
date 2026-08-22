@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 
 from langchain.tools import tool
@@ -8,6 +7,7 @@ from pydantic import AwareDatetime, BaseModel, Field
 
 from app.campaign_data import CampaignDataProvider, CampaignDataUnavailable
 from app.models import CampaignBrief
+from app.operator_auth import AuthenticatedOperator, OperatorPermissionError
 from app.skills.campaign_planning import CampaignPlanningSkill
 from app.skills.registry import SkillRegistry
 from app.trace import execute_traced
@@ -17,17 +17,11 @@ CAMPAIGN_READ = "campaign:read"
 CAMPAIGN_DRAFT = "campaign:draft"
 
 
-@dataclass(frozen=True)
-class OperatorContext:
-    operator_id: str
-    permissions: frozenset[str]
-
-
 class CampaignSnapshotInput(BaseModel):
-    target_segment: str = Field(
-        min_length=2,
-        max_length=200,
-        description="已经在运营数据平台中定义的目标用户群描述",
+    target_segment_key: str = Field(
+        min_length=1,
+        max_length=64,
+        description="服务端支持的固定客群标识",
     )
 
 
@@ -42,7 +36,7 @@ class CampaignDraftInput(CampaignSnapshotInput):
 
 def build_operator_tools(
     data_provider: CampaignDataProvider,
-    operator: OperatorContext,
+    operator: AuthenticatedOperator,
     skill_registry: SkillRegistry | None = None,
     planning_skill: CampaignPlanningSkill | None = None,
 ):
@@ -51,24 +45,24 @@ def build_operator_tools(
     _require_permissions(operator, CAMPAIGN_READ)
 
     @tool(args_schema=CampaignSnapshotInput)
-    def get_campaign_planning_snapshot(target_segment: str) -> dict:
+    def get_campaign_planning_snapshot(target_segment_key: str) -> dict:
         """读取活动草案所需的用户群、任务、奖品库存和历史参与率快照。"""
 
         arguments = {
             "operator_id": operator.operator_id,
-            "target_segment_chars": len(target_segment),
+            "target_segment_key": target_segment_key,
         }
 
         def execute() -> dict:
             try:
-                snapshot = data_provider.get_planning_snapshot(target_segment)
+                snapshot = data_provider.get_planning_snapshot(target_segment_key)
             except CampaignDataUnavailable as exc:
                 return {
                     "success": False,
-                    "code": "CAMPAIGN_DATA_UNAVAILABLE",
+                    "code": exc.code,
                     "data": None,
-                    "message": str(exc),
-                    "retryable": True,
+                    "message": exc.message,
+                    "retryable": exc.retryable,
                 }
             return {
                 "success": True,
@@ -94,7 +88,7 @@ def build_operator_tools(
         extras=manifest.trace_metadata(),
     )
     def draft_campaign_plan(
-        target_segment: str,
+        target_segment_key: str,
         objective: str,
         budget_points: int,
         start_at: datetime,
@@ -114,18 +108,19 @@ def build_operator_tools(
         def execute() -> dict:
             registry.activate(manifest.name)
             try:
-                snapshot = data_provider.get_planning_snapshot(target_segment)
+                snapshot = data_provider.get_planning_snapshot(target_segment_key)
             except CampaignDataUnavailable as exc:
                 return {
                     "success": False,
-                    "code": "CAMPAIGN_DATA_UNAVAILABLE",
+                    "code": exc.code,
                     "data": None,
-                    "message": str(exc),
-                    "retryable": True,
+                    "message": exc.message,
+                    "retryable": exc.retryable,
                 }
             brief = CampaignBrief(
                 objective=objective,
-                target_segment=target_segment,
+                target_segment_key=target_segment_key,
+                target_segment=snapshot.segment.description,
                 budget_points=budget_points,
                 start_at=start_at,
                 end_at=end_at,
@@ -140,7 +135,7 @@ def build_operator_tools(
     return available_tools
 
 
-def _require_permissions(operator: OperatorContext, *required: str) -> None:
+def _require_permissions(operator: AuthenticatedOperator, *required: str) -> None:
     missing = [item for item in required if item not in operator.permissions]
     if missing:
-        raise PermissionError(f"运营身份缺少权限：{', '.join(missing)}")
+        raise OperatorPermissionError(f"运营身份缺少权限：{', '.join(missing)}")

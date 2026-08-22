@@ -37,7 +37,7 @@ class CampaignPlanningSkill:
         generated_at = self._now()
         base = self._base_fields(brief, snapshot, generated_at)
 
-        if snapshot.segment.description != brief.target_segment:
+        if snapshot.segment.segment_key != brief.target_segment_key:
             return CampaignPlanDraft(
                 status="NEEDS_DATA",
                 reason_code="SEGMENT_SNAPSHOT_MISMATCH",
@@ -119,7 +119,12 @@ class CampaignPlanningSkill:
                 **base,
             )
         per_user_budget = brief.budget_points // estimated_participants
-        tasks = self._select_tasks(snapshot.tasks, brief.max_tasks, per_user_budget)
+        tasks = self._select_tasks(
+            snapshot.tasks,
+            brief.max_tasks,
+            per_user_budget,
+            brief,
+        )
         awards, excluded_awards = self._select_awards(
             snapshot.awards,
             brief,
@@ -209,6 +214,7 @@ class CampaignPlanningSkill:
     ) -> dict:
         return {
             "objective": brief.objective,
+            "target_segment_key": brief.target_segment_key,
             "target_segment": brief.target_segment,
             "budget_points": brief.budget_points,
             "start_at": brief.start_at,
@@ -241,11 +247,24 @@ class CampaignPlanningSkill:
         tasks: list[CampaignTaskSnapshot],
         limit: int,
         per_user_budget: int,
+        brief: CampaignBrief,
     ) -> list[CampaignTaskSnapshot]:
         selected: list[CampaignTaskSnapshot] = []
         remaining = per_user_budget
         candidates = sorted(
-            (task for task in tasks if task.active),
+            (
+                task
+                for task in tasks
+                if task.active
+                and (
+                    task.available_from is None
+                    or task.available_from <= brief.start_at
+                )
+                and (
+                    task.available_until is None
+                    or task.available_until >= brief.end_at
+                )
+            ),
             key=lambda task: (-task.max_reward_per_user, task.task_id),
         )
         for task in candidates:

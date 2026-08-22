@@ -78,6 +78,11 @@ class BusinessApiClient:
             f"/agent/query/users/{user_id}/awards/{award_id}/eligibility"
         )
 
+    def get_campaign_planning_snapshot(self, segment_key: str) -> ToolEnvelope:
+        return self._get(
+            f"/agent/operator/query/campaign-planning/snapshots/{segment_key}"
+        )
+
     def submit_exchange(
         self,
         *,

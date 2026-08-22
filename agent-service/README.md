@@ -22,7 +22,7 @@
 
 ## 2. 环境准备
 
-要求 Python 3.11。先启动 MySQL、Redis 和 Java 服务，默认地址分别为 `127.0.0.1:3306`、`127.0.0.1:6379` 和 `http://127.0.0.1:8088`。首次升级执行 `sql/migrate_agent_long_term_memory.sql` 创建长期记忆表。
+要求 Python 3.11。先启动 MySQL、Redis 和 Java 服务，默认地址分别为 `127.0.0.1:3306`、`127.0.0.1:6379` 和 `http://127.0.0.1:8088`。首次升级执行 `sql/migrate_agent_long_term_memory.sql` 创建长期记忆表；启用运营草案前执行 `sql/migrations/20260822_add_campaign_metric_history.sql` 创建历史活动指标表。
 
 ```powershell
 cd D:\工作\incentive-事务消息\agent-service
@@ -77,6 +77,18 @@ GROWTH_MEMORY_MYSQL_DATABASE=budou
 GROWTH_MEMORY_MYSQL_USER=root
 GROWTH_MEMORY_MYSQL_PASSWORD=本地MySQL密码
 GROWTH_MEMORY_MYSQL_TABLE=agent_long_term_memory
+OPERATOR_ACCESS_TOKEN=独立于普通用户令牌的运营访问令牌
+OPERATOR_ID=local-operator
+OPERATOR_PERMISSIONS=campaign:read,campaign:draft
+```
+
+运营接口不挂载到普通用户 Agent。配置完成后，可使用以下命令验证只读快照：
+
+```powershell
+$headers = @{ Authorization = "Bearer $env:OPERATOR_ACCESS_TOKEN" }
+Invoke-RestMethod `
+  -Uri http://127.0.0.1:8090/v1/operator/campaign/snapshots/ALL_USERS `
+  -Headers $headers
 ```
 
 ## 3. 先验证业务 Skill

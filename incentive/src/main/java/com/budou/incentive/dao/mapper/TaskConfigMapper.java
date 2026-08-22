@@ -21,4 +21,7 @@ public interface TaskConfigMapper {
             "and (endTime is null or endTime >= #{now}) " +
             "order by currency desc, taskId asc")
     List<TaskConfig> selectActiveTasks(@Param("now") Date now);
+
+    @Select("select * from task_config order by taskId asc")
+    List<TaskConfig> selectAllTasks();
 }

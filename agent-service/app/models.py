@@ -255,6 +255,7 @@ class CampaignBrief(BaseModel):
     """运营人员提交的活动目标和硬约束，不承载库存等动态事实。"""
 
     objective: str = Field(min_length=2, max_length=200)
+    target_segment_key: str = Field(min_length=1, max_length=64)
     target_segment: str = Field(min_length=2, max_length=200)
     budget_points: int = Field(gt=0)
     start_at: AwareDatetime
@@ -270,19 +271,29 @@ class CampaignBrief(BaseModel):
 
 
 class CampaignSegmentSnapshot(BaseModel):
-    segment_key: str = Field(min_length=1)
+    model_config = ConfigDict(populate_by_name=True)
+
+    segment_key: str = Field(min_length=1, alias="segmentKey")
     description: str = Field(min_length=1)
-    estimated_users: int = Field(ge=0)
-    as_of: AwareDatetime
+    estimated_users: int = Field(ge=0, alias="estimatedUsers")
+    as_of: AwareDatetime = Field(alias="asOf")
 
 
 class CampaignTaskSnapshot(BaseModel):
-    task_id: int = Field(gt=0)
-    task_name: str = Field(min_length=1)
-    reward_points: int = Field(gt=0)
-    max_completions_per_user: int = Field(default=1, ge=1)
+    model_config = ConfigDict(populate_by_name=True)
+
+    task_id: int = Field(gt=0, alias="taskId")
+    task_name: str = Field(min_length=1, alias="taskName")
+    reward_points: int = Field(gt=0, alias="rewardPoints")
+    max_completions_per_user: int = Field(
+        default=1,
+        ge=1,
+        alias="maxCompletionsPerUser",
+    )
     active: bool = True
-    source_ref: str = Field(min_length=1)
+    available_from: AwareDatetime | None = Field(default=None, alias="availableFrom")
+    available_until: AwareDatetime | None = Field(default=None, alias="availableUntil")
+    source_ref: str = Field(min_length=1, alias="sourceRef")
 
     @property
     def max_reward_per_user(self) -> int:
@@ -290,29 +301,35 @@ class CampaignTaskSnapshot(BaseModel):
 
 
 class CampaignAwardSnapshot(BaseModel):
-    award_id: int = Field(gt=0)
-    award_name: str = Field(min_length=1)
-    required_points: int = Field(gt=0)
+    model_config = ConfigDict(populate_by_name=True)
+
+    award_id: int = Field(gt=0, alias="awardId")
+    award_name: str = Field(min_length=1, alias="awardName")
+    required_points: int = Field(gt=0, alias="requiredPoints")
     inventory: int = Field(ge=0)
     active: bool = True
-    available_from: AwareDatetime | None = None
-    available_until: AwareDatetime | None = None
-    source_ref: str = Field(min_length=1)
+    available_from: AwareDatetime | None = Field(default=None, alias="availableFrom")
+    available_until: AwareDatetime | None = Field(default=None, alias="availableUntil")
+    source_ref: str = Field(min_length=1, alias="sourceRef")
 
 
 class HistoricalCampaignMetric(BaseModel):
-    metric_name: Literal["participation_rate"]
+    model_config = ConfigDict(populate_by_name=True)
+
+    metric_name: Literal["participation_rate"] = Field(alias="metricName")
     value: float = Field(ge=0, le=1)
-    sample_size: int = Field(gt=0)
-    as_of: AwareDatetime
-    source_ref: str = Field(min_length=1)
+    sample_size: int = Field(gt=0, alias="sampleSize")
+    as_of: AwareDatetime = Field(alias="asOf")
+    source_ref: str = Field(min_length=1, alias="sourceRef")
 
 
 class CampaignPlanningSnapshot(BaseModel):
     """生成草案时使用的只读事实快照。"""
 
-    snapshot_id: str = Field(min_length=1)
-    generated_at: AwareDatetime
+    model_config = ConfigDict(populate_by_name=True)
+
+    snapshot_id: str = Field(min_length=1, alias="snapshotId")
+    generated_at: AwareDatetime = Field(alias="generatedAt")
     segment: CampaignSegmentSnapshot
     tasks: list[CampaignTaskSnapshot] = Field(default_factory=list)
     awards: list[CampaignAwardSnapshot] = Field(default_factory=list)
@@ -351,6 +368,7 @@ class CampaignPlanDraft(BaseModel):
     publishable: Literal[False] = False
     review_required: Literal[True] = True
     objective: str
+    target_segment_key: str
     target_segment: str
     budget_points: int
     start_at: AwareDatetime

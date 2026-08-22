@@ -23,6 +23,12 @@ public interface UserCurrencyMapper {
     @Select("select userId, currency from user_currency where userId between #{minUserId} and #{maxUserId}")
     List<UserCurrency> selectRange(@Param("minUserId") Long minUserId, @Param("maxUserId") Long maxUserId);
 
+    @Select("select count(*) from user_currency")
+    long countAllUsers();
+
+    @Select("select count(*) from user_currency where currency >= #{minimumPoints}")
+    long countUsersWithMinimumPoints(@Param("minimumPoints") int minimumPoints);
+
     @Update("update user_currency set currency = currency + #{currency} where userId = #{userId}")
     void addCurrency(Long userId, Integer currency);
 

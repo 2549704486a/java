@@ -47,6 +47,11 @@ class Settings:
     agent_auth_issuer: str = "incentive-agent"
     agent_auth_audience: str = "incentive-agent-web"
     agent_access_token_ttl_seconds: int = 3600
+    operator_access_token: str | None = None
+    operator_id: str = "local-operator"
+    operator_permissions: frozenset[str] = frozenset(
+        {"campaign:read", "campaign:draft"}
+    )
     exchange_confirmation_ttl_seconds: int = 120
     exchange_confirmation_capacity: int = 10_000
     exchange_confirmation_store: str = "memory"
@@ -129,6 +134,16 @@ class Settings:
             ),
             agent_access_token_ttl_seconds=int(
                 os.getenv("AGENT_ACCESS_TOKEN_TTL_SECONDS", "3600")
+            ),
+            operator_access_token=os.getenv("OPERATOR_ACCESS_TOKEN") or None,
+            operator_id=os.getenv("OPERATOR_ID", "local-operator").strip(),
+            operator_permissions=frozenset(
+                item.strip()
+                for item in os.getenv(
+                    "OPERATOR_PERMISSIONS",
+                    "campaign:read,campaign:draft",
+                ).split(",")
+                if item.strip()
             ),
             exchange_confirmation_ttl_seconds=int(
                 os.getenv("EXCHANGE_CONFIRMATION_TTL_SECONDS", "120")
