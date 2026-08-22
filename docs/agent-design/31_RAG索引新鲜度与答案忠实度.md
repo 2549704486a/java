@@ -10,6 +10,97 @@
 - `knowledge_id`：单篇知识的稳定身份。
 - `knowledge_version`：单篇知识版本。
 
+### 1.1 数据模型实例：一篇知识如何变成 Chunk
+
+只看字段名不容易理解三种版本信息的关系。以“奖品兑换规则与状态”为例，它会依次经过目录清单、单篇文档、目录快照和 Chunk 四种形态。
+
+#### 1. 目录清单
+
+`manifest.json` 管理“本批知识有哪些”和“整个目录是哪一版”：
+
+```json
+{
+  "schema_version": 1,
+  "catalog_version": "2026.08.22.1",
+  "documents": [
+    {
+      "id": "exchange-rules-and-status",
+      "path": "documents/exchange-rules-and-status.md"
+    }
+  ]
+}
+```
+
+这里的 `catalog_version` 属于整个知识目录。即使只修改一篇知识，也应该产生新的目录版本，使运行时能够识别“代码看到的目录”和“磁盘中的旧索引”不是同一批数据。
+
+#### 2. 单篇知识元数据
+
+知识文档开头的 YAML Front Matter 描述“这篇知识是谁、是哪一版、是否允许进入索引”：
+
+```yaml
+knowledge_id: exchange-rules-and-status
+title: 奖品兑换规则与状态
+version: 1.1.0
+status: active
+audience: [end_user]
+topics: [exchange, eligibility, status]
+fact_scope: stable_rules_only
+source_refs:
+  - incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java
+  - agent-service/app/skills/controlled_exchange.py
+```
+
+其中 `knowledge_id` 是稳定身份，文档内容变化时通常不换 ID，而是提升 `version`。`status: active` 表示它可以进入索引；`draft` 和 `retired` 仍会接受格式校验，但不会交给后续切分。
+
+#### 3. KnowledgeCatalog 快照
+
+`KnowledgeCatalog.load()` 不直接返回一堆未经检查的 Markdown，而是先校验目录、路径、Front Matter 和正文结构，再形成不可变快照。可把运行时对象理解为：
+
+```text
+KnowledgeCatalogSnapshot(
+  version="2026.08.22.1",
+  documents=(
+    KnowledgeDocument(
+      metadata=KnowledgeMetadata(
+        knowledge_id="exchange-rules-and-status",
+        title="奖品兑换规则与状态",
+        version="1.1.0",
+        status="active",
+        fact_scope="stable_rules_only"
+      ),
+      body="# 奖品兑换规则与状态\n...",
+      source_path="knowledge/documents/exchange-rules-and-status.md"
+    )
+  )
+)
+```
+
+这里的 `KnowledgeCatalog` 是加载和治理入口，真正传给切分器的数据模型是 `KnowledgeCatalogSnapshot`。这样，索引层拿到的一定是已经通过治理且当前有效的知识。
+
+#### 4. Chroma 中的 Chunk
+
+切分器先按 Markdown 标题保留章节语义，再把过长内容递归切分。某个“规则说明”片段最终可表示为：
+
+```text
+Document(
+  page_content="处理中只表示兑换请求已经受理，不表示兑换成功。",
+  metadata={
+    "catalog_version": "2026.08.22.1",
+    "knowledge_id": "exchange-rules-and-status",
+    "knowledge_version": "1.1.0",
+    "chunk_id": "exchange-rules-and-status:1.1.0:0001",
+    "chunk_index": 1,
+    "title": "奖品兑换规则与状态",
+    "heading_1": "奖品兑换规则与状态",
+    "heading_2": "规则说明",
+    "source_path": "documents/exchange-rules-and-status.md",
+    "fact_scope": "stable_rules_only"
+  }
+)
+```
+
+`page_content` 用于向量化和提供回答证据，`metadata` 用于版本门禁、来源引用、过滤和问题追踪。一个文档会产生多个 Chunk，因此新鲜度检查不能只抽查第一条，而要读取正式集合中全部 Chunk 的版本元数据。
+
 RAG 开启时，服务读取正式集合的全部 Chunk 元数据，并与当前 `KnowledgeCatalog` 比较：
 
 1. 正式集合不能为空。
@@ -60,7 +151,60 @@ python -m app.knowledge_index build
 
 Agent 集从 `7` 条扩充到 `11` 条，增加错别字、口语和两类冲突陈述。一次初始口语用例“活干完了，咋分还没到账”被模型合理理解为查询当前用户状态，因此走了实时积分和任务 Tool；该原始结果被保留，用例随后改为明确询问规则的口语表达，没有通过修改 Prompt 强行改变正确的实时路由。
 
-## 4. 阈值重新校准
+## 4. 查询标准化与双路召回
+
+错别字和口语会改变 Query 的向量表达。只降低阈值可以减少误拒答，却不能解决正确知识排在错误知识之后的问题；对所有请求调用大模型改写，又会增加延迟、费用和意图漂移风险。因此当前实现使用受控领域词表：
+
+1. 保留用户原始 Query。
+2. 只纠正能够明确映射到积分兑换领域的错别字和口语短语。
+3. 没有命中规则时只执行原始 Query 检索。
+4. 发生标准化时分别检索原始 Query 和标准化 Query。
+5. 两路候选按 `chunk_id` 合并，同一 Chunk 保留更高相关度，再统一过滤和排序。
+
+### 4.1 数据模型实例
+
+输入“任物作完了，积份会自已到帐吗？”后，标准化层产生：
+
+```text
+QueryNormalizationResult(
+  original_query="任物作完了，积份会自已到帐吗？",
+  normalized_query="任务作完了，积分会自己到账吗？",
+  applied_replacements=(
+    ("任物", "任务"),
+    ("积份", "积分"),
+    ("自已", "自己"),
+    ("到帐", "到账")
+  )
+)
+```
+
+它不是把原问题永久改掉，而是生成两个检索变体：
+
+```text
+variants = (
+  "任物作完了，积份会自已到帐吗？",
+  "任务作完了，积分会自己到账吗？"
+)
+```
+
+假设原 Query 把 Agent 使用说明召回为 `0.3781`，标准化 Query 把积分任务规则召回为 `0.5559`，合并后积分任务规则会成为 Top1。原始表达仍参与召回，因此标准化规则不准确时，原 Query 找到的候选不会直接丢失。
+
+### 4.2 定向验证
+
+本轮按照减少回归频率的约定，只复验 4 条错别字和口语困难用例：
+
+| 用例 | 优化前 Top1 分数 | 优化后 Top1 分数 | Top1 结果 |
+| --- | ---: | ---: | --- |
+| `RR19` 处理中错别字 | `0.4314` | `0.6629` | 正确 → 正确 |
+| `RR20` 任务积分重度错别字 | `0.3781` | `0.5559` | 错误 → 正确 |
+| `RR21` 任务积分口语 | `0.3446` | `0.6014` | 正确 → 正确 |
+| `RR22` Agent 能力口语 | `0.6918` | `0.7187` | 正确 → 正确 |
+
+困难集 Top1 从 `3/4` 提升为 `4/4`，平均 Top1 分数为 `0.6347`。普通标准问题不命中词表，仍只产生一次向量查询；困难问题会增加一次查询。当前没有引入大模型 Query Rewrite、混合检索或重排模型。
+
+领域词表适合少量高频、含义明确的业务表达，不适合无限积累用户原句。只有能够归纳成通用错别字或稳定业务同义表达时才加入；无法确定意图的问题应让 Agent 澄清，而不是强制改写。
+
+## 5. 阈值重新校准
 
 旧阈值 `0.35` 下，口语用例最高分为 `0.3446`，只差 `0.0054` 而被拒答；所有负样本最高分仍只有 `0.0540`。因此阈值调整为 `0.30`：
 
@@ -70,7 +214,7 @@ Agent 集从 `7` 条扩充到 `11` 条，增加错别字、口语和两类冲突
 
 阈值只适用于当前 `text-embedding-v4`、知识目录和冻结用例。知识扩容或更换 Embedding 模型后必须重新校准。
 
-## 5. 最终结果
+## 6. 最终结果
 
 | 验证 | 结果 |
 | --- | ---: |
@@ -82,12 +226,14 @@ Agent 集从 `7` 条扩充到 `11` 条，增加错别字、口语和两类冲突
 | 引用结构有效率 | `100%` |
 | 真实 Agent 用例 | `11/11` |
 | Agent 忠实度 | 适用的 `7/7` 条规则用例通过（`100%`） |
+| 错别字、口语定向优化 | `4/4`，Top1 `100%` |
 | 全量 Python 测试 | `101` 项执行，`94` 项通过，`7` 项按环境开关跳过 |
 
-Top1 唯一未命中的是重度错别字用例：第一名为 Agent 使用说明，正确的积分规则位于第二、第三名。由于正确证据已经进入 Agent 上下文，Hit@3 与 Agent 用例均通过，当前没有足够证据引入重排模型；该项作为知识扩容后的观察指标保留。
+上一轮 24 条完整检索评测中，Top1 唯一未命中的是重度错别字用例；本轮查询标准化定向复验已经把该用例修正为正确 Top1。为减少不必要回归，本轮没有重跑 24 条完整检索和 11 条 Agent 评测，因此 `94.44%` 仍是上一轮完整集数据，`4/4` 是本轮新增机制的定向证据，不能混成同一个统计口径。
 
-## 6. 边界
+## 7. 边界
 
 - “冲突用例”目前验证用户陈述与受控知识冲突时能否纠正，不代表已经实现多文档自动冲突检测。
 - 忠实度目前只覆盖用例声明的关键业务结论，不代表回答中每个修饰语都经过语义证明。
+- 查询标准化依赖受控领域词表，不是通用拼写纠错系统，也不能替代意图澄清。
 - 当前仍是 3 篇文档、12 个 Chunk 的小规模知识库，不能把结果描述成生产流量准确率。

@@ -12,3 +12,4 @@
 - `rag_agent_faithfulness_hard_cases_20260822.json`：困难 Agent 用例的原始结果，保留歧义口语问题错误路由证据。
 - `rag_agent_ra09_corrected_20260822.json`：澄清用例语义后的单条复验，不替换原始失败证据。
 - `rag_agent_faithfulness_final_scoped_20260822.json`：最终 11 条 Agent 评测；忠实度只统计适用的 7 条 RAG 规则用例。
+- `rag_retrieval_query_normalization_20260822.json`：受控 Query 标准化和双路召回的 4 条困难用例定向结果，Top1 为 `4/4`。

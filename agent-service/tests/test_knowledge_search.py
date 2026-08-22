@@ -11,6 +11,7 @@ from app.knowledge_search import (
     validate_index_freshness,
 )
 from app.knowledge_catalog import KnowledgeCatalog
+from app.query_normalization import normalize_business_query
 from app.tools import build_tools
 from app.trace import capture_tool_trace
 from evals.fixtures import FixtureBusinessApiClient
@@ -22,17 +23,19 @@ class FakeVectorStore:
         results=None,
         error: Exception | None = None,
         metadatas: list[dict] | None = None,
+        results_by_query: dict[str, list] | None = None,
     ) -> None:
         self.results = results or []
         self.error = error
         self.metadatas = metadatas or []
+        self.results_by_query = results_by_query or {}
         self.queries: list[tuple[str, int]] = []
 
     def similarity_search_with_relevance_scores(self, query: str, k: int):
         self.queries.append((query, k))
         if self.error is not None:
             raise self.error
-        return list(self.results)
+        return list(self.results_by_query.get(query, self.results))
 
     def get(self, **kwargs):
         return {
@@ -108,6 +111,64 @@ class KnowledgeSearchServiceTest(unittest.TestCase):
     def test_normalized_relevance_is_bounded(self):
         self.assertEqual(1.0, normalized_euclidean_relevance(0.0))
         self.assertEqual(0.0, normalized_euclidean_relevance(10.0))
+
+    def test_normalizes_domain_typos_and_colloquial_phrases(self):
+        result = normalize_business_query("  任物作完了，积份会自已到帐吗？  ")
+
+        self.assertEqual("任物作完了，积份会自已到帐吗？", result.original_query)
+        self.assertEqual("任务作完了，积分会自己到账吗？", result.normalized_query)
+        self.assertEqual(2, len(result.variants))
+        self.assertEqual(
+            (("任物", "任务"), ("积份", "积分"), ("自已", "自己"), ("到帐", "到账")),
+            result.applied_replacements,
+        )
+
+    def test_normalizes_colloquial_task_points_question(self):
+        result = normalize_business_query("活干完了，咋分还没到帐？")
+
+        self.assertEqual(
+            "任务完成了，积分为什么还没到账？",
+            result.normalized_query,
+        )
+        self.assertEqual(2, len(result.variants))
+
+    def test_keeps_single_query_when_no_normalization_is_needed(self):
+        store = FakeVectorStore([(rule_document(), 0.90)])
+        service = KnowledgeSearchService(store, relevance_threshold=0.50)
+
+        service.search("处理中是否等于兑换成功")
+
+        self.assertEqual([("处理中是否等于兑换成功", 6)], store.queries)
+
+    def test_merges_raw_and_normalized_retrieval_by_highest_chunk_score(self):
+        exchange = rule_document("exchange:1.0.0:0001")
+        points = Document(
+            page_content="任务完成后积分可能处于待领取状态。",
+            metadata={
+                **rule_document("points:1.0.0:0001").metadata,
+                "chunk_id": "points:1.0.0:0001",
+                "knowledge_id": "points-and-tasks",
+                "title": "积分与任务规则",
+            },
+        )
+        raw_query = "任物作完了，积份会自已到帐吗？"
+        normalized_query = "任务作完了，积分会自己到账吗？"
+        store = FakeVectorStore(
+            results_by_query={
+                raw_query: [(exchange, 0.38), (points, 0.37)],
+                normalized_query: [(points, 0.82), (exchange, 0.31)],
+            }
+        )
+        service = KnowledgeSearchService(store, relevance_threshold=0.30)
+
+        result = service.search("任物作完了，积份会自已到帐吗？", limit=2)
+
+        self.assertEqual([raw_query, normalized_query], [item[0] for item in store.queries])
+        self.assertEqual(
+            ["points-and-tasks", "exchange-rules-and-status"],
+            [match.knowledge_id for match in result.matches],
+        )
+        self.assertEqual(0.82, result.matches[0].score)
 
     def test_returns_only_relevant_unique_matches_with_citations(self):
         document = rule_document()

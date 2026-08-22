@@ -16,6 +16,7 @@ from app.knowledge_index import (
     close_vector_store,
     resolve_index_dir,
 )
+from app.query_normalization import normalize_business_query
 
 
 def normalized_euclidean_relevance(distance: float) -> float:
@@ -102,25 +103,39 @@ class KnowledgeSearchService:
         self._owns_vector_store = owns_vector_store
 
     def search(self, query: str, limit: int | None = None) -> KnowledgeSearchResult:
-        normalized_query = query.strip()
-        if not normalized_query:
-            raise ValueError("query 不能为空")
+        query_normalization = normalize_business_query(query)
         actual_limit = self.default_limit if limit is None else limit
         if actual_limit <= 0:
             raise ValueError("limit 必须大于 0")
 
         try:
-            # 多取一些候选，过滤低相关结果和重复 Chunk 后仍尽量满足 limit。
-            candidates = self.vector_store.similarity_search_with_relevance_scores(
-                normalized_query,
-                k=max(actual_limit * 2, actual_limit),
-            )
+            candidate_limit = max(actual_limit * 2, actual_limit)
+            candidate_groups = [
+                self.vector_store.similarity_search_with_relevance_scores(
+                    query_variant,
+                    k=candidate_limit,
+                )
+                for query_variant in query_normalization.variants
+            ]
         except Exception as exc:
             raise KnowledgeSearchError("业务知识检索暂时不可用") from exc
 
+        # 原 Query 和标准化 Query 可能召回同一个 Chunk，只保留更高相关度。
+        merged_candidates: dict[str, tuple[Document, float]] = {}
+        for candidates in candidate_groups:
+            for document, score in candidates:
+                candidate_key = self._candidate_key(document)
+                current = merged_candidates.get(candidate_key)
+                if current is None or score > current[1]:
+                    merged_candidates[candidate_key] = (document, score)
+
         matches: list[KnowledgeMatch] = []
         seen_chunk_ids: set[str] = set()
-        for document, score in candidates:
+        for document, score in sorted(
+            merged_candidates.values(),
+            key=lambda item: item[1],
+            reverse=True,
+        ):
             if not math.isfinite(score) or score < self.relevance_threshold:
                 continue
             chunk_id = str(document.metadata.get("chunk_id", "")).strip()
@@ -143,6 +158,15 @@ class KnowledgeSearchService:
             message="已找到可引用的业务规则",
             matches=tuple(matches),
         )
+
+    @staticmethod
+    def _candidate_key(document: Document) -> str:
+        chunk_id = str(document.metadata.get("chunk_id", "")).strip()
+        if chunk_id:
+            return chunk_id
+        # 兼容旧测试数据或异常索引：没有 chunk_id 时仍避免双路召回重复返回同一内容。
+        knowledge_id = str(document.metadata.get("knowledge_id", "")).strip()
+        return f"{knowledge_id}\u0000{document.page_content}"
 
     def close(self) -> None:
         if self._owns_vector_store and isinstance(self.vector_store, Chroma):
