@@ -285,7 +285,7 @@ def build_tools(
 
     @tool(
         description=(
-            "读取当前用户明确确认并跨会话保存的兑换目标、奖品偏好和任务偏好。"
+            "读取当前用户直接表达并跨会话保存的兑换目标、奖品偏好和任务偏好。"
             "不得用它查询实时积分、库存、任务完成状态或订单状态。"
         ),
         extras=memory_manifest.trace_metadata(),
@@ -300,8 +300,8 @@ def build_tools(
     @tool(
         args_schema=SaveRedemptionGoalInput,
         description=(
-            "用户明确要求记住或修改长期兑换目标时使用，并立即保存。"
-            "不能根据闲聊、猜测或一次性计划自动写入。"
+            "用户直接声明稳定的长期兑换目标，或明确要求记住、修改目标时使用，并立即保存。"
+            "不能根据猜测或一次性计划自动写入。"
         ),
         extras=memory_manifest.trace_metadata(),
     )
@@ -328,8 +328,8 @@ def build_tools(
     @tool(
         args_schema=SaveUserPreferencesInput,
         description=(
-            "用户明确要求记住或替换稳定的奖品类别、排斥类别或任务偏好时使用。"
-            "该工具按完整列表立即替换；不能保存临时情绪或模型推测。"
+            "用户用第一人称直接声明稳定的奖品类别、排斥类别或任务偏好时使用，"
+            "不要求用户额外说请记住。该工具按完整列表立即替换；不能保存本轮临时条件、临时情绪或模型推测。"
         ),
         extras=memory_manifest.trace_metadata(),
     )
