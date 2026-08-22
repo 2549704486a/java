@@ -64,6 +64,18 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--ids", help="只运行指定编号，多个编号使用逗号分隔")
     parser.add_argument("--user-id", type=int, default=10)
+    parser.add_argument(
+        "--case-file",
+        type=Path,
+        default=CASES_PATH,
+        help="指定 RAG 用例文件，默认使用用户侧用例",
+    )
+    parser.add_argument(
+        "--audience",
+        choices=("end_user", "operator"),
+        default="end_user",
+        help="由服务端固定本轮允许检索的知识受众",
+    )
     parser.add_argument("--output", help="指定结果 JSON 路径")
     return parser.parse_args()
 
@@ -377,7 +389,7 @@ def main() -> None:
     load_dotenv()
     args = parse_args()
     ids = {value.strip() for value in args.ids.split(",")} if args.ids else None
-    case_file = load_case_file()
+    case_file = load_case_file(args.case_file)
     retrieval_cases = select_cases(case_file["retrieval_cases"], ids, args.split)
     agent_cases = select_cases(case_file["agent_cases"], ids)
     if args.mode == "retrieval":
@@ -388,7 +400,10 @@ def main() -> None:
         raise SystemExit("没有匹配的 RAG 评测用例")
 
     settings = Settings.from_env()
-    service = open_knowledge_search(settings)
+    service = open_knowledge_search(
+        settings,
+        allowed_audiences=(args.audience,),
+    )
     model = build_model(settings) if agent_cases else None
     retrieval_results: list[dict[str, Any]] = []
     agent_results: list[dict[str, Any]] = []
@@ -421,6 +436,8 @@ def main() -> None:
             "chat_model": settings.llm_model if agent_cases else None,
             "relevance_threshold": settings.rag_relevance_threshold,
             "split": args.split,
+            "audience": args.audience,
+            "case_file": str(args.case_file),
             "case_ids": [case["id"] for case in retrieval_cases + agent_cases],
         },
         "summary": {

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 import unittest
 from types import SimpleNamespace
 
@@ -33,6 +34,19 @@ class RagEvalTest(unittest.TestCase):
         for case in agent:
             if case.get("expected_knowledge_id"):
                 self.assertTrue(case.get("grounding_groups"), case["id"])
+
+    def test_operator_case_file_covers_frozen_difficulties(self):
+        path = Path(__file__).resolve().parents[1] / "evals" / "operator_rag_cases.json"
+        payload = load_case_file(path)
+        retrieval = payload["retrieval_cases"]
+
+        self.assertEqual(15, len(retrieval))
+        self.assertEqual(len(retrieval), len({case["id"] for case in retrieval}))
+        self.assertTrue(
+            {"精确编号", "精确条款", "语义案例", "口语表达", "知识冲突", "受众隔离"}
+            <= {case["category"] for case in retrieval}
+        )
+        self.assertEqual([], payload["agent_cases"])
 
     def test_agent_evaluation_requires_returned_citation_in_answer(self):
         case = {

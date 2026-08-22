@@ -282,7 +282,11 @@ def validate_index_freshness(
         )
 
 
-def open_knowledge_search(settings: Settings) -> KnowledgeSearchService:
+def open_knowledge_search(
+    settings: Settings,
+    *,
+    allowed_audiences: tuple[str, ...] = ("end_user",),
+) -> KnowledgeSearchService:
     """打开已有持久化集合；未建库时拒绝以空知识库启动。"""
     index_dir = resolve_index_dir(settings.rag_index_dir)
     if not index_dir.is_dir():
@@ -305,5 +309,6 @@ def open_knowledge_search(settings: Settings) -> KnowledgeSearchService:
         vector_store=vector_store,
         relevance_threshold=settings.rag_relevance_threshold,
         default_limit=settings.rag_top_k,
+        allowed_audiences=allowed_audiences,
         owns_vector_store=True,
     )
