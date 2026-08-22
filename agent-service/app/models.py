@@ -146,7 +146,7 @@ class PointsPlan(BaseModel):
 
 
 class RedemptionGoalData(BaseModel):
-    """用户明确确认过的跨会话兑换目标。"""
+    """用户明确要求保存的跨会话兑换目标。"""
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -161,7 +161,7 @@ class RedemptionGoalData(BaseModel):
 
 
 class UserPreferenceData(BaseModel):
-    """只保存用户确认过、跨会话仍稳定的兑换与任务偏好。"""
+    """只保存用户明确表达、跨会话仍稳定的兑换与任务偏好。"""
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -188,20 +188,3 @@ class GrowthMemoryData(BaseModel):
 
     goal: RedemptionGoalData | None = None
     preferences: UserPreferenceData | None = None
-
-
-class PendingMemoryChangeData(BaseModel):
-    """可返回给浏览器的记忆变更摘要，不包含内部草稿标识。"""
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    status: Literal["AWAITING_MEMORY_CONFIRMATION"]
-    change_type: Literal[
-        "UPSERT_GOAL",
-        "REPLACE_PREFERENCES",
-        "FORGET_GOAL",
-        "FORGET_PREFERENCES",
-        "FORGET_ALL",
-    ] = Field(alias="changeType")
-    summary: str
-    expires_at: datetime = Field(alias="expiresAt")

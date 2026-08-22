@@ -10,7 +10,6 @@ from langchain_core.messages.utils import count_tokens_approximately
 
 from app.confirmation_store import ConfirmationStoreBackend
 from app.execution_context import current_thread_id
-from app.growth_memory_store import GrowthMemoryStoreBackend
 
 
 logger = logging.getLogger(__name__)
@@ -152,26 +151,6 @@ def _pending_exchange_context(
     )
 
 
-def _pending_memory_context(
-    growth_memory_store: GrowthMemoryStoreBackend | None,
-    user_id: int,
-) -> str | None:
-    thread_id = current_thread_id()
-    if growth_memory_store is None or thread_id is None:
-        return None
-    pending = growth_memory_store.pending_for(
-        user_id=user_id,
-        session_id=thread_id,
-    )
-    if pending is None:
-        return None
-    return (
-        "当前会话存在一项等待用户确认的长期记忆变更："
-        f"{pending.summary}。"
-        "这只是草稿；只有用户明确回复确认保存或确认遗忘时，服务端才能执行变更。"
-    )
-
-
 def _actual_usage(response: ModelResponse) -> tuple[int | None, int | None]:
     input_tokens = 0
     output_tokens = 0
@@ -193,7 +172,6 @@ def build_context_window_middleware(
     policy: ContextWindowPolicy,
     user_id: int,
     confirmation_store: ConfirmationStoreBackend | None,
-    growth_memory_store: GrowthMemoryStoreBackend | None = None,
 ):
     """构建模型调用中间件；持久化历史不变，仅裁剪本次模型输入。"""
 
@@ -202,20 +180,13 @@ def build_context_window_middleware(
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelResponse:
-        pending_contexts = [
-            value
-            for value in (
-                _pending_exchange_context(confirmation_store, user_id),
-                _pending_memory_context(growth_memory_store, user_id),
-            )
-            if value
-        ]
+        pending_exchange = _pending_exchange_context(confirmation_store, user_id)
         result = apply_context_window(
             messages=request.messages,
             system_message=request.system_message,
             tools=request.tools,
             policy=policy,
-            pending_context="\n".join(pending_contexts) or None,
+            pending_context=pending_exchange,
         )
         response = handler(
             request.override(

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import os
-import threading
 import unittest
 import uuid
+from datetime import date
 
 from app.config import Settings
-from app.growth_memory_store import MemoryChangeType
 from app.redis_growth_memory_store import RedisGrowthMemoryStore
 from app.runtime import build_growth_memory_store
 
@@ -39,17 +38,13 @@ class RedisGrowthMemoryStoreTest(unittest.TestCase):
         self.store_a.close()
         self.store_b.close()
 
-    def prepare_goal(self):
-        return self.store_a.prepare(
+    def save_goal(self):
+        return self.store_a.save_goal(
             user_id=10,
-            session_id="user:10:session:a",
-            change_type=MemoryChangeType.UPSERT_GOAL,
-            payload={
-                "target_award_id": 6,
-                "target_award_name": "城市随行保温杯",
-                "target_date": "2026-09-01",
-            },
-            summary="设置兑换目标",
+            source_session="user:10:session:a",
+            target_award_id=6,
+            target_award_name="城市随行保温杯",
+            target_date=date(2026, 9, 1),
         )
 
     def test_factory_and_cross_instance_read(self):
@@ -66,38 +61,17 @@ class RedisGrowthMemoryStoreTest(unittest.TestCase):
             store.clear()
             store.close()
 
-        self.prepare_goal()
-        self.assertIsNotNone(
-            self.store_b.pending_for(
-                user_id=10,
-                session_id="user:10:session:a",
-            )
-        )
-        self.store_b.confirm(user_id=10, session_id="user:10:session:a")
+        self.save_goal()
         self.assertEqual(6, self.store_a.get(10).goal.target_award_id)
-
-    def test_cross_instance_concurrent_confirm_has_one_winner(self):
-        self.prepare_goal()
-        barrier = threading.Barrier(20)
-        applied: list[bool] = []
-        lock = threading.Lock()
-
-        def confirm(index: int) -> None:
-            barrier.wait()
-            store = self.store_a if index % 2 == 0 else self.store_b
-            result = store.confirm(user_id=10, session_id="user:10:session:a")
-            with lock:
-                applied.append(result.applied)
-
-        threads = [threading.Thread(target=confirm, args=(index,)) for index in range(20)]
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join()
-
-        self.assertEqual(1, applied.count(True))
-        self.assertEqual(19, applied.count(False))
         self.assertEqual(6, self.store_b.get(10).goal.target_award_id)
+
+    def test_cross_instance_forget_is_immediate(self):
+        self.save_goal()
+
+        result = self.store_b.forget(user_id=10, scope="goal")
+
+        self.assertTrue(result.applied)
+        self.assertIsNone(self.store_a.get(10).goal)
 
 
 if __name__ == "__main__":

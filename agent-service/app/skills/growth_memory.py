@@ -3,50 +3,16 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from datetime import date
-from typing import Literal
 
 from pydantic import ValidationError
 
 from app.api_client import BusinessApiClient, BusinessApiError
-from app.growth_memory_store import (
-    GrowthMemoryStoreBackend,
-    MemoryChangeResult,
-    MemoryChangeType,
-)
+from app.growth_memory_store import ForgetScope, GrowthMemoryStoreBackend, MemoryChangeResult
 from app.models import AwardData, ToolEnvelope
 
 
-MemoryAction = Literal["CONFIRM", "CANCEL"]
-ForgetScope = Literal["goal", "preferences", "all"]
-
-_CONFIRM_PHRASES = {
-    "确认保存",
-    "确认记住",
-    "确认修改",
-    "确认遗忘",
-    "确认删除",
-    "就按这个保存",
-}
-_CANCEL_PHRASES = {
-    "取消保存",
-    "不保存了",
-    "取消记忆修改",
-    "取消遗忘",
-}
-
-
-def explicit_memory_action(message: str) -> MemoryAction | None:
-    """记忆写入使用专用口令，避免与兑换确认或普通肯定句混淆。"""
-    normalized = re.sub(r"[\s，。！？!?、]+", "", message).casefold()
-    if normalized in _CONFIRM_PHRASES:
-        return "CONFIRM"
-    if normalized in _CANCEL_PHRASES:
-        return "CANCEL"
-    return None
-
-
 class GrowthMemorySkill:
-    """管理用户确认过的兑换目标与稳定偏好，不保存实时业务事实。"""
+    """保存用户明确表达的稳定目标和偏好，不保存实时业务事实或模型推测。"""
 
     def __init__(
         self,
@@ -59,19 +25,15 @@ class GrowthMemorySkill:
         self._today = today_provider
 
     def get(self, user_id: int) -> ToolEnvelope:
-        data = self.store.get(user_id).model_dump(mode="json", by_alias=True)
-        # 来源会话用于服务端审计，不交给模型，也不应出现在用户回答中。
-        for value in data.values():
-            if isinstance(value, dict):
-                value.pop("sourceSession", None)
+        data = self._public_memory(user_id)
         return ToolEnvelope(
             success=True,
             code="GROWTH_MEMORY_FOUND" if any(data.values()) else "GROWTH_MEMORY_EMPTY",
             data=data,
-            message="已读取用户确认过的长期目标与偏好" if any(data.values()) else "当前还没有已确认的长期目标或偏好",
+            message="已读取用户长期目标与偏好" if any(data.values()) else "当前还没有长期目标或偏好",
         )
 
-    def prepare_goal(
+    def save_goal(
         self,
         *,
         user_id: int,
@@ -109,21 +71,16 @@ class GrowthMemorySkill:
                 message=f"目标日期晚于{award.name}的活动结束日期，请调整目标日期",
             )
 
-        summary = f"将{award.name}（奖品 {award_id}）设为兑换目标，计划在 {target_date.isoformat()} 前完成"
-        pending = self.store.prepare(
+        result = self.store.save_goal(
             user_id=user_id,
-            session_id=session_id,
-            change_type=MemoryChangeType.UPSERT_GOAL,
-            payload={
-                "target_award_id": award_id,
-                "target_award_name": award.name,
-                "target_date": target_date.isoformat(),
-            },
-            summary=summary,
+            source_session=session_id,
+            target_award_id=award_id,
+            target_award_name=award.name,
+            target_date=target_date,
         )
-        return self._prepared(pending.change_type, pending.summary, pending.expires_at)
+        return self._changed(result)
 
-    def prepare_preferences(
+    def save_preferences(
         self,
         *,
         user_id: int,
@@ -148,94 +105,47 @@ class GrowthMemorySkill:
                 success=False,
                 code="CONFLICTING_PREFERENCES",
                 data={"conflicts": conflicts},
-                message="同一类别不能同时设为喜欢和不喜欢，请先确认偏好",
+                message="同一类别不能同时设为喜欢和不喜欢，请先澄清偏好",
             )
 
-        parts = []
-        if preferred:
-            parts.append(f"偏好奖品：{'、'.join(preferred)}")
-        if disliked:
-            parts.append(f"不喜欢奖品：{'、'.join(disliked)}")
-        if tasks:
-            parts.append(f"偏好任务：{'、'.join(tasks)}")
-        pending = self.store.prepare(
+        result = self.store.replace_preferences(
             user_id=user_id,
-            session_id=session_id,
-            change_type=MemoryChangeType.REPLACE_PREFERENCES,
-            payload={
-                "preferred_categories": preferred,
-                "disliked_categories": disliked,
-                "task_preferences": tasks,
-            },
-            summary="；".join(parts),
+            source_session=session_id,
+            preferred_categories=preferred,
+            disliked_categories=disliked,
+            task_preferences=tasks,
         )
-        return self._prepared(pending.change_type, pending.summary, pending.expires_at)
+        return self._changed(result)
 
-    def prepare_forget(
+    def forget(
         self,
         *,
         user_id: int,
-        session_id: str,
         scope: ForgetScope,
     ) -> ToolEnvelope:
-        memory = self.store.get(user_id)
-        change_type = {
-            "goal": MemoryChangeType.FORGET_GOAL,
-            "preferences": MemoryChangeType.FORGET_PREFERENCES,
-            "all": MemoryChangeType.FORGET_ALL,
-        }[scope]
-        has_target = (
-            memory.goal is not None
-            if scope == "goal"
-            else memory.preferences is not None
-            if scope == "preferences"
-            else memory.goal is not None or memory.preferences is not None
-        )
-        if not has_target:
-            return ToolEnvelope(
-                success=True,
-                code="NOTHING_TO_FORGET",
-                data=None,
-                message="对应范围内没有已保存的长期记忆",
-            )
-        summary = {
-            "goal": "删除已保存的兑换目标",
-            "preferences": "删除已保存的奖品与任务偏好",
-            "all": "删除全部兑换目标和偏好",
-        }[scope]
-        pending = self.store.prepare(
-            user_id=user_id,
-            session_id=session_id,
-            change_type=change_type,
-            payload={},
-            summary=summary,
-        )
-        return self._prepared(pending.change_type, pending.summary, pending.expires_at)
+        # 只有用户明确说出遗忘意图时模型才可调用；工具按明确范围直接执行。
+        result = self.store.forget(user_id=user_id, scope=scope)
+        return self._changed(result)
 
-    def confirm(self, *, user_id: int, session_id: str) -> MemoryChangeResult:
-        return self.store.confirm(user_id=user_id, session_id=session_id)
+    def _public_memory(self, user_id: int) -> dict:
+        data = self.store.get(user_id).model_dump(mode="json", by_alias=True)
+        # 来源会话用于服务端追踪，不交给模型，也不应出现在用户回答中。
+        for value in data.values():
+            if isinstance(value, dict):
+                value.pop("sourceSession", None)
+        return data
 
-    def cancel(self, *, user_id: int, session_id: str) -> ToolEnvelope:
-        cancelled = self.store.cancel_pending(user_id=user_id, session_id=session_id)
+    def _changed(self, result: MemoryChangeResult) -> ToolEnvelope:
+        data = result.memory.model_dump(mode="json", by_alias=True)
+        for value in data.values():
+            if isinstance(value, dict):
+                value.pop("sourceSession", None)
         return ToolEnvelope(
-            success=True,
-            code="MEMORY_CHANGE_CANCELLED" if cancelled else "NO_PENDING_MEMORY_CHANGE",
-            data={"cancelledCount": cancelled},
-            message="已取消待确认的记忆变更" if cancelled else "当前没有待确认的记忆变更",
-        )
-
-    @staticmethod
-    def _prepared(change_type: MemoryChangeType, summary: str, expires_at) -> ToolEnvelope:
-        return ToolEnvelope(
-            success=True,
-            code="MEMORY_CONFIRMATION_REQUIRED",
-            data={
-                "status": "AWAITING_MEMORY_CONFIRMATION",
-                "changeType": change_type.value,
-                "summary": summary,
-                "expiresAt": expires_at,
-            },
-            message="请核对将保存或删除的内容；确认无误后回复“确认保存”或“确认遗忘”",
+            # 幂等遗忘没有命中记录也属于成功处理，而不是系统失败。
+            success=result.applied or result.code == "NOTHING_TO_FORGET",
+            code=result.code,
+            data=data,
+            message=result.message,
         )
 
     @staticmethod

@@ -71,7 +71,6 @@ AGENT_SESSION_TTL_SECONDS=3600
 AGENT_CONTEXT_MAX_TOKENS=6000
 AGENT_CONTEXT_MAX_TURNS=12
 GROWTH_MEMORY_STORE=redis
-GROWTH_MEMORY_PENDING_TTL_SECONDS=120
 GROWTH_MEMORY_REDIS_URL=redis://127.0.0.1:6379/0
 GROWTH_MEMORY_REDIS_PREFIX=agent:growth:memory
 ```
@@ -103,7 +102,7 @@ Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Too
 
 受控兑换示例：先说“我想兑换 6 号奖品”，Agent 展示奖品和积分摘要后，再在同一会话明确回复“确认兑换”。`EXCHANGE_PROCESSING` 只表示已进入旧链路处理流程，最终结果需要到订单页面查看；遇到 `SUBMISSION_UNKNOWN` 时先核对订单，不要立即重复提交。
 
-长期记忆示例：说“请记住，我想在 2026-09-01 前兑换 6 号奖品”，核对预览后回复“确认保存”。之后的新会话可以询问“我的兑换目标是什么”。说“忘掉我的兑换目标”时会先生成删除预览，回复“确认遗忘”后才真正删除。
+长期记忆示例：说“请记住，我想在 2026-09-01 前兑换 6 号奖品”，Agent 校验奖品和日期后直接保存，并明确告知结果。之后的新会话可以询问“我的兑换目标是什么”。说“忘掉我的兑换目标”时会按明确范围直接删除，不再要求重复确认。
 
 ## 5. 运行 HTTP 服务与前端
 
@@ -155,7 +154,7 @@ Invoke-RestMethod `
     -Body $body
 ```
 
-响应包含 `request_id`、`session_id`、`user_id`、`answer`、服务端总耗时 `elapsed_ms`，以及安全的待确认兑换或记忆变更摘要。首次不传 `session_id` 时服务会生成并返回；后续请求携带同一个 `session_id` 即可延续对话。
+响应包含 `request_id`、`session_id`、`user_id`、`answer`、服务端总耗时 `elapsed_ms`，以及安全的待确认兑换摘要。首次不传 `session_id` 时服务会生成并返回；后续请求携带同一个 `session_id` 即可延续对话。
 
 本地签发命令使用 `.env` 中的 JWT 密钥。生产环境应由正式登录系统签发身份，不能把签名密钥交给浏览器，也不能提供公开的“输入用户 ID 换 Token”接口。
 

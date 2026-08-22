@@ -17,14 +17,13 @@ from app.confirmation_store import ConfirmationStore, ConfirmationStoreBackend
 from app.growth_memory_store import GrowthMemoryStore, GrowthMemoryStoreBackend
 from app.config import Settings
 from app.knowledge_search import KnowledgeSearchService, open_knowledge_search
-from app.models import PendingExchangeData, PendingMemoryChangeData, ToolEnvelope
+from app.models import PendingExchangeData, ToolEnvelope
 from app.redis_confirmation_store import RedisConfirmationStore
 from app.redis_growth_memory_store import RedisGrowthMemoryStore
 from app.skills.controlled_exchange import (
     ControlledExchangeSkill,
     explicit_exchange_action,
 )
-from app.skills.growth_memory import GrowthMemorySkill, explicit_memory_action
 from app.skills.registry import SkillRegistry
 from app.trace import capture_tool_trace, execute_traced
 
@@ -94,10 +93,6 @@ class AgentRuntime:
             self.client,
             self.confirmation_store,
         )
-        self._growth_memory = GrowthMemorySkill(
-            self.client,
-            self.growth_memory_store,
-        )
         self._agent_builder = agent_builder
         self._agent_runner = agent_runner
         self._cache_size = max(1, settings.agent_cache_size)
@@ -118,27 +113,6 @@ class AgentRuntime:
         started = time.perf_counter()
         thread_id, slot = self._acquire_session(user_id, session_id)
         try:
-            # 长期记忆使用独立确认口令，在模型外原子落库，避免与兑换确认混淆。
-            memory_action = explicit_memory_action(message)
-            pending_memory = self.growth_memory_store.pending_for(
-                user_id=user_id,
-                session_id=thread_id,
-            )
-            if memory_action is not None and pending_memory is not None:
-                result = self._execute_memory_action(
-                    action=memory_action,
-                    user_id=user_id,
-                    thread_id=thread_id,
-                    request_id=request_id or thread_id,
-                )
-                self._append_exchange_action_turn(
-                    user_id=user_id,
-                    thread_id=thread_id,
-                    user_message=message,
-                    assistant_message=result.message,
-                )
-                return result.message, (time.perf_counter() - started) * 1000
-
             # 明确确认/取消属于高风险确定性动作。存在待确认记录时不再让模型猜测。
             action = explicit_exchange_action(message)
             pending = self.confirmation_store.pending_for(
@@ -193,24 +167,6 @@ class AgentRuntime:
             requiredPoints=record.required_points,
             remainingPoints=record.remaining_points,
             expiresAt=record.expires_at,
-        )
-
-    def pending_memory_change(
-        self,
-        user_id: int,
-        session_id: str,
-    ) -> PendingMemoryChangeData | None:
-        pending = self.growth_memory_store.pending_for(
-            user_id=user_id,
-            session_id=self._thread_id(user_id, session_id),
-        )
-        if pending is None:
-            return None
-        return PendingMemoryChangeData(
-            status="AWAITING_MEMORY_CONFIRMATION",
-            changeType=pending.change_type.value,
-            summary=pending.summary,
-            expiresAt=pending.expires_at,
         )
 
     def health(self) -> dict[str, Any]:
@@ -349,72 +305,6 @@ class AgentRuntime:
         )
         return result
 
-    def _execute_memory_action(
-        self,
-        *,
-        action: str,
-        user_id: int,
-        thread_id: str,
-        request_id: str,
-    ) -> ToolEnvelope:
-        tool_name = (
-            "confirm_growth_memory"
-            if action == "CONFIRM"
-            else "cancel_growth_memory"
-        )
-        with capture_tool_trace(request_id) as trace_session:
-            try:
-                if action == "CONFIRM":
-                    def confirm_memory() -> ToolEnvelope:
-                        change = self._growth_memory.confirm(
-                            user_id=user_id,
-                            session_id=thread_id,
-                        )
-                        return ToolEnvelope(
-                            success=change.applied,
-                            code=change.code,
-                            data=(
-                                change.memory.model_dump(mode="json", by_alias=True)
-                                if change.memory is not None
-                                else None
-                            ),
-                            message=change.message,
-                        )
-
-                    result = execute_traced(
-                        tool_name,
-                        {"routing": "deterministic"},
-                        confirm_memory,
-                    )
-                else:
-                    result = execute_traced(
-                        tool_name,
-                        {"routing": "deterministic"},
-                        lambda: self._growth_memory.cancel(
-                            user_id=user_id,
-                            session_id=thread_id,
-                        ),
-                    )
-            finally:
-                logger.info(
-                    "agent_tool_trace request_id=%s thread_id=%s events=%s",
-                    request_id,
-                    thread_id,
-                    json.dumps(
-                        trace_session.as_dicts(),
-                        ensure_ascii=False,
-                        separators=(",", ":"),
-                    ),
-                )
-        logger.info(
-            "memory_action_routed request_id=%s thread_id=%s action=%s code=%s",
-            request_id,
-            thread_id,
-            action,
-            result.code,
-        )
-        return result
-
     def _append_exchange_action_turn(
         self,
         *,
@@ -476,7 +366,6 @@ class AgentRuntime:
         self.checkpointer.delete_thread(thread_id)
         # 会话记忆淘汰时同步撤销待确认授权，避免孤立凭证继续可用。
         self.confirmation_store.cancel_pending_by_session(thread_id)
-        self.growth_memory_store.cancel_pending_by_session(thread_id)
         logger.info("session_evicted thread_id=%s reason=%s", thread_id, reason)
 
 
@@ -504,13 +393,10 @@ def build_confirmation_store(settings: Settings) -> ConfirmationStoreBackend:
 def build_growth_memory_store(settings: Settings) -> GrowthMemoryStoreBackend:
     backend = settings.growth_memory_store
     if backend == "memory":
-        return GrowthMemoryStore(
-            pending_ttl_seconds=settings.growth_memory_pending_ttl_seconds,
-        )
+        return GrowthMemoryStore()
     if backend == "redis":
         return RedisGrowthMemoryStore.from_url(
             settings.growth_memory_redis_url,
-            pending_ttl_seconds=settings.growth_memory_pending_ttl_seconds,
             key_prefix=settings.growth_memory_redis_prefix,
         )
     raise ValueError(

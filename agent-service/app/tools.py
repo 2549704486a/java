@@ -61,12 +61,12 @@ class KnowledgeSearchInput(BaseModel):
     limit: int = Field(default=3, ge=1, le=5, description="最多返回的知识片段数")
 
 
-class PrepareRedemptionGoalInput(BaseModel):
+class SaveRedemptionGoalInput(BaseModel):
     award_id: int = Field(gt=0, description="用户希望长期兑换的目标奖品 ID")
     target_date: date = Field(description="用户计划完成兑换的目标日期，格式 YYYY-MM-DD")
 
 
-class PrepareUserPreferencesInput(BaseModel):
+class SaveUserPreferencesInput(BaseModel):
     preferred_categories: list[str] = Field(
         default_factory=list,
         max_length=10,
@@ -298,13 +298,14 @@ def build_tools(
         )
 
     @tool(
-        args_schema=PrepareRedemptionGoalInput,
+        args_schema=SaveRedemptionGoalInput,
         description=(
-            "用户明确要求记住或修改长期兑换目标时使用。只生成待确认摘要，不立即写入长期记忆。"
+            "用户明确要求记住或修改长期兑换目标时使用，并立即保存。"
+            "不能根据闲聊、猜测或一次性计划自动写入。"
         ),
         extras=memory_manifest.trace_metadata(),
     )
-    def prepare_redemption_goal(award_id: int, target_date: date) -> dict:
+    def save_redemption_goal(award_id: int, target_date: date) -> dict:
         arguments = {
             "award_id": award_id,
             "target_date": target_date.isoformat(),
@@ -315,24 +316,24 @@ def build_tools(
             if context_error is not None:
                 return context_error
             registry.activate(memory_manifest.name)
-            return growth_memory_skill.prepare_goal(
+            return growth_memory_skill.save_goal(
                 user_id=user_id,
                 session_id=current_thread_id() or "",
                 award_id=award_id,
                 target_date=target_date,
             ).model_dump(mode="json")
 
-        return execute_traced("prepare_redemption_goal", arguments, execute)
+        return execute_traced("save_redemption_goal", arguments, execute)
 
     @tool(
-        args_schema=PrepareUserPreferencesInput,
+        args_schema=SaveUserPreferencesInput,
         description=(
             "用户明确要求记住或替换稳定的奖品类别、排斥类别或任务偏好时使用。"
-            "只生成完整替换预览，不立即写入长期记忆。"
+            "该工具按完整列表立即替换；不能保存临时情绪或模型推测。"
         ),
         extras=memory_manifest.trace_metadata(),
     )
-    def prepare_user_preferences(
+    def save_user_preferences(
         preferred_categories: list[str] | None = None,
         disliked_categories: list[str] | None = None,
         task_preferences: list[str] | None = None,
@@ -348,7 +349,7 @@ def build_tools(
             if context_error is not None:
                 return context_error
             registry.activate(memory_manifest.name)
-            return growth_memory_skill.prepare_preferences(
+            return growth_memory_skill.save_preferences(
                 user_id=user_id,
                 session_id=current_thread_id() or "",
                 preferred_categories=preferred_categories or [],
@@ -356,17 +357,17 @@ def build_tools(
                 task_preferences=task_preferences or [],
             ).model_dump(mode="json")
 
-        return execute_traced("prepare_user_preferences", arguments, execute)
+        return execute_traced("save_user_preferences", arguments, execute)
 
     @tool(
         args_schema=ForgetGrowthMemoryInput,
         description=(
             "用户明确要求遗忘已保存的兑换目标、偏好或全部长期记忆时使用。"
-            "只生成删除预览，不立即删除。"
+            "按用户明确指定的范围立即删除。"
         ),
         extras=memory_manifest.trace_metadata(),
     )
-    def prepare_forget_growth_memory(scope: str) -> dict:
+    def forget_growth_memory(scope: str) -> dict:
         arguments = {"scope": scope}
 
         def execute() -> dict:
@@ -374,13 +375,12 @@ def build_tools(
             if context_error is not None:
                 return context_error
             registry.activate(memory_manifest.name)
-            return growth_memory_skill.prepare_forget(
+            return growth_memory_skill.forget(
                 user_id=user_id,
-                session_id=current_thread_id() or "",
                 scope=scope,
             ).model_dump(mode="json")
 
-        return execute_traced("prepare_forget_growth_memory", arguments, execute)
+        return execute_traced("forget_growth_memory", arguments, execute)
 
     available_tools = [
         get_user_points,
@@ -393,9 +393,9 @@ def build_tools(
         prepare_exchange,
         cancel_exchange,
         get_growth_memory,
-        prepare_redemption_goal,
-        prepare_user_preferences,
-        prepare_forget_growth_memory,
+        save_redemption_goal,
+        save_user_preferences,
+        forget_growth_memory,
     ]
     if knowledge_search is not None:
         @tool(args_schema=KnowledgeSearchInput)

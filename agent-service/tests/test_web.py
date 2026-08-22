@@ -5,7 +5,7 @@ import unittest
 from fastapi.testclient import TestClient
 
 from app.auth import JwtAuthenticator
-from app.models import PendingExchangeData, PendingMemoryChangeData, ToolEnvelope
+from app.models import PendingExchangeData, ToolEnvelope
 from app.web import create_app
 
 
@@ -74,11 +74,9 @@ class FakeRuntime:
         self,
         should_fail: bool = False,
         pending=None,
-        pending_memory=None,
     ) -> None:
         self.should_fail = should_fail
         self.pending = pending
-        self.pending_memory = pending_memory
         self.closed = False
         self.calls: list[tuple[int, str, str, str | None]] = []
         self.client = FakeBusinessClient()
@@ -112,10 +110,6 @@ class FakeRuntime:
     def pending_exchange(self, user_id: int, session_id: str):
         return self.pending
 
-    def pending_memory_change(self, user_id: int, session_id: str):
-        return self.pending_memory
-
-
 class AgentWebTest(unittest.TestCase):
     def test_chat_returns_safe_pending_exchange_without_confirmation_token(self):
         runtime = FakeRuntime(
@@ -145,28 +139,6 @@ class AgentWebTest(unittest.TestCase):
         self.assertEqual("手表", pending["awardName"])
         self.assertEqual(100, pending["remainingPoints"])
         self.assertNotIn("confirmationId", pending)
-
-    def test_chat_returns_pending_memory_summary(self):
-        runtime = FakeRuntime(
-            pending_memory=PendingMemoryChangeData(
-                status="AWAITING_MEMORY_CONFIRMATION",
-                changeType="UPSERT_GOAL",
-                summary="将城市随行保温杯设为兑换目标",
-                expiresAt="2026-08-22T08:02:00Z",
-            )
-        )
-        app = create_test_app(runtime)
-
-        with TestClient(app) as client:
-            response = client.post(
-                "/v1/chat",
-                headers=auth_headers(),
-                json={"session_id": "session-001", "message": "记住我的目标"},
-            )
-
-        pending = response.json()["pending_memory_change"]
-        self.assertEqual("UPSERT_GOAL", pending["changeType"])
-        self.assertIn("保温杯", pending["summary"])
 
     def test_dashboard_aggregates_points_and_awards(self):
         runtime = FakeRuntime()
@@ -214,7 +186,6 @@ class AgentWebTest(unittest.TestCase):
                 "answer": "测试回答",
                 "elapsed_ms": 12.35,
                 "pending_exchange": None,
-                "pending_memory_change": None,
             },
             response.json(),
         )

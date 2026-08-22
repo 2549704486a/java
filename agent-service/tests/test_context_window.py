@@ -12,7 +12,6 @@ from app.context_window import (
     build_context_window_middleware,
 )
 from app.execution_context import bind_execution_context
-from app.growth_memory_store import GrowthMemoryStore, MemoryChangeType
 
 
 class ContextWindowTest(unittest.TestCase):
@@ -150,46 +149,6 @@ class ContextWindowTest(unittest.TestCase):
         self.assertIn("智能手表", captured_requests[0].system_message.content)
         self.assertIn("pending_context=True", logs.output[0])
         self.assertIn("actual_input_tokens=120", logs.output[0])
-
-    def test_middleware_injects_pending_memory_summary(self):
-        store = GrowthMemoryStore()
-        thread_id = "user:10:session:memory-context"
-        store.prepare(
-            user_id=10,
-            session_id=thread_id,
-            change_type=MemoryChangeType.UPSERT_GOAL,
-            payload={
-                "target_award_id": 6,
-                "target_award_name": "智能手表",
-                "target_date": "2026-09-01",
-            },
-            summary="将智能手表设为兑换目标",
-        )
-        middleware = build_context_window_middleware(
-            policy=ContextWindowPolicy(max_tokens=512, max_turns=2),
-            user_id=10,
-            confirmation_store=None,
-            growth_memory_store=store,
-        )
-        captured_requests = []
-
-        def handler(request):
-            captured_requests.append(request)
-            return ModelResponse(result=[AIMessage(content="请核对草稿")])
-
-        request = ModelRequest(
-            model=object(),
-            messages=[HumanMessage(content="刚才准备保存什么")],
-            system_message=SystemMessage(content="系统提示"),
-            tools=[],
-        )
-        with bind_execution_context(thread_id):
-            middleware.wrap_model_call(request, handler)
-
-        system_content = captured_requests[0].system_message.content
-        self.assertIn("将智能手表设为兑换目标", system_content)
-        self.assertIn("只是草稿", system_content)
-
 
 if __name__ == "__main__":
     unittest.main()

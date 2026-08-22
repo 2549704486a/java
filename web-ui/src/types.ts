@@ -43,7 +43,6 @@ export interface ChatResponse {
   answer: string;
   elapsed_ms: number;
   pending_exchange: PendingExchange | null;
-  pending_memory_change: PendingMemoryChange | null;
 }
 
 export interface PendingExchange {
@@ -53,18 +52,6 @@ export interface PendingExchange {
   currentPoints: number;
   requiredPoints: number;
   remainingPoints: number;
-  expiresAt: string;
-}
-
-export interface PendingMemoryChange {
-  status: "AWAITING_MEMORY_CONFIRMATION";
-  changeType:
-    | "UPSERT_GOAL"
-    | "REPLACE_PREFERENCES"
-    | "FORGET_GOAL"
-    | "FORGET_PREFERENCES"
-    | "FORGET_ALL";
-  summary: string;
   expiresAt: string;
 }
 

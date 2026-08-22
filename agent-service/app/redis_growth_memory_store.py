@@ -1,31 +1,28 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 
 import redis
 
 from app.growth_memory_store import (
-    business_date,
+    ForgetScope,
     GrowthMemoryStoreBackend,
     MemoryChangeResult,
-    MemoryChangeType,
-    PendingMemoryChange,
+    business_date,
 )
 from app.models import GrowthMemoryData, RedemptionGoalData, UserPreferenceData
 
 
 class RedisGrowthMemoryStore(GrowthMemoryStoreBackend):
-    """使用 Redis 保存跨会话记忆，并通过 WATCH/MULTI 原子消费确认草稿。"""
+    """使用 Redis 保存跨会话目标和偏好，写操作直接落到用户维度的记录。"""
 
     def __init__(
         self,
         client: redis.Redis,
         *,
-        pending_ttl_seconds: int = 120,
         key_prefix: str = "agent:growth:memory",
     ) -> None:
         self._client = client
-        self._pending_ttl = timedelta(seconds=max(1, pending_ttl_seconds))
         self._prefix = key_prefix.strip().rstrip(":")
         if not self._prefix:
             raise ValueError("Redis 长期记忆 key prefix 不能为空")
@@ -58,124 +55,96 @@ class RedisGrowthMemoryStore(GrowthMemoryStoreBackend):
             goal = goal.model_copy(update={"status": status})
         return GrowthMemoryData(goal=goal, preferences=preferences)
 
-    def prepare(
+    def save_goal(
         self,
         *,
         user_id: int,
-        session_id: str,
-        change_type: MemoryChangeType,
-        payload: dict,
-        summary: str,
-    ) -> PendingMemoryChange:
-        now = self._redis_now()
-        pending = PendingMemoryChange(
-            user_id=user_id,
-            session_id=session_id,
-            change_type=change_type,
-            payload=payload,
-            summary=summary,
-            created_at=now,
-            expires_at=now + self._pending_ttl,
-        )
-        # 多保留一分钟，使确认时可以区分“已过期”和“从未创建”。
-        retention_ms = int((self._pending_ttl.total_seconds() + 60) * 1000)
-        self._client.set(
-            self._pending_key(session_id),
-            pending.model_dump_json(),
-            px=retention_ms,
-        )
-        return pending
-
-    def pending_for(
-        self,
-        *,
-        user_id: int,
-        session_id: str,
-    ) -> PendingMemoryChange | None:
-        raw = self._client.get(self._pending_key(session_id))
-        if not raw:
-            return None
-        pending = PendingMemoryChange.model_validate_json(raw)
-        if pending.user_id != user_id or pending.session_id != session_id:
-            return None
-        if self._redis_now() >= pending.expires_at:
-            return None
-        return pending
-
-    def confirm(self, *, user_id: int, session_id: str) -> MemoryChangeResult:
-        pending_key = self._pending_key(session_id)
-        while True:
-            try:
-                with self._client.pipeline() as pipe:
-                    pipe.watch(pending_key)
-                    raw = pipe.get(pending_key)
-                    if not raw:
-                        pipe.unwatch()
-                        return self._result(False, "MEMORY_CHANGE_NOT_FOUND", "当前没有待确认的记忆变更", user_id)
-                    pending = PendingMemoryChange.model_validate_json(raw)
-                    if pending.user_id != user_id or pending.session_id != session_id:
-                        pipe.unwatch()
-                        return self._result(False, "MEMORY_CHANGE_NOT_FOUND", "当前没有待确认的记忆变更", user_id)
-                    if self._redis_now() >= pending.expires_at:
-                        pipe.multi()
-                        pipe.delete(pending_key)
-                        pipe.execute()
-                        return self._result(False, "MEMORY_CHANGE_EXPIRED", "记忆变更确认已过期，请重新发起", user_id)
-
-                    goal_key = self._goal_key(user_id)
-                    preferences_key = self._preferences_key(user_id)
-                    pipe.watch(goal_key, preferences_key)
-                    goal_raw = pipe.get(goal_key)
-                    preferences_raw = pipe.get(preferences_key)
-                    now = self._redis_now()
-                    goal, preferences = self._apply(
-                        pending,
-                        now,
-                        goal_raw,
-                        preferences_raw,
-                    )
-
-                    pipe.multi()
-                    if goal is None:
-                        pipe.delete(goal_key)
-                    else:
-                        pipe.set(goal_key, goal.model_dump_json(by_alias=True))
-                    if preferences is None:
-                        pipe.delete(preferences_key)
-                    else:
-                        pipe.set(
-                            preferences_key,
-                            preferences.model_dump_json(by_alias=True),
-                        )
-                    pipe.delete(pending_key)
-                    pipe.execute()
-                    return self._result(True, "MEMORY_CHANGE_APPLIED", "已按确认内容更新长期记忆", user_id)
-            except redis.WatchError:
-                continue
-
-    def cancel_pending(self, *, user_id: int, session_id: str) -> int:
-        key = self._pending_key(session_id)
+        source_session: str,
+        target_award_id: int,
+        target_award_name: str,
+        target_date: date,
+    ) -> MemoryChangeResult:
+        key = self._goal_key(user_id)
         while True:
             try:
                 with self._client.pipeline() as pipe:
                     pipe.watch(key)
                     raw = pipe.get(key)
-                    if not raw:
-                        pipe.unwatch()
-                        return 0
-                    pending = PendingMemoryChange.model_validate_json(raw)
-                    if pending.user_id != user_id or pending.session_id != session_id:
-                        pipe.unwatch()
-                        return 0
+                    existing = RedemptionGoalData.model_validate_json(raw) if raw else None
+                    now = self._redis_now()
+                    goal = RedemptionGoalData(
+                        userId=user_id,
+                        targetAwardId=target_award_id,
+                        targetAwardName=target_award_name,
+                        targetDate=target_date,
+                        status="ACTIVE" if target_date >= business_date(now) else "EXPIRED",
+                        createdAt=existing.created_at if existing else now,
+                        updatedAt=now,
+                        sourceSession=source_session,
+                    )
                     pipe.multi()
-                    pipe.delete(key)
+                    pipe.set(key, goal.model_dump_json(by_alias=True))
                     pipe.execute()
-                    return 1
+                    return self._result(
+                        True,
+                        "REDEMPTION_GOAL_SAVED",
+                        "已保存兑换目标",
+                        user_id,
+                    )
             except redis.WatchError:
                 continue
 
-    def cancel_pending_by_session(self, session_id: str) -> int:
-        return int(self._client.delete(self._pending_key(session_id)))
+    def replace_preferences(
+        self,
+        *,
+        user_id: int,
+        source_session: str,
+        preferred_categories: list[str],
+        disliked_categories: list[str],
+        task_preferences: list[str],
+    ) -> MemoryChangeResult:
+        key = self._preferences_key(user_id)
+        while True:
+            try:
+                with self._client.pipeline() as pipe:
+                    pipe.watch(key)
+                    raw = pipe.get(key)
+                    existing = UserPreferenceData.model_validate_json(raw) if raw else None
+                    now = self._redis_now()
+                    preferences = UserPreferenceData(
+                        userId=user_id,
+                        preferredCategories=preferred_categories,
+                        dislikedCategories=disliked_categories,
+                        taskPreferences=task_preferences,
+                        createdAt=existing.created_at if existing else now,
+                        updatedAt=now,
+                        sourceSession=source_session,
+                    )
+                    pipe.multi()
+                    pipe.set(key, preferences.model_dump_json(by_alias=True))
+                    pipe.execute()
+                    return self._result(
+                        True,
+                        "USER_PREFERENCES_SAVED",
+                        "已保存长期偏好",
+                        user_id,
+                    )
+            except redis.WatchError:
+                continue
+
+    def forget(self, *, user_id: int, scope: ForgetScope) -> MemoryChangeResult:
+        keys = []
+        if scope in {"goal", "all"}:
+            keys.append(self._goal_key(user_id))
+        if scope in {"preferences", "all"}:
+            keys.append(self._preferences_key(user_id))
+        removed = int(self._client.delete(*keys)) if keys else 0
+        return self._result(
+            removed > 0,
+            "GROWTH_MEMORY_FORGOTTEN" if removed else "NOTHING_TO_FORGET",
+            "已遗忘指定的长期记忆" if removed else "对应范围内没有已保存的长期记忆",
+            user_id,
+        )
 
     def stats(self) -> dict[str, int]:
         return {
@@ -183,7 +152,6 @@ class RedisGrowthMemoryStore(GrowthMemoryStoreBackend):
             "preferences": sum(
                 1 for _ in self._client.scan_iter(match=f"{self._prefix}:user:*:preferences")
             ),
-            "pending": sum(1 for _ in self._client.scan_iter(match=f"{self._prefix}:pending:*")),
         }
 
     def clear(self) -> None:
@@ -193,50 +161,6 @@ class RedisGrowthMemoryStore(GrowthMemoryStoreBackend):
 
     def close(self) -> None:
         self._client.close()
-
-    def _apply(
-        self,
-        pending: PendingMemoryChange,
-        now: datetime,
-        goal_raw: str | None,
-        preferences_raw: str | None,
-    ) -> tuple[RedemptionGoalData | None, UserPreferenceData | None]:
-        goal = RedemptionGoalData.model_validate_json(goal_raw) if goal_raw else None
-        preferences = (
-            UserPreferenceData.model_validate_json(preferences_raw)
-            if preferences_raw
-            else None
-        )
-        if pending.change_type == MemoryChangeType.UPSERT_GOAL:
-            target_date = date.fromisoformat(str(pending.payload["target_date"]))
-            goal = RedemptionGoalData(
-                userId=pending.user_id,
-                targetAwardId=int(pending.payload["target_award_id"]),
-                targetAwardName=str(pending.payload["target_award_name"]),
-                targetDate=target_date,
-                status="ACTIVE" if target_date >= business_date(now) else "EXPIRED",
-                createdAt=goal.created_at if goal else now,
-                updatedAt=now,
-                sourceSession=pending.session_id,
-            )
-        elif pending.change_type == MemoryChangeType.REPLACE_PREFERENCES:
-            preferences = UserPreferenceData(
-                userId=pending.user_id,
-                preferredCategories=pending.payload.get("preferred_categories", []),
-                dislikedCategories=pending.payload.get("disliked_categories", []),
-                taskPreferences=pending.payload.get("task_preferences", []),
-                createdAt=preferences.created_at if preferences else now,
-                updatedAt=now,
-                sourceSession=pending.session_id,
-            )
-        elif pending.change_type == MemoryChangeType.FORGET_GOAL:
-            goal = None
-        elif pending.change_type == MemoryChangeType.FORGET_PREFERENCES:
-            preferences = None
-        elif pending.change_type == MemoryChangeType.FORGET_ALL:
-            goal = None
-            preferences = None
-        return goal, preferences
 
     def _result(
         self,
@@ -264,6 +188,3 @@ class RedisGrowthMemoryStore(GrowthMemoryStoreBackend):
 
     def _preferences_key(self, user_id: int) -> str:
         return f"{self._prefix}:user:{user_id}:preferences"
-
-    def _pending_key(self, session_id: str) -> str:
-        return f"{self._prefix}:pending:{session_id}"

@@ -136,7 +136,6 @@ def build_agent(
                 ),
                 user_id=user_id,
                 confirmation_store=confirmation_store,
-                growth_memory_store=growth_memory_store,
             )
         ],
         checkpointer=checkpointer,

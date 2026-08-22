@@ -11,6 +11,16 @@ class PromptTest(unittest.TestCase):
         self.assertIn("search_business_knowledge", build_system_prompt(True))
         self.assertIn("NO_RELEVANT_KNOWLEDGE", build_system_prompt(True))
 
+    def test_explicit_memory_intent_writes_without_second_confirmation(self):
+        prompt = build_system_prompt(False)
+
+        self.assertIn("save_redemption_goal", prompt)
+        self.assertIn("save_user_preferences", prompt)
+        self.assertIn("forget_growth_memory", prompt)
+        self.assertIn("不再要求二次确认", prompt)
+        self.assertNotIn("prepare_redemption_goal", prompt)
+        self.assertNotIn("确认保存", prompt)
+
 
 if __name__ == "__main__":
     unittest.main()

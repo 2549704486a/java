@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import { ApiError, sendChat } from "../api";
-import type { ChatMessage, PendingExchange, PendingMemoryChange } from "../types";
+import type { ChatMessage, PendingExchange } from "../types";
 
 interface ChatPanelProps {
   accessToken: string;
@@ -44,8 +44,6 @@ export default function ChatPanel({
   const [draft, setDraft] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [pendingExchange, setPendingExchange] = useState<PendingExchange | null>(null);
-  const [pendingMemoryChange, setPendingMemoryChange] =
-    useState<PendingMemoryChange | null>(null);
   const [sending, setSending] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
 
@@ -59,7 +57,6 @@ export default function ChatPanel({
     setMessages([initialMessage()]);
     setSessionId(null);
     setPendingExchange(null);
-    setPendingMemoryChange(null);
     setDraft("");
   }, [userId]);
 
@@ -83,7 +80,6 @@ export default function ChatPanel({
       const response = await sendChat(accessToken, sessionId, normalized);
       setSessionId(response.session_id);
       setPendingExchange(response.pending_exchange);
-      setPendingMemoryChange(response.pending_memory_change);
       setMessages((current) => [
         ...current,
         {
@@ -124,7 +120,6 @@ export default function ChatPanel({
     setMessages([initialMessage()]);
     setSessionId(null);
     setPendingExchange(null);
-    setPendingMemoryChange(null);
     setDraft("");
   }
 
@@ -210,58 +205,6 @@ export default function ChatPanel({
                 type="button"
                 disabled={sending}
                 onClick={() => void submit("取消兑换")}
-              >
-                <X size={15} />
-                取消
-              </button>
-            </div>
-          </section>
-        )}
-        {pendingMemoryChange && (
-          <section className="exchange-confirmation" aria-label="待确认长期记忆变更">
-            <div className="confirmation-heading">
-              <ShieldCheck size={18} />
-              <div>
-                <span>等待确认长期记忆变更</span>
-                <strong>{pendingMemoryChange.summary}</strong>
-              </div>
-            </div>
-            <p>
-              草稿有效至
-              {new Date(pendingMemoryChange.expiresAt).toLocaleTimeString("zh-CN", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit"
-              })}
-            </p>
-            <div className="confirmation-actions">
-              <button
-                type="button"
-                disabled={sending}
-                onClick={() =>
-                  void submit(
-                    pendingMemoryChange.changeType.startsWith("FORGET")
-                      ? "确认遗忘"
-                      : "确认保存"
-                  )
-                }
-              >
-                <ShieldCheck size={15} />
-                {pendingMemoryChange.changeType.startsWith("FORGET")
-                  ? "确认遗忘"
-                  : "确认保存"}
-              </button>
-              <button
-                className="is-secondary"
-                type="button"
-                disabled={sending}
-                onClick={() =>
-                  void submit(
-                    pendingMemoryChange.changeType.startsWith("FORGET")
-                      ? "取消遗忘"
-                      : "取消保存"
-                  )
-                }
               >
                 <X size={15} />
                 取消
