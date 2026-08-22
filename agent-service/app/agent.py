@@ -12,6 +12,7 @@ from app.confirmation_store import ConfirmationStoreBackend
 from app.config import Settings
 from app.context_window import ContextWindowPolicy, build_context_window_middleware
 from app.execution_context import bind_execution_context
+from app.growth_memory_store import GrowthMemoryStoreBackend
 from app.knowledge_search import KnowledgeSearchService
 from app.prompt import build_system_prompt
 from app.skills.registry import SkillRegistry
@@ -105,6 +106,7 @@ def build_agent(
     checkpointer=None,
     confirmation_store: ConfirmationStoreBackend | None = None,
     knowledge_search: KnowledgeSearchService | None = None,
+    growth_memory_store: GrowthMemoryStoreBackend | None = None,
 ):
     registry = skill_registry or SkillRegistry()
     model = ChatOpenAI(
@@ -118,11 +120,12 @@ def build_agent(
     return create_agent(
         model=model,
         tools=build_tools(
-            client,
-            user_id,
-            registry,
-            confirmation_store,
-            knowledge_search,
+            client=client,
+            user_id=user_id,
+            skill_registry=registry,
+            confirmation_store=confirmation_store,
+            knowledge_search=knowledge_search,
+            growth_memory_store=growth_memory_store,
         ),
         system_prompt=build_system_prompt(knowledge_search is not None),
         middleware=[
@@ -133,6 +136,7 @@ def build_agent(
                 ),
                 user_id=user_id,
                 confirmation_store=confirmation_store,
+                growth_memory_store=growth_memory_store,
             )
         ],
         checkpointer=checkpointer,

@@ -22,7 +22,12 @@ from app.auth import (
     authenticator_from_settings,
 )
 from app.config import Settings
-from app.models import AwardOptionData, PendingExchangeData, UserPointsData
+from app.models import (
+    AwardOptionData,
+    PendingExchangeData,
+    PendingMemoryChangeData,
+    UserPointsData,
+)
 from app.runtime import AgentRuntime
 from app.trace import capture_tool_trace
 
@@ -66,6 +71,7 @@ class ChatResponse(BaseModel):
     answer: str
     elapsed_ms: float
     pending_exchange: PendingExchangeData | None = None
+    pending_memory_change: PendingMemoryChangeData | None = None
 
 
 class ErrorResponse(BaseModel):
@@ -234,6 +240,10 @@ def create_app(
             answer=answer,
             elapsed_ms=round(elapsed_ms, 2),
             pending_exchange=request.app.state.runtime.pending_exchange(
+                user_id,
+                session_id,
+            ),
+            pending_memory_change=request.app.state.runtime.pending_memory_change(
                 user_id,
                 session_id,
             ),

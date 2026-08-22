@@ -53,6 +53,10 @@ class Settings:
     exchange_confirmation_redis_url: str = "redis://127.0.0.1:6379/0"
     exchange_confirmation_redis_prefix: str = "agent:exchange:confirmation"
     exchange_confirmation_retention_seconds: int = 3600
+    growth_memory_store: str = "memory"
+    growth_memory_pending_ttl_seconds: int = 120
+    growth_memory_redis_url: str = "redis://127.0.0.1:6379/0"
+    growth_memory_redis_prefix: str = "agent:growth:memory"
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -139,6 +143,23 @@ class Settings:
             exchange_confirmation_retention_seconds=int(
                 os.getenv("EXCHANGE_CONFIRMATION_RETENTION_SECONDS", "3600")
             ),
+            growth_memory_store=os.getenv(
+                "GROWTH_MEMORY_STORE", "redis"
+            ).strip().lower(),
+            growth_memory_pending_ttl_seconds=int(
+                os.getenv("GROWTH_MEMORY_PENDING_TTL_SECONDS", "120")
+            ),
+            growth_memory_redis_url=(
+                os.getenv("GROWTH_MEMORY_REDIS_URL")
+                or os.getenv(
+                    "EXCHANGE_CONFIRMATION_REDIS_URL",
+                    "redis://127.0.0.1:6379/0",
+                )
+            ).strip(),
+            growth_memory_redis_prefix=os.getenv(
+                "GROWTH_MEMORY_REDIS_PREFIX",
+                "agent:growth:memory",
+            ).strip(),
         )
 
     def require_llm_api_key(self) -> str:

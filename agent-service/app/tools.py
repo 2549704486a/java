@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import logging
 import time
+from datetime import date
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -10,9 +12,11 @@ from langchain.tools import tool
 from app.api_client import BusinessApiClient, BusinessApiError
 from app.confirmation_store import ConfirmationStore, ConfirmationStoreBackend
 from app.execution_context import current_thread_id
+from app.growth_memory_store import GrowthMemoryStore, GrowthMemoryStoreBackend
 from app.knowledge_search import KnowledgeSearchError, KnowledgeSearchService
 from app.skills.award_recommendation import AwardRecommendationSkill
 from app.skills.controlled_exchange import ControlledExchangeSkill
+from app.skills.growth_memory import GrowthMemorySkill
 from app.skills.points_plan import PointsPlanningSkill
 from app.skills.registry import SkillRegistry
 from app.trace import current_correlation_id, execute_traced
@@ -57,22 +61,57 @@ class KnowledgeSearchInput(BaseModel):
     limit: int = Field(default=3, ge=1, le=5, description="最多返回的知识片段数")
 
 
+class PrepareRedemptionGoalInput(BaseModel):
+    award_id: int = Field(gt=0, description="用户希望长期兑换的目标奖品 ID")
+    target_date: date = Field(description="用户计划完成兑换的目标日期，格式 YYYY-MM-DD")
+
+
+class PrepareUserPreferencesInput(BaseModel):
+    preferred_categories: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="用户明确喜欢的稳定奖品类别；未提及时传空数组",
+    )
+    disliked_categories: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="用户明确不喜欢的稳定奖品类别；未提及时传空数组",
+    )
+    task_preferences: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="用户明确偏好的稳定任务类型；未提及时传空数组",
+    )
+
+
+class ForgetGrowthMemoryInput(BaseModel):
+    scope: Literal["goal", "preferences", "all"] = Field(
+        description="要遗忘的范围：兑换目标、偏好或全部长期记忆"
+    )
+
+
 def build_tools(
     client: BusinessApiClient,
     user_id: int,
     skill_registry: SkillRegistry | None = None,
     confirmation_store: ConfirmationStoreBackend | None = None,
     knowledge_search: KnowledgeSearchService | None = None,
+    growth_memory_store: GrowthMemoryStoreBackend | None = None,
 ):
     registry = skill_registry or SkillRegistry()
     points_manifest = registry.require_manifest("points-planning")
     recommendation_manifest = registry.require_manifest("award-recommendation")
     exchange_manifest = registry.require_manifest("controlled-exchange")
+    memory_manifest = registry.require_manifest("growth-memory")
     points_skill = PointsPlanningSkill(client)
     recommendation_skill = AwardRecommendationSkill(client)
     controlled_exchange_skill = ControlledExchangeSkill(
         client,
         confirmation_store or ConfirmationStore(),
+    )
+    growth_memory_skill = GrowthMemorySkill(
+        client,
+        growth_memory_store or GrowthMemoryStore(),
     )
 
     def safe_result(tool_name: str, arguments: dict, callable_):
@@ -244,6 +283,105 @@ def build_tools(
 
         return execute_traced("cancel_exchange", {}, execute)
 
+    @tool(
+        description=(
+            "读取当前用户明确确认并跨会话保存的兑换目标、奖品偏好和任务偏好。"
+            "不得用它查询实时积分、库存、任务完成状态或订单状态。"
+        ),
+        extras=memory_manifest.trace_metadata(),
+    )
+    def get_growth_memory() -> dict:
+        return execute_traced(
+            "get_growth_memory",
+            {},
+            lambda: growth_memory_skill.get(user_id).model_dump(mode="json"),
+        )
+
+    @tool(
+        args_schema=PrepareRedemptionGoalInput,
+        description=(
+            "用户明确要求记住或修改长期兑换目标时使用。只生成待确认摘要，不立即写入长期记忆。"
+        ),
+        extras=memory_manifest.trace_metadata(),
+    )
+    def prepare_redemption_goal(award_id: int, target_date: date) -> dict:
+        arguments = {
+            "award_id": award_id,
+            "target_date": target_date.isoformat(),
+        }
+
+        def execute() -> dict:
+            context_error = exchange_context_error()
+            if context_error is not None:
+                return context_error
+            registry.activate(memory_manifest.name)
+            return growth_memory_skill.prepare_goal(
+                user_id=user_id,
+                session_id=current_thread_id() or "",
+                award_id=award_id,
+                target_date=target_date,
+            ).model_dump(mode="json")
+
+        return execute_traced("prepare_redemption_goal", arguments, execute)
+
+    @tool(
+        args_schema=PrepareUserPreferencesInput,
+        description=(
+            "用户明确要求记住或替换稳定的奖品类别、排斥类别或任务偏好时使用。"
+            "只生成完整替换预览，不立即写入长期记忆。"
+        ),
+        extras=memory_manifest.trace_metadata(),
+    )
+    def prepare_user_preferences(
+        preferred_categories: list[str] | None = None,
+        disliked_categories: list[str] | None = None,
+        task_preferences: list[str] | None = None,
+    ) -> dict:
+        arguments = {
+            "preferred_count": len(preferred_categories or []),
+            "disliked_count": len(disliked_categories or []),
+            "task_preference_count": len(task_preferences or []),
+        }
+
+        def execute() -> dict:
+            context_error = exchange_context_error()
+            if context_error is not None:
+                return context_error
+            registry.activate(memory_manifest.name)
+            return growth_memory_skill.prepare_preferences(
+                user_id=user_id,
+                session_id=current_thread_id() or "",
+                preferred_categories=preferred_categories or [],
+                disliked_categories=disliked_categories or [],
+                task_preferences=task_preferences or [],
+            ).model_dump(mode="json")
+
+        return execute_traced("prepare_user_preferences", arguments, execute)
+
+    @tool(
+        args_schema=ForgetGrowthMemoryInput,
+        description=(
+            "用户明确要求遗忘已保存的兑换目标、偏好或全部长期记忆时使用。"
+            "只生成删除预览，不立即删除。"
+        ),
+        extras=memory_manifest.trace_metadata(),
+    )
+    def prepare_forget_growth_memory(scope: str) -> dict:
+        arguments = {"scope": scope}
+
+        def execute() -> dict:
+            context_error = exchange_context_error()
+            if context_error is not None:
+                return context_error
+            registry.activate(memory_manifest.name)
+            return growth_memory_skill.prepare_forget(
+                user_id=user_id,
+                session_id=current_thread_id() or "",
+                scope=scope,
+            ).model_dump(mode="json")
+
+        return execute_traced("prepare_forget_growth_memory", arguments, execute)
+
     available_tools = [
         get_user_points,
         list_available_tasks,
@@ -254,6 +392,10 @@ def build_tools(
         recommend_awards,
         prepare_exchange,
         cancel_exchange,
+        get_growth_memory,
+        prepare_redemption_goal,
+        prepare_user_preferences,
+        prepare_forget_growth_memory,
     ]
     if knowledge_search is not None:
         @tool(args_schema=KnowledgeSearchInput)

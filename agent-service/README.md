@@ -5,17 +5,18 @@
 ## 1. 当前能力
 
 - 通过 LangChain `create_agent` 运行 Function Calling 循环。
-- 使用 5 个基础查询 Tool、2 个只读组合 Skill 和 1 个受控兑换 Skill。
+- 使用 5 个基础查询 Tool、2 个只读组合 Skill、1 个受控兑换 Skill 和 1 个长期记忆 Skill。
 - `plan_points_for_award` 使用确定性代码计算积分缺口和任务组合。
 - `recommend_awards` 使用确定性代码过滤并排序当前真正可兑换的奖品。
 - 启动时发现并校验 `skills/*/SKILL.md`，Tool 描述、Skill 版本和哈希来自声明文件。
 - 提供 FastAPI HTTP 接口，支持请求校验、请求 ID、错误脱敏和有界 Agent 缓存。
 - 使用空闲 TTL 回收会话，并在每次模型调用前按完整轮次和估算 token 裁剪可见上下文；裁剪指标与模型实际 token 写入日志。
 - 使用签名 JWT 验证用户身份，查询、会话和兑换不接受浏览器自行指定用户 ID。
-- 建立受控 RAG 知识源目录，使用文档版本、来源引用和结构校验管理索引输入；已实现文档切分与本地 Chroma 索引，当前尚未接入在线检索。
+- 建立受控 RAG 知识源目录，已实现文档切分、本地 Chroma 索引、在线只读检索、来源引用和新鲜度门禁。
 - Tool 层只对 GET 请求的瞬时网络错误做有限重试；兑换 POST 绝不自动重试。
 - 兑换必须经过“准备摘要 -> 用户明确确认 -> 服务端确定性路由 -> 原子消费一次性凭证”，确认凭证不进入模型上下文，受理后仍由旧事务消息链路异步完成。
-- 不直连业务 MySQL 和 RocketMQ；只使用独立 Redis Key 前缀保存 Agent 自己的确认授权状态，不直接修改积分、库存和任务状态。
+- 兑换目标和稳定偏好必须经过“变更预览 -> 用户明确确认 -> Runtime 原子写入”，支持跨会话读取、修改、遗忘和目标过期标记。
+- 不直连业务 MySQL 和 RocketMQ；只使用独立 Redis Key 前缀保存 Agent 自己的确认授权与长期记忆，不直接修改积分、库存和任务状态。
 
 课程讲义中的 `langgraph.prebuilt.create_react_agent` 在当前版本已由 `langchain.agents.create_agent` 取代，二者承担相同的“模型决定工具 -> 执行工具 -> 返回结果 -> 继续推理”循环。
 
@@ -69,6 +70,10 @@ AGENT_ACCESS_TOKEN_TTL_SECONDS=3600
 AGENT_SESSION_TTL_SECONDS=3600
 AGENT_CONTEXT_MAX_TOKENS=6000
 AGENT_CONTEXT_MAX_TURNS=12
+GROWTH_MEMORY_STORE=redis
+GROWTH_MEMORY_PENDING_TTL_SECONDS=120
+GROWTH_MEMORY_REDIS_URL=redis://127.0.0.1:6379/0
+GROWTH_MEMORY_REDIS_PREFIX=agent:growth:memory
 ```
 
 ## 3. 先验证业务 Skill
@@ -97,6 +102,8 @@ Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Too
 ```
 
 受控兑换示例：先说“我想兑换 6 号奖品”，Agent 展示奖品和积分摘要后，再在同一会话明确回复“确认兑换”。`EXCHANGE_PROCESSING` 只表示已进入旧链路处理流程，最终结果需要到订单页面查看；遇到 `SUBMISSION_UNKNOWN` 时先核对订单，不要立即重复提交。
+
+长期记忆示例：说“请记住，我想在 2026-09-01 前兑换 6 号奖品”，核对预览后回复“确认保存”。之后的新会话可以询问“我的兑换目标是什么”。说“忘掉我的兑换目标”时会先生成删除预览，回复“确认遗忘”后才真正删除。
 
 ## 5. 运行 HTTP 服务与前端
 
@@ -148,7 +155,7 @@ Invoke-RestMethod `
     -Body $body
 ```
 
-响应包含 `request_id`、`session_id`、`user_id`、`answer` 和服务端总耗时 `elapsed_ms`。首次不传 `session_id` 时服务会生成并返回；后续请求携带同一个 `session_id` 即可延续对话。
+响应包含 `request_id`、`session_id`、`user_id`、`answer`、服务端总耗时 `elapsed_ms`，以及安全的待确认兑换或记忆变更摘要。首次不传 `session_id` 时服务会生成并返回；后续请求携带同一个 `session_id` 即可延续对话。
 
 本地签发命令使用 `.env` 中的 JWT 密钥。生产环境应由正式登录系统签发身份，不能把签名密钥交给浏览器，也不能提供公开的“输入用户 ID 换 Token”接口。
 

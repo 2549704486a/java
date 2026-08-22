@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -143,3 +143,65 @@ class PointsPlan(BaseModel):
     projected_points: int | None = None
     remaining_gap: int | None = None
     recommended_tasks: list[RecommendedTask] = Field(default_factory=list)
+
+
+class RedemptionGoalData(BaseModel):
+    """用户明确确认过的跨会话兑换目标。"""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    user_id: int = Field(alias="userId")
+    target_award_id: int = Field(alias="targetAwardId", gt=0)
+    target_award_name: str = Field(alias="targetAwardName", min_length=1)
+    target_date: date = Field(alias="targetDate")
+    status: Literal["ACTIVE", "EXPIRED"]
+    created_at: datetime = Field(alias="createdAt")
+    updated_at: datetime = Field(alias="updatedAt")
+    source_session: str = Field(alias="sourceSession")
+
+
+class UserPreferenceData(BaseModel):
+    """只保存用户确认过、跨会话仍稳定的兑换与任务偏好。"""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    user_id: int = Field(alias="userId")
+    preferred_categories: list[str] = Field(
+        default_factory=list,
+        alias="preferredCategories",
+    )
+    disliked_categories: list[str] = Field(
+        default_factory=list,
+        alias="dislikedCategories",
+    )
+    task_preferences: list[str] = Field(
+        default_factory=list,
+        alias="taskPreferences",
+    )
+    created_at: datetime = Field(alias="createdAt")
+    updated_at: datetime = Field(alias="updatedAt")
+    source_session: str = Field(alias="sourceSession")
+
+
+class GrowthMemoryData(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    goal: RedemptionGoalData | None = None
+    preferences: UserPreferenceData | None = None
+
+
+class PendingMemoryChangeData(BaseModel):
+    """可返回给浏览器的记忆变更摘要，不包含内部草稿标识。"""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    status: Literal["AWAITING_MEMORY_CONFIRMATION"]
+    change_type: Literal[
+        "UPSERT_GOAL",
+        "REPLACE_PREFERENCES",
+        "FORGET_GOAL",
+        "FORGET_PREFERENCES",
+        "FORGET_ALL",
+    ] = Field(alias="changeType")
+    summary: str
+    expires_at: datetime = Field(alias="expiresAt")

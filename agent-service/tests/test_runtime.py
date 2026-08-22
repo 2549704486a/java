@@ -8,6 +8,7 @@ from langgraph.graph import START, MessagesState, StateGraph
 from app.agent import append_agent_turn
 from app.config import Settings
 from app.confirmation_store import ConfirmationStatus, ConfirmationStore
+from app.growth_memory_store import GrowthMemoryStore, MemoryChangeType
 from app.models import ToolEnvelope
 from app.runtime import AgentRuntime
 
@@ -87,6 +88,7 @@ class AgentRuntimeTest(unittest.TestCase):
             actual_checkpointer,
             confirmation_store,
             knowledge_search,
+            growth_memory_store,
         ):
             built_user_ids.append(user_id)
             self.assertIs(checkpointer, actual_checkpointer)
@@ -210,6 +212,7 @@ class AgentRuntimeTest(unittest.TestCase):
             checkpointer,
             confirmation_store,
             knowledge_search,
+            growth_memory_store,
         ):
             return {"user_id": user_id}
 
@@ -333,6 +336,49 @@ class AgentRuntimeTest(unittest.TestCase):
         pending = runtime.pending_exchange(10, "session-a")
         self.assertIsNotNone(pending)
         self.assertEqual("手表", pending.award_name)
+
+    def test_memory_confirmation_uses_deterministic_route_and_persists_across_sessions(self):
+        runner_calls: list[str] = []
+        memory_store = GrowthMemoryStore()
+        agent = FakeAgent()
+
+        def builder(*args):
+            return agent
+
+        def runner(agent, message, thread_id, request_id):
+            runner_calls.append(message)
+            return "不应调用模型"
+
+        runtime = AgentRuntime(
+            Settings(llm_api_key="test-key"),
+            client=FakeClient(),
+            skill_registry=FakeSkillRegistry(),
+            checkpointer=FakeCheckpointer(),
+            agent_builder=builder,
+            agent_runner=runner,
+            growth_memory_store=memory_store,
+        )
+        memory_store.prepare(
+            user_id=10,
+            session_id="user:10:session:session-a",
+            change_type=MemoryChangeType.UPSERT_GOAL,
+            payload={
+                "target_award_id": 6,
+                "target_award_name": "城市随行保温杯",
+                "target_date": "2026-09-01",
+            },
+            summary="设置兑换目标",
+        )
+
+        answer, _ = runtime.answer(10, "session-a", "确认保存", "memory-confirm")
+
+        self.assertEqual("已按确认内容更新长期记忆", answer)
+        self.assertEqual([], runner_calls)
+        self.assertEqual(6, memory_store.get(10).goal.target_award_id)
+        self.assertIsNone(runtime.pending_memory_change(10, "session-a"))
+        # 新会话仍读取同一用户长期目标，不依赖 LangGraph 短期会话历史。
+        self.assertEqual(6, memory_store.get(10).goal.target_award_id)
+        self.assertEqual("确认保存", agent.state_updates[0][1]["messages"][0].content)
 
 
 if __name__ == "__main__":
