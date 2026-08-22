@@ -282,15 +282,23 @@ def score_draft(
     _add_check(
         checks,
         "constraint_satisfaction",
-        "积分成本由参与人数和任务奖励重新计算且不超预算",
-        _cost_is_valid(draft, brief),
-        {"budget_points": brief.budget_points},
+        "积分发放量与奖品金额分别重算且不越过各自约束",
+        _costs_are_valid(draft, brief),
+        {
+            "points_issuance_cap": brief.points_issuance_cap,
+            "budget_amount_cents": brief.budget_amount_cents,
+        },
         {
             "estimated_participants": draft.estimated_participants,
-            "estimated_point_cost": draft.estimated_point_cost,
+            "estimated_points_issued": draft.estimated_points_issued,
+            "planned_award_cost_cents": draft.planned_award_cost_cents,
         },
     )
-    for field in ("estimated_participants", "estimated_point_cost"):
+    for field in (
+        "estimated_participants",
+        "estimated_points_issued",
+        "planned_award_cost_cents",
+    ):
         if field in expected:
             _add_check(
                 checks,
@@ -371,7 +379,8 @@ def score_draft(
         {
             "status": draft.status,
             "estimated_participants": draft.estimated_participants,
-            "estimated_point_cost": draft.estimated_point_cost,
+            "estimated_points_issued": draft.estimated_points_issued,
+            "planned_award_cost_cents": draft.planned_award_cost_cents,
             "task_count": len(draft.suggested_tasks),
             "award_count": len(draft.suggested_awards),
         },
@@ -426,7 +435,12 @@ def _award_references_match(
         item.award_id in facts
         and item.award_name == facts[item.award_id].award_name
         and item.required_points == facts[item.award_id].required_points
+        and item.unit_cost_cents == facts[item.award_id].unit_cost_cents
+        and item.cost_source_ref == facts[item.award_id].cost_source_ref
         and item.inventory == facts[item.award_id].inventory
+        and 0 < item.planned_quantity <= facts[item.award_id].inventory
+        and item.planned_cost_cents
+        == item.planned_quantity * item.unit_cost_cents
         and item.source_ref == facts[item.award_id].source_ref
         for item in draft.suggested_awards
     )
@@ -458,17 +472,26 @@ def _selected_candidates_are_available(
     return True
 
 
-def _cost_is_valid(draft: CampaignPlanDraft, brief: CampaignBrief) -> bool:
-    if draft.estimated_point_cost is None:
+def _costs_are_valid(draft: CampaignPlanDraft, brief: CampaignBrief) -> bool:
+    if (
+        draft.estimated_points_issued is None
+        or draft.planned_award_cost_cents is None
+    ):
         return draft.status == "NEEDS_DATA"
     if draft.estimated_participants is None:
         return False
-    recomputed = draft.estimated_participants * sum(
+    recomputed_points = draft.estimated_participants * sum(
         item.max_reward_per_user for item in draft.suggested_tasks
     )
+    recomputed_amount = sum(
+        item.planned_quantity * item.unit_cost_cents
+        for item in draft.suggested_awards
+    )
     return (
-        draft.estimated_point_cost == recomputed
-        and draft.estimated_point_cost <= brief.budget_points
+        draft.estimated_points_issued == recomputed_points
+        and draft.estimated_points_issued <= brief.points_issuance_cap
+        and draft.planned_award_cost_cents == recomputed_amount
+        and draft.planned_award_cost_cents <= brief.budget_amount_cents
     )
 
 
@@ -476,18 +499,24 @@ def _status_payload_is_complete(draft: CampaignPlanDraft) -> bool:
     if draft.status == "DRAFT_READY":
         return (
             draft.estimated_participants is not None
-            and draft.estimated_point_cost is not None
+            and draft.estimated_points_issued is not None
+            and draft.planned_award_cost_cents is not None
             and bool(draft.suggested_tasks)
             and bool(draft.suggested_awards)
         )
     if draft.status == "NEEDS_DATA":
         return (
             draft.estimated_participants is None
-            and draft.estimated_point_cost is None
+            and draft.estimated_points_issued is None
+            and draft.planned_award_cost_cents is None
             and not draft.suggested_tasks
             and not draft.suggested_awards
         )
-    return draft.estimated_participants is not None and draft.estimated_point_cost is not None
+    return (
+        draft.estimated_participants is not None
+        and draft.estimated_points_issued is not None
+        and draft.planned_award_cost_cents is not None
+    )
 
 
 def _tool_names(tools: list[Any]) -> list[str]:

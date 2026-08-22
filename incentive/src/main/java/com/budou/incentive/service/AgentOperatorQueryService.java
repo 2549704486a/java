@@ -146,11 +146,15 @@ public class AgentOperatorQueryService {
                 award.getAwardId(),
                 award.getName(),
                 award.getPrice(),
+                award.getUnitCostCents(),
                 inventory,
                 inventory > 0 && isAvailable(award.getStartTime(), award.getEndTime(), now),
                 award.getStartTime(),
                 award.getEndTime(),
-                "award_config:" + award.getAwardId()
+                "award_config:" + award.getAwardId() + ":unitCostCents",
+                Integer.valueOf(1).equals(award.getIsOverSell())
+                        ? "award_config:" + award.getAwardId() + ":inventory"
+                        : "award_inventory_split:" + award.getAwardId() + ":sum"
         );
     }
 

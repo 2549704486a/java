@@ -21,25 +21,25 @@ DELETE FROM `award_config`;
 
 -- Step 2: 创建不同价位、类型和库存规模的奖品，活动长期有效。
 INSERT INTO `award_config`
-(`awardId`, `coverUrl`, `name`, `awardType`, `inventory`, `price`,
+(`awardId`, `coverUrl`, `name`, `awardType`, `inventory`, `price`, `unitCostCents`,
  `startTime`, `endTime`, `createTime`, `updateTime`, `initInventory`, `isOverSell`)
 VALUES
-(1, '/static/award/bluetooth-headset.png', '蓝牙耳机', 1, 119, 800,
+(1, '/static/award/bluetooth-headset.png', '蓝牙耳机', 1, 119, 800, 12900,
  DATE_SUB(NOW(), INTERVAL 30 DAY), DATE_ADD(NOW(), INTERVAL 365 DAY),
  NOW(), NOW(), 120, 0),
-(2, '/static/award/smart-band.png', '智能手环', 1, 60, 1500,
+(2, '/static/award/smart-band.png', '智能手环', 1, 60, 1500, 19900,
  DATE_SUB(NOW(), INTERVAL 30 DAY), DATE_ADD(NOW(), INTERVAL 365 DAY),
  NOW(), NOW(), 60, 0),
-(3, '/static/award/video-membership.png', '视频会员月卡', 2, 500, 300,
+(3, '/static/award/video-membership.png', '视频会员月卡', 2, 500, 300, 1500,
  DATE_SUB(NOW(), INTERVAL 30 DAY), DATE_ADD(NOW(), INTERVAL 365 DAY),
  NOW(), NOW(), 500, 1),
-(4, '/static/award/coffee-coupon.png', '精品咖啡券', 2, 300, 180,
+(4, '/static/award/coffee-coupon.png', '精品咖啡券', 2, 300, 180, 2500,
  DATE_SUB(NOW(), INTERVAL 30 DAY), DATE_ADD(NOW(), INTERVAL 365 DAY),
  NOW(), NOW(), 300, 1),
-(5, '/static/award/mechanical-keyboard.png', '机械键盘', 1, 24, 2500,
+(5, '/static/award/mechanical-keyboard.png', '机械键盘', 1, 24, 2500, 29900,
  DATE_SUB(NOW(), INTERVAL 30 DAY), DATE_ADD(NOW(), INTERVAL 365 DAY),
  NOW(), NOW(), 24, 0),
-(6, '/static/award/smart-watch.png', '智能手表', 1, 19, 5000,
+(6, '/static/award/smart-watch.png', '智能手表', 1, 19, 5000, 49900,
  DATE_SUB(NOW(), INTERVAL 30 DAY), DATE_ADD(NOW(), INTERVAL 365 DAY),
  NOW(), NOW(), 20, 0);
 

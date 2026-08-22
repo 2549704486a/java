@@ -136,6 +136,7 @@ class AgentQueryServiceTest {
         Date now = new Date();
         return new AwardConfig(
                 awardId, "/cover.png", "测试奖品", 1, 100, requiredPoints,
+                19900,
                 new Date(now.getTime() - 60_000), new Date(now.getTime() + 60_000),
                 now, now, 100, 0
         );

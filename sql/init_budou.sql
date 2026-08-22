@@ -31,6 +31,7 @@ CREATE TABLE `award_config` (
   `awardType` tinyint NOT NULL COMMENT '1实物奖品 2虚拟奖品',
   `inventory` bigint NOT NULL COMMENT '奖品库存',
   `price` int NOT NULL COMMENT '兑换奖品消耗积分',
+  `unitCostCents` int DEFAULT NULL COMMENT '奖品单位成本，单位分；与兑换积分无固定换算关系',
   `startTime` timestamp NULL DEFAULT NULL,
   `endTime` timestamp NULL DEFAULT NULL,
   `createTime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -186,9 +187,9 @@ CREATE TABLE `inventory_log` (
   `creatTime` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-INSERT INTO `award_config` (`awardId`, `coverUrl`, `name`, `awardType`, `inventory`, `price`, `startTime`, `endTime`, `createTime`, `updateTime`, `initInventory`, `isOverSell`) VALUES
-(5, '/static/award/hard-disk.png', '硬盘', 1, 1000, 100, '2024-10-06 12:29:19', '2027-07-03 21:37:45', NOW(), NOW(), 1000, 1),
-(6, '/static/award/watch.png', '手表', 1, 1000, 200, '2024-10-10 22:19:53', '2027-07-29 14:15:01', NOW(), NOW(), 1000, 0);
+INSERT INTO `award_config` (`awardId`, `coverUrl`, `name`, `awardType`, `inventory`, `price`, `unitCostCents`, `startTime`, `endTime`, `createTime`, `updateTime`, `initInventory`, `isOverSell`) VALUES
+(5, '/static/award/hard-disk.png', '硬盘', 1, 1000, 100, 29900, '2024-10-06 12:29:19', '2027-07-03 21:37:45', NOW(), NOW(), 1000, 1),
+(6, '/static/award/watch.png', '手表', 1, 1000, 200, 19900, '2024-10-10 22:19:53', '2027-07-29 14:15:01', NOW(), NOW(), 1000, 0);
 
 INSERT INTO `award_inventory_split` (`splitId`, `awardId`, `inventory`) VALUES
 (1, 6, 100),

@@ -108,7 +108,8 @@ class CampaignPlanningSkill:
                 reason_code="ZERO_EXPECTED_PARTICIPATION",
                 message="历史数据下预计参与人数为零，请调整用户群或活动方案",
                 estimated_participants=0,
-                estimated_point_cost=0,
+                estimated_points_issued=0,
+                planned_award_cost_cents=0,
                 risks=[
                     self._risk(
                         "ZERO_EXPECTED_PARTICIPATION",
@@ -118,45 +119,93 @@ class CampaignPlanningSkill:
                 ],
                 **base,
             )
-        per_user_budget = brief.budget_points // estimated_participants
+
+        available_awards, excluded_awards = self._available_awards(
+            snapshot.awards,
+            brief,
+        )
+        missing_cost_awards = [
+            award for award in available_awards if award.unit_cost_cents is None
+        ]
+        if missing_cost_awards:
+            missing_ids = ", ".join(str(award.award_id) for award in missing_cost_awards)
+            return CampaignPlanDraft(
+                status="NEEDS_DATA",
+                reason_code="AWARD_UNIT_COST_MISSING",
+                message="候选奖品缺少真实单位成本，不能生成金额预算草案",
+                risks=[
+                    self._risk(
+                        "AWARD_UNIT_COST_MISSING",
+                        "BLOCKING",
+                        f"奖品 {missing_ids} 需要由采购或运营数据回填单位成本",
+                    )
+                ],
+                **base,
+            )
+
+        per_user_points_cap = brief.points_issuance_cap // estimated_participants
         tasks = self._select_tasks(
             snapshot.tasks,
             brief.max_tasks,
-            per_user_budget,
+            per_user_points_cap,
             brief,
         )
-        awards, excluded_awards = self._select_awards(
-            snapshot.awards,
+        award_plans = self._plan_awards(
+            available_awards,
             brief,
+            estimated_participants,
         )
 
         risks: list[CampaignRisk] = []
         if not tasks:
             risks.append(
                 self._risk(
-                    "NO_TASK_FITS_BUDGET",
+                    "NO_TASK_FITS_POINTS_CAP",
                     "BLOCKING",
-                    "现有任务奖励无法放入当前人均积分预算",
+                    "现有任务奖励无法放入当前人均积分发放上限",
                 )
             )
-        if not awards:
+        if not award_plans:
+            code = (
+                "NO_AWARD_FITS_AMOUNT_BUDGET"
+                if available_awards
+                else "NO_AWARD_AVAILABLE_FOR_WINDOW"
+            )
+            message = (
+                "金额预算不足以配置任何候选奖品"
+                if available_awards
+                else "没有库存充足且覆盖活动时间窗口的奖品"
+            )
             risks.append(
                 self._risk(
-                    "NO_AWARD_AVAILABLE_FOR_WINDOW",
+                    code,
                     "BLOCKING",
-                    "没有库存充足且覆盖活动时间窗口的奖品",
+                    message,
                 )
             )
 
-        estimated_point_cost = estimated_participants * sum(
+        estimated_points_issued = estimated_participants * sum(
             task.max_reward_per_user for task in tasks
         )
-        if tasks and estimated_point_cost < brief.budget_points * 0.5:
+        planned_award_cost_cents = sum(
+            quantity * award.unit_cost_cents
+            for award, quantity in award_plans
+            if award.unit_cost_cents is not None
+        )
+        if tasks and estimated_points_issued < brief.points_issuance_cap * 0.5:
             risks.append(
                 self._risk(
-                    "LOW_BUDGET_UTILIZATION",
+                    "LOW_POINTS_CAP_UTILIZATION",
                     "WARNING",
-                    "当前任务组合预计使用不到一半积分预算，可由运营人员调整",
+                    "当前任务组合预计使用不到一半积分发放上限，可由运营人员调整",
+                )
+            )
+        if award_plans and planned_award_cost_cents < brief.budget_amount_cents * 0.5:
+            risks.append(
+                self._risk(
+                    "LOW_AMOUNT_BUDGET_UTILIZATION",
+                    "WARNING",
+                    "当前奖品计划使用不到一半金额预算，可由运营人员调整",
                 )
             )
         if excluded_awards:
@@ -167,14 +216,15 @@ class CampaignPlanningSkill:
                     f"有 {excluded_awards} 个奖品未覆盖完整活动时间窗口或库存为零",
                 )
             )
-        if awards:
-            inventory = sum(award.inventory for award in awards)
-            if inventory < estimated_participants:
+        if award_plans:
+            planned_quantity = sum(quantity for _, quantity in award_plans)
+            if planned_quantity < estimated_participants:
                 risks.append(
                     self._risk(
                         "AWARD_INVENTORY_COVERAGE_LOW",
                         "WARNING",
-                        f"候选奖品库存仅覆盖预计参与人数的 {inventory}/{estimated_participants}",
+                        "金额预算和库存下的奖品计划仅覆盖预计参与人数的 "
+                        f"{planned_quantity}/{estimated_participants}",
                     )
                 )
             risks.append(
@@ -182,6 +232,13 @@ class CampaignPlanningSkill:
                     "AWARD_RELEVANCE_REVIEW_REQUIRED",
                     "INFO",
                     "当前仅按可用性和库存选择奖品，仍需人工审核奖品与活动目标的匹配度",
+                )
+            )
+            risks.append(
+                self._risk(
+                    "AWARD_QUANTITY_ASSUMPTION_REVIEW_REQUIRED",
+                    "INFO",
+                    "当前按每位预计参与者最多一个奖品名额规划数量，发布前需核对活动规则",
                 )
             )
 
@@ -199,9 +256,13 @@ class CampaignPlanningSkill:
                 else "活动草案已生成，发布前仍需运营人员编辑和审核"
             ),
             estimated_participants=estimated_participants,
-            estimated_point_cost=estimated_point_cost,
+            estimated_points_issued=estimated_points_issued,
+            planned_award_cost_cents=planned_award_cost_cents,
             suggested_tasks=[self._suggested_task(task) for task in tasks],
-            suggested_awards=[self._suggested_award(award) for award in awards],
+            suggested_awards=[
+                self._suggested_award(award, quantity)
+                for award, quantity in award_plans
+            ],
             risks=risks,
             **base,
         )
@@ -216,7 +277,8 @@ class CampaignPlanningSkill:
             "objective": brief.objective,
             "target_segment_key": brief.target_segment_key,
             "target_segment": brief.target_segment,
-            "budget_points": brief.budget_points,
+            "budget_amount_cents": brief.budget_amount_cents,
+            "points_issuance_cap": brief.points_issuance_cap,
             "start_at": brief.start_at,
             "end_at": brief.end_at,
             "source_snapshot_id": snapshot.snapshot_id,
@@ -246,11 +308,11 @@ class CampaignPlanningSkill:
     def _select_tasks(
         tasks: list[CampaignTaskSnapshot],
         limit: int,
-        per_user_budget: int,
+        per_user_points_cap: int,
         brief: CampaignBrief,
     ) -> list[CampaignTaskSnapshot]:
         selected: list[CampaignTaskSnapshot] = []
-        remaining = per_user_budget
+        remaining = per_user_points_cap
         candidates = sorted(
             (
                 task
@@ -276,7 +338,7 @@ class CampaignPlanningSkill:
         return selected
 
     @staticmethod
-    def _select_awards(
+    def _available_awards(
         awards: list[CampaignAwardSnapshot],
         brief: CampaignBrief,
     ) -> tuple[list[CampaignAwardSnapshot], int]:
@@ -292,10 +354,45 @@ class CampaignPlanningSkill:
             )
             if award.active and award.inventory > 0 and covers_start and covers_end:
                 available.append(award)
-        available.sort(
-            key=lambda award: (-award.inventory, award.required_points, award.award_id)
+        return available, len(awards) - len(available)
+
+    @staticmethod
+    def _plan_awards(
+        awards: list[CampaignAwardSnapshot],
+        brief: CampaignBrief,
+        estimated_participants: int,
+    ) -> list[tuple[CampaignAwardSnapshot, int]]:
+        """在金额预算内规划奖品数量；不使用兑换积分换算成本。"""
+
+        planned: list[tuple[CampaignAwardSnapshot, int]] = []
+        remaining_budget = brief.budget_amount_cents
+        remaining_quantity = estimated_participants
+        candidates = sorted(
+            awards,
+            key=lambda award: (
+                award.unit_cost_cents if award.unit_cost_cents is not None else math.inf,
+                -award.inventory,
+                award.required_points,
+                award.award_id,
+            ),
         )
-        return available[: brief.max_awards], len(awards) - len(available)
+        for award in candidates:
+            if len(planned) >= brief.max_awards or remaining_quantity <= 0:
+                break
+            if award.unit_cost_cents is None:
+                continue
+            affordable_quantity = (
+                remaining_quantity
+                if award.unit_cost_cents == 0
+                else remaining_budget // award.unit_cost_cents
+            )
+            quantity = min(award.inventory, remaining_quantity, affordable_quantity)
+            if quantity <= 0:
+                continue
+            planned.append((award, quantity))
+            remaining_quantity -= quantity
+            remaining_budget -= quantity * award.unit_cost_cents
+        return planned
 
     @staticmethod
     def _suggested_task(task: CampaignTaskSnapshot) -> SuggestedCampaignTask:
@@ -307,12 +404,21 @@ class CampaignPlanningSkill:
         )
 
     @staticmethod
-    def _suggested_award(award: CampaignAwardSnapshot) -> SuggestedCampaignAward:
+    def _suggested_award(
+        award: CampaignAwardSnapshot,
+        planned_quantity: int,
+    ) -> SuggestedCampaignAward:
+        if award.unit_cost_cents is None:
+            raise ValueError("奖品单位成本缺失")
         return SuggestedCampaignAward(
             award_id=award.award_id,
             award_name=award.award_name,
             required_points=award.required_points,
+            unit_cost_cents=award.unit_cost_cents,
             inventory=award.inventory,
+            planned_quantity=planned_quantity,
+            planned_cost_cents=planned_quantity * award.unit_cost_cents,
+            cost_source_ref=award.cost_source_ref,
             source_ref=award.source_ref,
         )
 

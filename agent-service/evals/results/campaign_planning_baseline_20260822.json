@@ -22,8 +22,8 @@
         "rate": 1.0
       },
       "constraint_satisfaction": {
-        "passed": 32,
-        "total": 32,
+        "passed": 35,
+        "total": 35,
         "rate": 1.0
       },
       "draft_completeness": {
@@ -181,14 +181,16 @@
         },
         {
           "category": "constraint_satisfaction",
-          "name": "积分成本由参与人数和任务奖励重新计算且不超预算",
+          "name": "积分发放量与奖品金额分别重算且不越过各自约束",
           "passed": true,
           "expected": {
-            "budget_points": 50000
+            "points_issuance_cap": 50000,
+            "budget_amount_cents": 1600000
           },
           "actual": {
             "estimated_participants": 200,
-            "estimated_point_cost": 36000
+            "estimated_points_issued": 36000,
+            "planned_award_cost_cents": 1600000
           }
         },
         {
@@ -200,10 +202,17 @@
         },
         {
           "category": "constraint_satisfaction",
-          "name": "estimated_point_cost 符合冻结预期",
+          "name": "estimated_points_issued 符合冻结预期",
           "passed": true,
           "expected": 36000,
           "actual": 36000
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "planned_award_cost_cents 符合冻结预期",
+          "passed": true,
+          "expected": 1600000,
+          "actual": 1600000
         },
         {
           "category": "draft_completeness",
@@ -253,7 +262,8 @@
           "actual": {
             "status": "DRAFT_READY",
             "estimated_participants": 200,
-            "estimated_point_cost": 36000,
+            "estimated_points_issued": 36000,
+            "planned_award_cost_cents": 1600000,
             "task_count": 2,
             "award_count": 2
           }
@@ -270,11 +280,13 @@
         "objective": "召回高积分用户",
         "target_segment_key": "POINTS_AT_LEAST_500",
         "target_segment": "当前积分不少于 500 的用户",
-        "budget_points": 50000,
+        "budget_amount_cents": 1600000,
+        "points_issuance_cap": 50000,
         "start_at": "2026-09-01T00:00:00+08:00",
         "end_at": "2026-09-07T23:59:59+08:00",
         "estimated_participants": 200,
-        "estimated_point_cost": 36000,
+        "estimated_points_issued": 36000,
+        "planned_award_cost_cents": 1600000,
         "suggested_tasks": [
           {
             "task_id": 1,
@@ -294,14 +306,22 @@
             "award_id": 6,
             "award_name": "智能手环",
             "required_points": 1000,
+            "unit_cost_cents": 10000,
             "inventory": 150,
+            "planned_quantity": 150,
+            "planned_cost_cents": 1500000,
+            "cost_source_ref": "award_config:6:unitCostCents",
             "source_ref": "award_inventory_split:6:sum"
           },
           {
             "award_id": 8,
             "award_name": "蓝牙耳机",
             "required_points": 1500,
+            "unit_cost_cents": 20000,
             "inventory": 20,
+            "planned_quantity": 5,
+            "planned_cost_cents": 100000,
+            "cost_source_ref": "award_config:8:unitCostCents",
             "source_ref": "award_inventory_split:8:sum"
           }
         ],
@@ -314,12 +334,17 @@
           {
             "code": "AWARD_INVENTORY_COVERAGE_LOW",
             "severity": "WARNING",
-            "message": "候选奖品库存仅覆盖预计参与人数的 170/200"
+            "message": "金额预算和库存下的奖品计划仅覆盖预计参与人数的 155/200"
           },
           {
             "code": "AWARD_RELEVANCE_REVIEW_REQUIRED",
             "severity": "INFO",
             "message": "当前仅按可用性和库存选择奖品，仍需人工审核奖品与活动目标的匹配度"
+          },
+          {
+            "code": "AWARD_QUANTITY_ASSUMPTION_REVIEW_REQUIRED",
+            "severity": "INFO",
+            "message": "当前按每位预计参与者最多一个奖品名额规划数量，发布前需核对活动规则"
           }
         ],
         "source_snapshot_id": "campaign-snapshot-ready-001",
@@ -534,14 +559,16 @@
         },
         {
           "category": "constraint_satisfaction",
-          "name": "积分成本由参与人数和任务奖励重新计算且不超预算",
+          "name": "积分发放量与奖品金额分别重算且不越过各自约束",
           "passed": true,
           "expected": {
-            "budget_points": 50000
+            "points_issuance_cap": 50000,
+            "budget_amount_cents": 1600000
           },
           "actual": {
             "estimated_participants": null,
-            "estimated_point_cost": null
+            "estimated_points_issued": null,
+            "planned_award_cost_cents": null
           }
         },
         {
@@ -592,7 +619,8 @@
           "actual": {
             "status": "NEEDS_DATA",
             "estimated_participants": null,
-            "estimated_point_cost": null,
+            "estimated_points_issued": null,
+            "planned_award_cost_cents": null,
             "task_count": 0,
             "award_count": 0
           }
@@ -609,11 +637,13 @@
         "objective": "召回高积分用户",
         "target_segment_key": "POINTS_AT_LEAST_500",
         "target_segment": "当前积分不少于 500 的用户",
-        "budget_points": 50000,
+        "budget_amount_cents": 1600000,
+        "points_issuance_cap": 50000,
         "start_at": "2026-09-01T00:00:00+08:00",
         "end_at": "2026-09-07T23:59:59+08:00",
         "estimated_participants": null,
-        "estimated_point_cost": null,
+        "estimated_points_issued": null,
+        "planned_award_cost_cents": null,
         "suggested_tasks": [],
         "suggested_awards": [],
         "risks": [
@@ -739,14 +769,16 @@
         },
         {
           "category": "constraint_satisfaction",
-          "name": "积分成本由参与人数和任务奖励重新计算且不超预算",
+          "name": "积分发放量与奖品金额分别重算且不越过各自约束",
           "passed": true,
           "expected": {
-            "budget_points": 50000
+            "points_issuance_cap": 50000,
+            "budget_amount_cents": 1600000
           },
           "actual": {
             "estimated_participants": null,
-            "estimated_point_cost": null
+            "estimated_points_issued": null,
+            "planned_award_cost_cents": null
           }
         },
         {
@@ -797,7 +829,8 @@
           "actual": {
             "status": "NEEDS_DATA",
             "estimated_participants": null,
-            "estimated_point_cost": null,
+            "estimated_points_issued": null,
+            "planned_award_cost_cents": null,
             "task_count": 0,
             "award_count": 0
           }
@@ -814,11 +847,13 @@
         "objective": "召回高积分用户",
         "target_segment_key": "POINTS_AT_LEAST_500",
         "target_segment": "当前积分不少于 500 的用户",
-        "budget_points": 50000,
+        "budget_amount_cents": 1600000,
+        "points_issuance_cap": 50000,
         "start_at": "2026-09-01T00:00:00+08:00",
         "end_at": "2026-09-07T23:59:59+08:00",
         "estimated_participants": null,
-        "estimated_point_cost": null,
+        "estimated_points_issued": null,
+        "planned_award_cost_cents": null,
         "suggested_tasks": [],
         "suggested_awards": [],
         "risks": [
@@ -835,7 +870,7 @@
     },
     {
       "id": "C07",
-      "category": "预算无法容纳任务",
+      "category": "积分上限无法容纳任务",
       "operation": "draft",
       "passed": true,
       "checks": [
@@ -962,14 +997,16 @@
         },
         {
           "category": "constraint_satisfaction",
-          "name": "积分成本由参与人数和任务奖励重新计算且不超预算",
+          "name": "积分发放量与奖品金额分别重算且不越过各自约束",
           "passed": true,
           "expected": {
-            "budget_points": 100
+            "points_issuance_cap": 100,
+            "budget_amount_cents": 1600000
           },
           "actual": {
             "estimated_participants": 200,
-            "estimated_point_cost": 0
+            "estimated_points_issued": 0,
+            "planned_award_cost_cents": 1600000
           }
         },
         {
@@ -981,23 +1018,31 @@
         },
         {
           "category": "constraint_satisfaction",
-          "name": "estimated_point_cost 符合冻结预期",
+          "name": "estimated_points_issued 符合冻结预期",
           "passed": true,
           "expected": 0,
           "actual": 0
         },
         {
           "category": "constraint_satisfaction",
+          "name": "planned_award_cost_cents 符合冻结预期",
+          "passed": true,
+          "expected": 1600000,
+          "actual": 1600000
+        },
+        {
+          "category": "constraint_satisfaction",
           "name": "关键风险没有遗漏",
           "passed": true,
           "expected": [
-            "NO_TASK_FITS_BUDGET"
+            "NO_TASK_FITS_POINTS_CAP"
           ],
           "actual": [
             "AWARD_INVENTORY_COVERAGE_LOW",
+            "AWARD_QUANTITY_ASSUMPTION_REVIEW_REQUIRED",
             "AWARD_RELEVANCE_REVIEW_REQUIRED",
             "AWARD_WINDOW_MISMATCH",
-            "NO_TASK_FITS_BUDGET"
+            "NO_TASK_FITS_POINTS_CAP"
           ]
         },
         {
@@ -1048,7 +1093,8 @@
           "actual": {
             "status": "CONSTRAINT_CONFLICT",
             "estimated_participants": 200,
-            "estimated_point_cost": 0,
+            "estimated_points_issued": 0,
+            "planned_award_cost_cents": 1600000,
             "task_count": 0,
             "award_count": 2
           }
@@ -1065,33 +1111,43 @@
         "objective": "低预算召回高积分用户",
         "target_segment_key": "POINTS_AT_LEAST_500",
         "target_segment": "当前积分不少于 500 的用户",
-        "budget_points": 100,
+        "budget_amount_cents": 1600000,
+        "points_issuance_cap": 100,
         "start_at": "2026-09-01T00:00:00+08:00",
         "end_at": "2026-09-07T23:59:59+08:00",
         "estimated_participants": 200,
-        "estimated_point_cost": 0,
+        "estimated_points_issued": 0,
+        "planned_award_cost_cents": 1600000,
         "suggested_tasks": [],
         "suggested_awards": [
           {
             "award_id": 6,
             "award_name": "智能手环",
             "required_points": 1000,
+            "unit_cost_cents": 10000,
             "inventory": 150,
+            "planned_quantity": 150,
+            "planned_cost_cents": 1500000,
+            "cost_source_ref": "award_config:6:unitCostCents",
             "source_ref": "award_inventory_split:6:sum"
           },
           {
             "award_id": 8,
             "award_name": "蓝牙耳机",
             "required_points": 1500,
+            "unit_cost_cents": 20000,
             "inventory": 20,
+            "planned_quantity": 5,
+            "planned_cost_cents": 100000,
+            "cost_source_ref": "award_config:8:unitCostCents",
             "source_ref": "award_inventory_split:8:sum"
           }
         ],
         "risks": [
           {
-            "code": "NO_TASK_FITS_BUDGET",
+            "code": "NO_TASK_FITS_POINTS_CAP",
             "severity": "BLOCKING",
-            "message": "现有任务奖励无法放入当前人均积分预算"
+            "message": "现有任务奖励无法放入当前人均积分发放上限"
           },
           {
             "code": "AWARD_WINDOW_MISMATCH",
@@ -1101,12 +1157,17 @@
           {
             "code": "AWARD_INVENTORY_COVERAGE_LOW",
             "severity": "WARNING",
-            "message": "候选奖品库存仅覆盖预计参与人数的 170/200"
+            "message": "金额预算和库存下的奖品计划仅覆盖预计参与人数的 155/200"
           },
           {
             "code": "AWARD_RELEVANCE_REVIEW_REQUIRED",
             "severity": "INFO",
             "message": "当前仅按可用性和库存选择奖品，仍需人工审核奖品与活动目标的匹配度"
+          },
+          {
+            "code": "AWARD_QUANTITY_ASSUMPTION_REVIEW_REQUIRED",
+            "severity": "INFO",
+            "message": "当前按每位预计参与者最多一个奖品名额规划数量，发布前需核对活动规则"
           }
         ],
         "source_snapshot_id": "campaign-snapshot-ready-001",
@@ -1247,14 +1308,16 @@
         },
         {
           "category": "constraint_satisfaction",
-          "name": "积分成本由参与人数和任务奖励重新计算且不超预算",
+          "name": "积分发放量与奖品金额分别重算且不越过各自约束",
           "passed": true,
           "expected": {
-            "budget_points": 50000
+            "points_issuance_cap": 50000,
+            "budget_amount_cents": 1600000
           },
           "actual": {
             "estimated_participants": 200,
-            "estimated_point_cost": 20000
+            "estimated_points_issued": 20000,
+            "planned_award_cost_cents": 1500000
           }
         },
         {
@@ -1266,10 +1329,17 @@
         },
         {
           "category": "constraint_satisfaction",
-          "name": "estimated_point_cost 符合冻结预期",
+          "name": "estimated_points_issued 符合冻结预期",
           "passed": true,
           "expected": 20000,
           "actual": 20000
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "planned_award_cost_cents 符合冻结预期",
+          "passed": true,
+          "expected": 1500000,
+          "actual": 1500000
         },
         {
           "category": "draft_completeness",
@@ -1319,7 +1389,8 @@
           "actual": {
             "status": "DRAFT_READY",
             "estimated_participants": 200,
-            "estimated_point_cost": 20000,
+            "estimated_points_issued": 20000,
+            "planned_award_cost_cents": 1500000,
             "task_count": 1,
             "award_count": 1
           }
@@ -1336,11 +1407,13 @@
         "objective": "小规模高积分用户活动",
         "target_segment_key": "POINTS_AT_LEAST_500",
         "target_segment": "当前积分不少于 500 的用户",
-        "budget_points": 50000,
+        "budget_amount_cents": 1600000,
+        "points_issuance_cap": 50000,
         "start_at": "2026-09-01T00:00:00+08:00",
         "end_at": "2026-09-07T23:59:59+08:00",
         "estimated_participants": 200,
-        "estimated_point_cost": 20000,
+        "estimated_points_issued": 20000,
+        "planned_award_cost_cents": 1500000,
         "suggested_tasks": [
           {
             "task_id": 1,
@@ -1354,15 +1427,19 @@
             "award_id": 6,
             "award_name": "智能手环",
             "required_points": 1000,
+            "unit_cost_cents": 10000,
             "inventory": 150,
+            "planned_quantity": 150,
+            "planned_cost_cents": 1500000,
+            "cost_source_ref": "award_config:6:unitCostCents",
             "source_ref": "award_inventory_split:6:sum"
           }
         ],
         "risks": [
           {
-            "code": "LOW_BUDGET_UTILIZATION",
+            "code": "LOW_POINTS_CAP_UTILIZATION",
             "severity": "WARNING",
-            "message": "当前任务组合预计使用不到一半积分预算，可由运营人员调整"
+            "message": "当前任务组合预计使用不到一半积分发放上限，可由运营人员调整"
           },
           {
             "code": "AWARD_WINDOW_MISMATCH",
@@ -1372,12 +1449,17 @@
           {
             "code": "AWARD_INVENTORY_COVERAGE_LOW",
             "severity": "WARNING",
-            "message": "候选奖品库存仅覆盖预计参与人数的 150/200"
+            "message": "金额预算和库存下的奖品计划仅覆盖预计参与人数的 150/200"
           },
           {
             "code": "AWARD_RELEVANCE_REVIEW_REQUIRED",
             "severity": "INFO",
             "message": "当前仅按可用性和库存选择奖品，仍需人工审核奖品与活动目标的匹配度"
+          },
+          {
+            "code": "AWARD_QUANTITY_ASSUMPTION_REVIEW_REQUIRED",
+            "severity": "INFO",
+            "message": "当前按每位预计参与者最多一个奖品名额规划数量，发布前需核对活动规则"
           }
         ],
         "source_snapshot_id": "campaign-snapshot-ready-001",

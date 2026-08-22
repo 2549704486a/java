@@ -39,9 +39,9 @@ class CampaignEvaluationTest(unittest.TestCase):
         self.assertEqual("data_reference_correctness", failed[0]["category"])
         self.assertIn("任务字段和来源", failed[0]["name"])
 
-    def test_cost_tampering_is_detected(self):
+    def test_amount_cost_tampering_is_detected(self):
         case, snapshot, draft = self._ready_case_and_draft()
-        draft.estimated_point_cost = draft.budget_points + 1
+        draft.planned_award_cost_cents = draft.budget_amount_cents + 1
 
         checks = score_draft(case, snapshot, draft)
 
@@ -50,7 +50,7 @@ class CampaignEvaluationTest(unittest.TestCase):
         self.assertTrue(
             any(
                 check["category"] == "constraint_satisfaction"
-                and "积分成本" in check["name"]
+                and "奖品金额" in check["name"]
                 for check in failed
             )
         )

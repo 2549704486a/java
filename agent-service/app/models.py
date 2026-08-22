@@ -257,7 +257,14 @@ class CampaignBrief(BaseModel):
     objective: str = Field(min_length=2, max_length=200)
     target_segment_key: str = Field(min_length=1, max_length=64)
     target_segment: str = Field(min_length=2, max_length=200)
-    budget_points: int = Field(gt=0)
+    budget_amount_cents: int = Field(
+        gt=0,
+        description="活动奖品的真实金额预算，单位分",
+    )
+    points_issuance_cap: int = Field(
+        gt=0,
+        description="活动任务最多发放的积分，不是人民币预算",
+    )
     start_at: AwareDatetime
     end_at: AwareDatetime
     max_tasks: int = Field(default=2, ge=1, le=5)
@@ -306,10 +313,12 @@ class CampaignAwardSnapshot(BaseModel):
     award_id: int = Field(gt=0, alias="awardId")
     award_name: str = Field(min_length=1, alias="awardName")
     required_points: int = Field(gt=0, alias="requiredPoints")
+    unit_cost_cents: int | None = Field(default=None, ge=0, alias="unitCostCents")
     inventory: int = Field(ge=0)
     active: bool = True
     available_from: AwareDatetime | None = Field(default=None, alias="availableFrom")
     available_until: AwareDatetime | None = Field(default=None, alias="availableUntil")
+    cost_source_ref: str = Field(min_length=1, alias="costSourceRef")
     source_ref: str = Field(min_length=1, alias="sourceRef")
 
 
@@ -347,7 +356,11 @@ class SuggestedCampaignAward(BaseModel):
     award_id: int
     award_name: str
     required_points: int
-    inventory: int
+    unit_cost_cents: int = Field(ge=0)
+    inventory: int = Field(ge=0)
+    planned_quantity: int = Field(gt=0)
+    planned_cost_cents: int = Field(ge=0)
+    cost_source_ref: str
     source_ref: str
 
 
@@ -370,11 +383,13 @@ class CampaignPlanDraft(BaseModel):
     objective: str
     target_segment_key: str
     target_segment: str
-    budget_points: int
+    budget_amount_cents: int
+    points_issuance_cap: int
     start_at: AwareDatetime
     end_at: AwareDatetime
     estimated_participants: int | None = None
-    estimated_point_cost: int | None = None
+    estimated_points_issued: int | None = Field(default=None, ge=0)
+    planned_award_cost_cents: int | None = Field(default=None, ge=0)
     suggested_tasks: list[SuggestedCampaignTask] = Field(default_factory=list)
     suggested_awards: list[SuggestedCampaignAward] = Field(default_factory=list)
     risks: list[CampaignRisk] = Field(default_factory=list)

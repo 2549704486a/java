@@ -76,18 +76,22 @@ def planning_snapshot(
                 award_id=6,
                 award_name="智能手环",
                 required_points=1000,
+                unit_cost_cents=10000,
                 inventory=150,
                 available_from=NOW - timedelta(days=1),
                 available_until=NOW + timedelta(days=30),
+                cost_source_ref="award_config:6:unitCostCents",
                 source_ref="award_inventory:6:20260822",
             ),
             CampaignAwardSnapshot(
                 award_id=8,
                 award_name="蓝牙耳机",
                 required_points=1500,
+                unit_cost_cents=20000,
                 inventory=20,
                 available_from=NOW - timedelta(days=1),
                 available_until=NOW + timedelta(days=30),
+                cost_source_ref="award_config:8:unitCostCents",
                 source_ref="award_inventory:8:20260822",
             ),
         ],
@@ -100,7 +104,8 @@ def brief(**overrides) -> CampaignBrief:
         "objective": "召回长期未活跃用户",
         "target_segment_key": "inactive-30d-points-500",
         "target_segment": SEGMENT,
-        "budget_points": 50000,
+        "budget_amount_cents": 1600000,
+        "points_issuance_cap": 50000,
         "start_at": NOW + timedelta(days=1),
         "end_at": NOW + timedelta(days=7),
     }
@@ -117,9 +122,11 @@ class CampaignPlanningSkillTest(unittest.TestCase):
 
         self.assertEqual("DRAFT_READY", result.status)
         self.assertEqual(200, result.estimated_participants)
-        self.assertEqual(36000, result.estimated_point_cost)
+        self.assertEqual(36000, result.estimated_points_issued)
+        self.assertEqual(1600000, result.planned_award_cost_cents)
         self.assertEqual([1, 2], [item.task_id for item in result.suggested_tasks])
         self.assertEqual([6, 8], [item.award_id for item in result.suggested_awards])
+        self.assertEqual([150, 5], [item.planned_quantity for item in result.suggested_awards])
         self.assertEqual("snapshot-20260822-001", result.source_snapshot_id)
         self.assertTrue(result.editable)
         self.assertTrue(result.review_required)
@@ -137,7 +144,8 @@ class CampaignPlanningSkillTest(unittest.TestCase):
 
         self.assertEqual("NEEDS_DATA", result.status)
         self.assertEqual("PARTICIPATION_RATE_MISSING", result.reason_code)
-        self.assertIsNone(result.estimated_point_cost)
+        self.assertIsNone(result.estimated_points_issued)
+        self.assertIsNone(result.planned_award_cost_cents)
 
     def test_rejects_stale_snapshot(self):
         result = self.skill.create_draft(
@@ -148,15 +156,38 @@ class CampaignPlanningSkillTest(unittest.TestCase):
         self.assertEqual("NEEDS_DATA", result.status)
         self.assertEqual("STALE_PLANNING_SNAPSHOT", result.reason_code)
 
-    def test_reports_constraint_conflict_when_no_task_fits_budget(self):
+    def test_reports_constraint_conflict_when_no_task_fits_points_cap(self):
         result = self.skill.create_draft(
-            brief(budget_points=100),
+            brief(points_issuance_cap=100),
             planning_snapshot(),
         )
 
         self.assertEqual("CONSTRAINT_CONFLICT", result.status)
         self.assertEqual([], result.suggested_tasks)
-        self.assertIn("NO_TASK_FITS_BUDGET", [risk.code for risk in result.risks])
+        self.assertIn("NO_TASK_FITS_POINTS_CAP", [risk.code for risk in result.risks])
+
+    def test_reports_constraint_conflict_when_money_budget_cannot_buy_award(self):
+        result = self.skill.create_draft(
+            brief(budget_amount_cents=9999),
+            planning_snapshot(),
+        )
+
+        self.assertEqual("CONSTRAINT_CONFLICT", result.status)
+        self.assertEqual([], result.suggested_awards)
+        self.assertIn(
+            "NO_AWARD_FITS_AMOUNT_BUDGET",
+            [risk.code for risk in result.risks],
+        )
+
+    def test_refuses_to_convert_points_when_award_cost_is_missing(self):
+        source = planning_snapshot()
+        source.awards[0].unit_cost_cents = None
+
+        result = self.skill.create_draft(brief(), source)
+
+        self.assertEqual("NEEDS_DATA", result.status)
+        self.assertEqual("AWARD_UNIT_COST_MISSING", result.reason_code)
+        self.assertEqual([], result.suggested_awards)
 
     def test_excludes_task_that_expires_before_campaign_ends(self):
         source = planning_snapshot()
@@ -196,7 +227,8 @@ class OperatorToolsTest(unittest.TestCase):
             {
                 "target_segment_key": "inactive-30d-points-500",
                 "objective": "召回长期未活跃用户",
-                "budget_points": 50000,
+                "budget_amount_cents": 1600000,
+                "points_issuance_cap": 50000,
                 "start_at": NOW + timedelta(days=1),
                 "end_at": NOW + timedelta(days=7),
             }

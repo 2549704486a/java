@@ -76,6 +76,15 @@ class AgentOperatorQueryServiceTest {
         assertTrue(response.success());
         assertEquals(20L, response.data().segment().estimatedUsers());
         assertEquals(19L, response.data().awards().get(0).inventory());
+        assertEquals(19900, response.data().awards().get(0).unitCostCents());
+        assertEquals(
+                "award_config:6:unitCostCents",
+                response.data().awards().get(0).costSourceRef()
+        );
+        assertEquals(
+                "award_inventory_split:6:sum",
+                response.data().awards().get(0).sourceRef()
+        );
         assertEquals(1, response.data().historicalMetrics().size());
         assertEquals("task_config:1", response.data().tasks().get(0).sourceRef());
     }
@@ -130,6 +139,7 @@ class AgentOperatorQueryServiceTest {
                 1,
                 999,
                 5000,
+                19900,
                 Date.from(NOW.toInstant().minusSeconds(3600)),
                 Date.from(NOW.toInstant().plusSeconds(3600)),
                 NOW,

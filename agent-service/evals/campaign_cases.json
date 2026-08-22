@@ -51,37 +51,45 @@
           "awardId": 6,
           "awardName": "智能手环",
           "requiredPoints": 1000,
+          "unitCostCents": 10000,
           "inventory": 150,
           "active": true,
           "availableFrom": "2026-08-01T00:00:00+08:00",
           "availableUntil": "2026-10-01T00:00:00+08:00",
+          "costSourceRef": "award_config:6:unitCostCents",
           "sourceRef": "award_inventory_split:6:sum"
         },
         {
           "awardId": 8,
           "awardName": "蓝牙耳机",
           "requiredPoints": 1500,
+          "unitCostCents": 20000,
           "inventory": 20,
           "active": true,
           "availableFrom": "2026-08-01T00:00:00+08:00",
           "availableUntil": "2026-10-01T00:00:00+08:00",
+          "costSourceRef": "award_config:8:unitCostCents",
           "sourceRef": "award_inventory_split:8:sum"
         },
         {
           "awardId": 9,
           "awardName": "库存为零的水杯",
           "requiredPoints": 500,
+          "unitCostCents": 3000,
           "inventory": 0,
           "active": true,
+          "costSourceRef": "award_config:9:unitCostCents",
           "sourceRef": "award_inventory_split:9:sum"
         },
         {
           "awardId": 10,
           "awardName": "活动中途过期奖品",
           "requiredPoints": 800,
+          "unitCostCents": 5000,
           "inventory": 500,
           "active": true,
           "availableUntil": "2026-09-03T23:59:59+08:00",
+          "costSourceRef": "award_config:10:unitCostCents",
           "sourceRef": "award_inventory_split:10:sum"
         }
       ],
@@ -116,7 +124,8 @@
       "brief": {
         "target_segment_key": "POINTS_AT_LEAST_500",
         "objective": "召回高积分用户",
-        "budget_points": 50000,
+        "budget_amount_cents": 1600000,
+        "points_issuance_cap": 50000,
         "start_at": "2026-09-01T00:00:00+08:00",
         "end_at": "2026-09-07T23:59:59+08:00",
         "max_tasks": 2,
@@ -128,7 +137,8 @@
         "task_ids": [1, 2],
         "award_ids": [6, 8],
         "estimated_participants": 200,
-        "estimated_point_cost": 36000
+        "estimated_points_issued": 36000,
+        "planned_award_cost_cents": 1600000
       }
     },
     {
@@ -172,7 +182,8 @@
       "brief": {
         "target_segment_key": "POINTS_AT_LEAST_500",
         "objective": "召回高积分用户",
-        "budget_points": 50000,
+        "budget_amount_cents": 1600000,
+        "points_issuance_cap": 50000,
         "start_at": "2026-09-01T00:00:00+08:00",
         "end_at": "2026-09-07T23:59:59+08:00"
       },
@@ -192,7 +203,8 @@
       "brief": {
         "target_segment_key": "POINTS_AT_LEAST_500",
         "objective": "召回高积分用户",
-        "budget_points": 50000,
+        "budget_amount_cents": 1600000,
+        "points_issuance_cap": 50000,
         "start_at": "2026-09-01T00:00:00+08:00",
         "end_at": "2026-09-07T23:59:59+08:00"
       },
@@ -205,14 +217,15 @@
     },
     {
       "id": "C07",
-      "category": "预算无法容纳任务",
+      "category": "积分上限无法容纳任务",
       "operation": "draft",
       "snapshot": "ready",
       "permissions": ["campaign:read", "campaign:draft"],
       "brief": {
         "target_segment_key": "POINTS_AT_LEAST_500",
         "objective": "低预算召回高积分用户",
-        "budget_points": 100,
+        "budget_amount_cents": 1600000,
+        "points_issuance_cap": 100,
         "start_at": "2026-09-01T00:00:00+08:00",
         "end_at": "2026-09-07T23:59:59+08:00"
       },
@@ -222,8 +235,9 @@
         "task_ids": [],
         "award_ids": [6, 8],
         "estimated_participants": 200,
-        "estimated_point_cost": 0,
-        "risk_codes": ["NO_TASK_FITS_BUDGET"]
+        "estimated_points_issued": 0,
+        "planned_award_cost_cents": 1600000,
+        "risk_codes": ["NO_TASK_FITS_POINTS_CAP"]
       }
     },
     {
@@ -235,7 +249,8 @@
       "brief": {
         "target_segment_key": "POINTS_AT_LEAST_500",
         "objective": "小规模高积分用户活动",
-        "budget_points": 50000,
+        "budget_amount_cents": 1600000,
+        "points_issuance_cap": 50000,
         "start_at": "2026-09-01T00:00:00+08:00",
         "end_at": "2026-09-07T23:59:59+08:00",
         "max_tasks": 1,
@@ -247,7 +262,8 @@
         "task_ids": [1],
         "award_ids": [6],
         "estimated_participants": 200,
-        "estimated_point_cost": 20000
+        "estimated_points_issued": 20000,
+        "planned_award_cost_cents": 1500000
       }
     }
   ]

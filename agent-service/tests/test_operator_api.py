@@ -65,9 +65,11 @@ def snapshot() -> CampaignPlanningSnapshot:
                 award_id=6,
                 award_name="智能手表",
                 required_points=5000,
+                unit_cost_cents=5000,
                 inventory=20,
                 available_from=NOW - timedelta(days=1),
                 available_until=NOW + timedelta(days=30),
+                cost_source_ref="award_config:6:unitCostCents",
                 source_ref="award_config:6",
             )
         ],
@@ -130,7 +132,8 @@ class OperatorApiTest(unittest.TestCase):
                 json={
                     "target_segment_key": SEGMENT_KEY,
                     "objective": "提高积分任务参与率",
-                    "budget_points": 5000,
+                    "budget_amount_cents": 100000,
+                    "points_issuance_cap": 5000,
                     "start_at": (NOW + timedelta(days=1)).isoformat(),
                     "end_at": (NOW + timedelta(days=7)).isoformat(),
                 },
@@ -149,7 +152,8 @@ class OperatorApiTest(unittest.TestCase):
                 json={
                     "target_segment_key": SEGMENT_KEY,
                     "objective": "提高积分任务参与率",
-                    "budget_points": 5000,
+                    "budget_amount_cents": 100000,
+                    "points_issuance_cap": 5000,
                     "start_at": (NOW + timedelta(days=1)).isoformat(),
                     "end_at": (NOW + timedelta(days=7)).isoformat(),
                 },

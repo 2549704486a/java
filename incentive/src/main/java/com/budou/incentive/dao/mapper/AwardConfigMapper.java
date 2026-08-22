@@ -19,8 +19,11 @@ public interface AwardConfigMapper {
             "where awardId = #{awardId}")
     int update(Long awardId, Integer inventory, Date updateTime);
 
-    @Insert("insert into award_config values(#{awardId}, #{coverUrl},#{name},#{awardType},#{inventory}," +
-            "#{price},#{startTime},#{endTime},#{createTime},#{updateTime},#{initInventory})")
+    @Insert("insert into award_config (awardId, coverUrl, name, awardType, inventory, price, " +
+            "unitCostCents, startTime, endTime, createTime, updateTime, initInventory, isOverSell) " +
+            "values(#{awardId}, #{coverUrl}, #{name}, #{awardType}, #{inventory}, #{price}, " +
+            "#{unitCostCents}, #{startTime}, #{endTime}, #{createTime}, #{updateTime}, " +
+            "#{initInventory}, #{isOverSell})")
     int insert(AwardConfig awardConfig);
 
     @Select("select endTime from award_config where awardId = #{awardId}")

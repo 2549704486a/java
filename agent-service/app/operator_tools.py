@@ -27,7 +27,14 @@ class CampaignSnapshotInput(BaseModel):
 
 class CampaignDraftInput(CampaignSnapshotInput):
     objective: str = Field(min_length=2, max_length=200, description="活动目标")
-    budget_points: int = Field(gt=0, description="本次活动最多发放的积分预算")
+    budget_amount_cents: int = Field(
+        gt=0,
+        description="本次活动奖品的真实金额预算，单位分",
+    )
+    points_issuance_cap: int = Field(
+        gt=0,
+        description="本次活动任务最多发放的积分，与金额预算分别约束",
+    )
     start_at: AwareDatetime = Field(description="包含时区的活动开始时间")
     end_at: AwareDatetime = Field(description="包含时区的活动结束时间")
     max_tasks: int = Field(default=2, ge=1, le=5)
@@ -90,7 +97,8 @@ def build_operator_tools(
     def draft_campaign_plan(
         target_segment_key: str,
         objective: str,
-        budget_points: int,
+        budget_amount_cents: int,
+        points_issuance_cap: int,
         start_at: datetime,
         end_at: datetime,
         max_tasks: int = 2,
@@ -100,7 +108,8 @@ def build_operator_tools(
 
         arguments = {
             "operator_id": operator.operator_id,
-            "budget_points": budget_points,
+            "budget_amount_cents": budget_amount_cents,
+            "points_issuance_cap": points_issuance_cap,
             "max_tasks": max_tasks,
             "max_awards": max_awards,
         }
@@ -121,7 +130,8 @@ def build_operator_tools(
                 objective=objective,
                 target_segment_key=target_segment_key,
                 target_segment=snapshot.segment.description,
-                budget_points=budget_points,
+                budget_amount_cents=budget_amount_cents,
+                points_issuance_cap=points_issuance_cap,
                 start_at=start_at,
                 end_at=end_at,
                 max_tasks=max_tasks,

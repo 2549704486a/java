@@ -27,6 +27,9 @@ public class AwardConfig {
 
     private Integer price;
 
+    /** 奖品单位成本（分），不能由兑换积分推算。 */
+    private Integer unitCostCents;
+
     private Date startTime;
 
     private Date endTime;
