@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": "2026.08.22.1",
+  "catalog_version": "2026.08.22.2",
   "documents": [
     {
       "id": "agent-service-guide",
@@ -13,6 +13,26 @@
     {
       "id": "points-and-tasks",
       "path": "documents/points-and-tasks.md"
+    },
+    {
+      "id": "campaign-operation-policy",
+      "path": "documents/campaign-operation-policy.md"
+    },
+    {
+      "id": "campaign-award-guide",
+      "path": "documents/campaign-award-guide.md"
+    },
+    {
+      "id": "campaign-review-demo-202608",
+      "path": "documents/campaign-review-demo-202608.md"
+    },
+    {
+      "id": "campaign-exception-handbook",
+      "path": "documents/campaign-exception-handbook.md"
+    },
+    {
+      "id": "campaign-rule-change-20260822",
+      "path": "documents/campaign-rule-change-20260822.md"
     }
   ]
 }

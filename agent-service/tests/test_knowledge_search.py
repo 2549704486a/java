@@ -55,6 +55,11 @@ def rule_document(chunk_id: str = "exchange:1.0.0:0001") -> Document:
             "heading_2": "规则说明",
             "source_path": "documents/exchange-rules-and-status.md",
             "source_refs": "incentive/src/main/java/Controller.java | agent-service/app/prompt.py",
+            "audience": "end_user",
+            "business_type": "exchange_rule",
+            "authority_level": "system_contract",
+            "effective_from": "2026-08-21",
+            "effective_until": "",
         },
     )
 
@@ -190,7 +195,27 @@ class KnowledgeSearchServiceTest(unittest.TestCase):
         self.assertEqual("[兑换规则与状态说明 / 规则说明]", match["citation"])
         self.assertEqual("documents/exchange-rules-and-status.md", match["sourcePath"])
         self.assertEqual(2, len(match["sourceRefs"]))
+        self.assertEqual("exchange_rule", match["businessType"])
+        self.assertEqual("system_contract", match["authorityLevel"])
+        self.assertEqual("2026-08-21", match["effectiveFrom"])
+        self.assertIsNone(match["effectiveUntil"])
         self.assertEqual([("处理中是否等于兑换成功", 4)], store.queries)
+
+    def test_filters_operator_knowledge_from_end_user_search(self):
+        operator_document = rule_document("operator:1.0.0:0001")
+        operator_document.metadata["audience"] = "operator"
+        operator_document.metadata["knowledge_id"] = "campaign-operation-policy"
+        service = KnowledgeSearchService(
+            FakeVectorStore([(operator_document, 0.95), (rule_document(), 0.90)]),
+            relevance_threshold=0.50,
+        )
+
+        result = service.search("活动规则", limit=2)
+
+        self.assertEqual(
+            ["exchange-rules-and-status"],
+            [match.knowledge_id for match in result.matches],
+        )
 
     def test_returns_no_answer_when_all_candidates_are_below_threshold(self):
         service = KnowledgeSearchService(

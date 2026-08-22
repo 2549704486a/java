@@ -5,11 +5,12 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 
 DEFAULT_KNOWLEDGE_DIR = Path(__file__).resolve().parents[1] / "knowledge"
@@ -45,7 +46,22 @@ class KnowledgeMetadata(BaseModel):
     audience: list[str] = Field(min_length=1)
     topics: list[str] = Field(min_length=1)
     fact_scope: Literal["stable_rules_only"]
+    business_type: str = Field(pattern=r"^[a-z0-9]+(?:_[a-z0-9]+)*$")
+    authority_level: Literal[
+        "official_policy",
+        "system_contract",
+        "operations_manual",
+        "historical_case",
+    ]
+    effective_from: date
+    effective_until: date | None = None
     source_refs: list[str] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_effective_window(self) -> "KnowledgeMetadata":
+        if self.effective_until is not None and self.effective_until < self.effective_from:
+            raise ValueError("知识失效日期不能早于生效日期")
+        return self
 
 
 @dataclass(frozen=True)

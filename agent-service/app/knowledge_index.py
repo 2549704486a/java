@@ -80,6 +80,14 @@ class KnowledgeChunker:
                 "topics": ",".join(metadata.topics),
                 "audience": ",".join(metadata.audience),
                 "fact_scope": metadata.fact_scope,
+                "business_type": metadata.business_type,
+                "authority_level": metadata.authority_level,
+                "effective_from": metadata.effective_from.isoformat(),
+                "effective_until": (
+                    metadata.effective_until.isoformat()
+                    if metadata.effective_until is not None
+                    else ""
+                ),
             }
 
             # 标题切分保留“这一段属于哪个章节”，递归切分只处理仍然过长的段落。

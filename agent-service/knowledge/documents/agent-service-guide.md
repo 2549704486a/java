@@ -6,6 +6,9 @@ status: active
 audience: [end_user]
 topics: [agent, guidance, safety]
 fact_scope: stable_rules_only
+business_type: service_guide
+authority_level: operations_manual
+effective_from: 2026-08-21
 source_refs:
   - agent-service/app/prompt.py
   - agent-service/app/tools.py

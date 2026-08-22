@@ -6,6 +6,9 @@ status: active
 audience: [end_user]
 topics: [points, tasks, rewards]
 fact_scope: stable_rules_only
+business_type: points_rule
+authority_level: system_contract
+effective_from: 2026-08-21
 source_refs:
   - incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java
   - agent-service/app/skills/points_plan.py

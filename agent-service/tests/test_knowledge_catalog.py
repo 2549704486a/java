@@ -15,14 +15,25 @@ class KnowledgeCatalogTest(unittest.TestCase):
     def test_current_catalog_is_valid_and_versioned(self):
         snapshot = KnowledgeCatalog().load()
 
-        self.assertEqual("2026.08.22.1", snapshot.version)
+        self.assertEqual("2026.08.22.2", snapshot.version)
         self.assertEqual(
-            {"agent-service-guide", "exchange-rules-and-status", "points-and-tasks"},
+            {
+                "agent-service-guide",
+                "exchange-rules-and-status",
+                "points-and-tasks",
+                "campaign-operation-policy",
+                "campaign-award-guide",
+                "campaign-review-demo-202608",
+                "campaign-exception-handbook",
+                "campaign-rule-change-20260822",
+            },
             {document.metadata.knowledge_id for document in snapshot.documents},
         )
         self.assertTrue(
             all(document.metadata.fact_scope == "stable_rules_only" for document in snapshot.documents)
         )
+        self.assertTrue(all(document.metadata.business_type for document in snapshot.documents))
+        self.assertTrue(all(document.metadata.effective_from for document in snapshot.documents))
 
     def test_rejects_document_path_outside_knowledge_directory(self):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as temp_dir:
@@ -59,6 +70,9 @@ status: active
 audience: [end_user]
 topics: [test]
 fact_scope: stable_rules_only
+business_type: test_rule
+authority_level: system_contract
+effective_from: 2026-08-21
 source_refs: [missing-source.md]
 ---
 
@@ -98,6 +112,9 @@ status: active
 audience: [end_user]
 topics: [test]
 fact_scope: stable_rules_only
+business_type: test_rule
+authority_level: system_contract
+effective_from: 2026-08-21
 source_refs: [agent-service/app/prompt.py]
 ---
 

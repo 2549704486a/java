@@ -50,6 +50,10 @@ class KnowledgeMatch:
     section: str
     source_path: str
     source_refs: tuple[str, ...]
+    business_type: str
+    authority_level: str
+    effective_from: str
+    effective_until: str | None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -62,6 +66,10 @@ class KnowledgeMatch:
             "section": self.section,
             "sourcePath": self.source_path,
             "sourceRefs": list(self.source_refs),
+            "businessType": self.business_type,
+            "authorityLevel": self.authority_level,
+            "effectiveFrom": self.effective_from,
+            "effectiveUntil": self.effective_until,
         }
 
 
@@ -91,6 +99,7 @@ class KnowledgeSearchService:
         vector_store: KnowledgeVectorStore,
         relevance_threshold: float = 0.35,
         default_limit: int = 3,
+        allowed_audiences: tuple[str, ...] = ("end_user",),
         owns_vector_store: bool = False,
     ) -> None:
         if not 0 <= relevance_threshold <= 1:
@@ -100,6 +109,9 @@ class KnowledgeSearchService:
         self.vector_store = vector_store
         self.relevance_threshold = relevance_threshold
         self.default_limit = default_limit
+        self.allowed_audiences = frozenset(allowed_audiences)
+        if not self.allowed_audiences:
+            raise ValueError("allowed_audiences 不能为空")
         self._owns_vector_store = owns_vector_store
 
     def search(self, query: str, limit: int | None = None) -> KnowledgeSearchResult:
@@ -138,6 +150,8 @@ class KnowledgeSearchService:
         ):
             if not math.isfinite(score) or score < self.relevance_threshold:
                 continue
+            if not self._is_audience_allowed(document):
+                continue
             chunk_id = str(document.metadata.get("chunk_id", "")).strip()
             if chunk_id and chunk_id in seen_chunk_ids:
                 continue
@@ -172,6 +186,11 @@ class KnowledgeSearchService:
         if self._owns_vector_store and isinstance(self.vector_store, Chroma):
             close_vector_store(self.vector_store)
 
+    def _is_audience_allowed(self, document: Document) -> bool:
+        raw_audience = str(document.metadata.get("audience", ""))
+        audiences = {item.strip() for item in raw_audience.split(",") if item.strip()}
+        return bool(audiences & self.allowed_audiences)
+
     @staticmethod
     def _to_match(document: Document, score: float) -> KnowledgeMatch:
         metadata = document.metadata
@@ -186,6 +205,7 @@ class KnowledgeSearchService:
         )
         raw_refs = str(metadata.get("source_refs", ""))
         source_refs = tuple(ref.strip() for ref in raw_refs.split("|") if ref.strip())
+        effective_until = str(metadata.get("effective_until", "")).strip() or None
         return KnowledgeMatch(
             content=document.page_content.strip(),
             score=float(score),
@@ -196,6 +216,10 @@ class KnowledgeSearchService:
             section=section,
             source_path=str(metadata.get("source_path", "")),
             source_refs=source_refs,
+            business_type=str(metadata.get("business_type", "")),
+            authority_level=str(metadata.get("authority_level", "")),
+            effective_from=str(metadata.get("effective_from", "")),
+            effective_until=effective_until,
         )
 
 

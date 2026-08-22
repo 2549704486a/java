@@ -60,6 +60,10 @@ class KnowledgeIndexTest(unittest.TestCase):
             self.assertIn("knowledge_version", chunk.metadata)
             self.assertIn("catalog_version", chunk.metadata)
             self.assertIn("source_refs", chunk.metadata)
+            self.assertIn("business_type", chunk.metadata)
+            self.assertIn("authority_level", chunk.metadata)
+            self.assertIn("effective_from", chunk.metadata)
+            self.assertIn("effective_until", chunk.metadata)
             self.assertTrue(str(chunk.metadata["source_path"]).startswith("documents/"))
             self.assertTrue(
                 "heading_1" in chunk.metadata or "heading_2" in chunk.metadata
