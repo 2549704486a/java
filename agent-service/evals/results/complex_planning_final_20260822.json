@@ -1,0 +1,1584 @@
+{
+  "metadata": {
+    "created_at": "2026-08-22T19:52:26",
+    "model": "deepseek-chat",
+    "dataset": "planning",
+    "suite": "fixture",
+    "repeat": 1,
+    "user_id": 10,
+    "temperature": 0,
+    "system_prompt_sha256": "8fc5b26b775ab67a54a022be1e82e57fb924a38e067fa645d5484410a65dbfc0",
+    "skills": [
+      {
+        "skill_name": "award-recommendation",
+        "skill_version": "1.0.0",
+        "skill_sha256": "dc8966972d6f9f6b171c9128d38615010fde91da3f22e8951da44f23658039ec"
+      },
+      {
+        "skill_name": "controlled-exchange",
+        "skill_version": "1.0.0",
+        "skill_sha256": "4341cc1abf8f953cd354f712928c78ac92cd91b9ac9b48cf5d003b414fa3b494"
+      },
+      {
+        "skill_name": "growth-memory",
+        "skill_version": "2.1.0",
+        "skill_sha256": "940d7e9a66837d65da9863aef96bf0b17f2a6b184742f88530c8cbfbf6513b30"
+      },
+      {
+        "skill_name": "points-planning",
+        "skill_version": "1.1.0",
+        "skill_sha256": "4074793a53ac8f1c53ca8e9ee1684f913eec72cb63aa5f7d3e065ea21682830b"
+      }
+    ],
+    "case_ids": [
+      "P01",
+      "P02",
+      "P03",
+      "P04",
+      "P05",
+      "P06",
+      "P07",
+      "P08"
+    ],
+    "case_set_sha256": "eb675becc817c5a43882cd332e13cf18bf52d95931b6cc4f8505c2f5cae00c42",
+    "blind_details_redacted": false
+  },
+  "summary": {
+    "total": 8,
+    "passed": 6,
+    "failed": 2,
+    "by_category": {
+      "多约束任务规划": {
+        "total": 1,
+        "passed": 0
+      },
+      "单目标实时规划": {
+        "total": 1,
+        "passed": 1
+      },
+      "多目标消歧": {
+        "total": 1,
+        "passed": 1
+      },
+      "指定目标消歧": {
+        "total": 1,
+        "passed": 1
+      },
+      "奖品候选消歧": {
+        "total": 1,
+        "passed": 1
+      },
+      "过期目标处理": {
+        "total": 1,
+        "passed": 1
+      },
+      "缺少目标处理": {
+        "total": 1,
+        "passed": 1
+      },
+      "显式目标多约束规划": {
+        "total": 1,
+        "passed": 0
+      }
+    },
+    "check_rates": {
+      "tool_selection": {
+        "passed": 8,
+        "total": 8,
+        "rate": 1.0
+      },
+      "tool_counts": {
+        "passed": 8,
+        "total": 8,
+        "rate": 1.0
+      },
+      "arguments": {
+        "passed": 7,
+        "total": 8,
+        "rate": 0.875
+      },
+      "tool_execution": {
+        "passed": 8,
+        "total": 8,
+        "rate": 1.0
+      },
+      "backend_path": {
+        "passed": 8,
+        "total": 8,
+        "rate": 1.0
+      },
+      "required_content": {
+        "passed": 7,
+        "total": 8,
+        "rate": 0.875
+      },
+      "safety": {
+        "passed": 8,
+        "total": 8,
+        "rate": 1.0
+      }
+    },
+    "tool_metrics": {
+      "plan_points_for_award": {
+        "calls": 1,
+        "execution_failures": 0,
+        "average_elapsed_ms": 0.21,
+        "max_elapsed_ms": 0.21
+      },
+      "plan_points_for_saved_goal": {
+        "calls": 7,
+        "execution_failures": 0,
+        "average_elapsed_ms": 0.35,
+        "max_elapsed_ms": 1.37
+      }
+    },
+    "token_metrics": {
+      "attempts_with_usage": 8,
+      "usage_coverage_rate": 1.0,
+      "input_tokens": 68960,
+      "output_tokens": 1711,
+      "total_tokens": 70671,
+      "average_tokens_per_attempt": 8833.88,
+      "estimated_cost": {
+        "available": false,
+        "currency": "USD",
+        "reason": "pricing_not_configured"
+      }
+    },
+    "model_metrics": {
+      "calls": 16,
+      "failures": 0,
+      "attempts_with_calls": 8,
+      "timing_coverage_rate": 1.0,
+      "total_elapsed_ms": 34414.0,
+      "average_call_elapsed_ms": 2150.88,
+      "p95_call_elapsed_ms": 3241.52,
+      "max_call_elapsed_ms": 3241.52,
+      "average_calls_per_attempt": 2.0
+    },
+    "average_elapsed_ms": 4331.73,
+    "p95_elapsed_ms": 5520.59,
+    "stability": {
+      "repeat_count": 1,
+      "case_count": 8,
+      "attempt_count": 8,
+      "attempt_pass_rate": 0.75,
+      "single_passed_cases": 6,
+      "single_failed_cases": 2,
+      "stable_passed_cases": 0,
+      "flaky_cases": 0,
+      "stable_failed_cases": 0,
+      "cases": {
+        "P01": {
+          "attempts": 1,
+          "passed": 0,
+          "pass_rate": 0.0,
+          "status": "single_fail",
+          "average_elapsed_ms": 5520.59,
+          "p95_elapsed_ms": 5520.59,
+          "elapsed_stddev_ms": 0
+        },
+        "P02": {
+          "attempts": 1,
+          "passed": 1,
+          "pass_rate": 1.0,
+          "status": "single_pass",
+          "average_elapsed_ms": 4267.14,
+          "p95_elapsed_ms": 4267.14,
+          "elapsed_stddev_ms": 0
+        },
+        "P03": {
+          "attempts": 1,
+          "passed": 1,
+          "pass_rate": 1.0,
+          "status": "single_pass",
+          "average_elapsed_ms": 3300.32,
+          "p95_elapsed_ms": 3300.32,
+          "elapsed_stddev_ms": 0
+        },
+        "P04": {
+          "attempts": 1,
+          "passed": 1,
+          "pass_rate": 1.0,
+          "status": "single_pass",
+          "average_elapsed_ms": 4184.62,
+          "p95_elapsed_ms": 4184.62,
+          "elapsed_stddev_ms": 0
+        },
+        "P05": {
+          "attempts": 1,
+          "passed": 1,
+          "pass_rate": 1.0,
+          "status": "single_pass",
+          "average_elapsed_ms": 3759.9,
+          "p95_elapsed_ms": 3759.9,
+          "elapsed_stddev_ms": 0
+        },
+        "P06": {
+          "attempts": 1,
+          "passed": 1,
+          "pass_rate": 1.0,
+          "status": "single_pass",
+          "average_elapsed_ms": 3941.94,
+          "p95_elapsed_ms": 3941.94,
+          "elapsed_stddev_ms": 0
+        },
+        "P07": {
+          "attempts": 1,
+          "passed": 1,
+          "pass_rate": 1.0,
+          "status": "single_pass",
+          "average_elapsed_ms": 4361.51,
+          "p95_elapsed_ms": 4361.51,
+          "elapsed_stddev_ms": 0
+        },
+        "P08": {
+          "attempts": 1,
+          "passed": 0,
+          "pass_rate": 0.0,
+          "status": "single_fail",
+          "average_elapsed_ms": 5317.86,
+          "p95_elapsed_ms": 5317.86,
+          "elapsed_stddev_ms": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "P01",
+      "attempt": 1,
+      "category": "多约束任务规划",
+      "source": "fixture",
+      "fixture": "insufficient_cover",
+      "question": "请按我之前保存的手表目标规划积分，但不要安排分享活动。",
+      "response": "根据您保存的手表目标，我已为您生成实时积分方案：\n\n## 手表（6号奖品）积分方案\n\n**当前状态**\n- 当前积分：50\n- 所需积分：200\n- 积分缺口：150\n\n**推荐任务安排**（已排除分享活动）\n\n| 任务 | 奖励积分 | 状态 | 动作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 | 可参与 | 完成任务 |\n\n**方案结果**\n- 完成上述任务后预计积分：210\n- 兑换后剩余积分：10\n- 积分缺口：0 ✅\n\n当前可用任务能够完全覆盖积分缺口。建议您先领取\"浏览奖励\"的60积分，再完成\"每日签到\"任务，即可攒够200积分兑换手表。\n\n需要我为您准备兑换手表吗？",
+      "elapsed_ms": 5520.59,
+      "model_metrics": {
+        "calls": 2,
+        "failures": 0,
+        "total_elapsed_ms": 5491.48,
+        "call_elapsed_ms": [
+          2722.99,
+          2768.49
+        ]
+      },
+      "usage": {
+        "input_tokens": 8757,
+        "output_tokens": 291,
+        "total_tokens": 9048
+      },
+      "tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {
+            "goal_query_chars": 2,
+            "excluded_task_ids": [],
+            "excluded_task_names": [
+              "分享"
+            ],
+            "allowed_task_names": []
+          },
+          "id": null
+        }
+      ],
+      "declared_tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {
+            "goal_query": "手表",
+            "excluded_task_names": [
+              "分享"
+            ]
+          },
+          "id": "call_00_iX4yAbJ6ixhZTwRxel819670"
+        }
+      ],
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "plan_points_for_saved_goal",
+          "arguments": {
+            "goal_query_chars": 2,
+            "excluded_task_ids": [],
+            "excluded_task_names": [
+              "分享"
+            ],
+            "allowed_task_names": []
+          },
+          "completed": true,
+          "business_success": null,
+          "result_code": "TARGET_RESOLVED",
+          "elapsed_ms": 1.37,
+          "error_type": null
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "check_exchange_eligibility",
+          "arguments": {
+            "user_id": 10,
+            "award_id": 6
+          }
+        },
+        {
+          "method": "get_award_detail",
+          "arguments": {
+            "award_id": 6
+          }
+        },
+        {
+          "method": "list_available_tasks",
+          "arguments": {
+            "user_id": 10
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": false,
+        "checks": {
+          "tool_selection": true,
+          "tool_counts": true,
+          "arguments": false,
+          "tool_execution": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "plan_points_for_saved_goal"
+          ],
+          "actual_tool_counts": {
+            "plan_points_for_saved_goal": 1
+          },
+          "tool_count_failures": {},
+          "argument_failures": [
+            "plan_points_for_saved_goal"
+          ],
+          "tool_execution_failures": [],
+          "actual_backend_calls": [
+            "check_exchange_eligibility",
+            "get_award_detail",
+            "list_available_tasks"
+          ],
+          "actual_backend_counts": {
+            "check_exchange_eligibility": 1,
+            "get_award_detail": 1,
+            "list_available_tasks": 1
+          },
+          "backend_count_failures": {},
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "请按我之前保存的手表目标规划积分，但不要安排分享活动。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "用户要求为之前保存的手表目标规划积分，并排除分享活动。我将调用 plan_points_for_saved_goal 来处理。",
+          "tool_calls": [
+            {
+              "name": "plan_points_for_saved_goal",
+              "args": {
+                "goal_query": "手表",
+                "excluded_task_names": [
+                  "分享"
+                ]
+              },
+              "id": "call_00_iX4yAbJ6ixhZTwRxel819670",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 4180,
+            "output_tokens": 98,
+            "total_tokens": 4278,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "plan_points_for_saved_goal",
+          "content": "{\"status\": \"TARGET_RESOLVED\", \"reason_code\": \"INSUFFICIENT_POINTS\", \"message\": \"当前可用任务能够覆盖积分缺口\", \"goal_raw_text\": \"我计划在 2099 年兑换 6 号手表\", \"goal_time_expression\": null, \"target_date\": null, \"target_year\": 2099, \"goal_candidates\": [], \"candidates\": [], \"plan\": {\"status\": \"PLAN_READY\", \"reason_code\": \"INSUFFICIENT_POINTS\", \"message\": \"当前可用任务能够覆盖积分缺口\", \"user_id\": 10, \"award_id\": 6, \"award_name\": \"手表\", \"current_points\": 50, \"required_points\": 200, \"points_gap\": 150, \"recommended_points\": 160, \"projected_points\": 210, \"remaining_gap\": 0, \"recommended_tasks\": [{\"task_id\": 1, \"task_name\": \"浏览奖励\", \"reward_points\": 60, \"status\": \"COMPLETED_UNCLAIMED\", \"action\": \"CLAIM_REWARD\"}, {\"task_id\": 2, \"task_name\": \"每日签到\", \"reward_points\": 100, \"status\": \"AVAILABLE\", \"action\": \"COMPLETE_TASK\"}]}}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "根据您保存的手表目标，我已为您生成实时积分方案：\n\n## 手表（6号奖品）积分方案\n\n**当前状态**\n- 当前积分：50\n- 所需积分：200\n- 积分缺口：150\n\n**推荐任务安排**（已排除分享活动）\n\n| 任务 | 奖励积分 | 状态 | 动作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 | 可参与 | 完成任务 |\n\n**方案结果**\n- 完成上述任务后预计积分：210\n- 兑换后剩余积分：10\n- 积分缺口：0 ✅\n\n当前可用任务能够完全覆盖积分缺口。建议您先领取\"浏览奖励\"的60积分，再完成\"每日签到\"任务，即可攒够200积分兑换手表。\n\n需要我为您准备兑换手表吗？",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 4577,
+            "output_tokens": 193,
+            "total_tokens": 4770,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "P02",
+      "attempt": 1,
+      "category": "单目标实时规划",
+      "source": "fixture",
+      "fixture": "insufficient_cover",
+      "question": "帮我规划一下之前保存的兑换目标。",
+      "response": "根据您之前保存的兑换目标，我为您整理了以下规划：\n\n## 兑换目标：6号手表\n\n**当前状态：积分不足，但可通过任务补齐**\n\n| 项目 | 数值 |\n|------|------|\n| 当前积分 | 50 |\n| 所需积分 | 200 |\n| 积分缺口 | 150 |\n\n### 推荐任务方案\n\n| 任务 | 奖励积分 | 状态 | 操作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 | 可参与 | 完成任务 |\n\n**方案效果：** 完成上述任务后预计积分可达 **210**，超出所需积分，缺口可完全覆盖 ✅\n\n### 建议动作\n1. 先**领取**「浏览奖励」的 60 积分（已完成待领取）\n2. 再完成「每日签到」获得 100 积分\n3. 完成后即可兑换 6 号手表\n\n需要我现在为您准备兑换，还是先完成这些任务呢？",
+      "elapsed_ms": 4267.14,
+      "model_metrics": {
+        "calls": 2,
+        "failures": 0,
+        "total_elapsed_ms": 4247.73,
+        "call_elapsed_ms": [
+          1388.35,
+          2859.38
+        ]
+      },
+      "usage": {
+        "input_tokens": 8686,
+        "output_tokens": 266,
+        "total_tokens": 8952
+      },
+      "tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {
+            "goal_query_chars": 0,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": []
+          },
+          "id": null
+        }
+      ],
+      "declared_tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {},
+          "id": "call_00_swxmUIfkmjibiGSOYHMy9324"
+        }
+      ],
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "plan_points_for_saved_goal",
+          "arguments": {
+            "goal_query_chars": 0,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": []
+          },
+          "completed": true,
+          "business_success": null,
+          "result_code": "TARGET_RESOLVED",
+          "elapsed_ms": 0.24,
+          "error_type": null
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "check_exchange_eligibility",
+          "arguments": {
+            "user_id": 10,
+            "award_id": 6
+          }
+        },
+        {
+          "method": "get_award_detail",
+          "arguments": {
+            "award_id": 6
+          }
+        },
+        {
+          "method": "list_available_tasks",
+          "arguments": {
+            "user_id": 10
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_counts": true,
+          "arguments": true,
+          "tool_execution": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "plan_points_for_saved_goal"
+          ],
+          "actual_tool_counts": {
+            "plan_points_for_saved_goal": 1
+          },
+          "tool_count_failures": {},
+          "argument_failures": [],
+          "tool_execution_failures": [],
+          "actual_backend_calls": [
+            "check_exchange_eligibility",
+            "get_award_detail",
+            "list_available_tasks"
+          ],
+          "actual_backend_counts": {
+            "check_exchange_eligibility": 1,
+            "get_award_detail": 1,
+            "list_available_tasks": 1
+          },
+          "backend_count_failures": {},
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "帮我规划一下之前保存的兑换目标。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "我来为您规划之前保存的兑换目标。",
+          "tool_calls": [
+            {
+              "name": "plan_points_for_saved_goal",
+              "args": {},
+              "id": "call_00_swxmUIfkmjibiGSOYHMy9324",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 4173,
+            "output_tokens": 41,
+            "total_tokens": 4214,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "plan_points_for_saved_goal",
+          "content": "{\"status\": \"TARGET_RESOLVED\", \"reason_code\": \"INSUFFICIENT_POINTS\", \"message\": \"当前可用任务能够覆盖积分缺口\", \"goal_raw_text\": \"我计划在 2099 年兑换 6 号手表\", \"goal_time_expression\": null, \"target_date\": null, \"target_year\": 2099, \"goal_candidates\": [], \"candidates\": [], \"plan\": {\"status\": \"PLAN_READY\", \"reason_code\": \"INSUFFICIENT_POINTS\", \"message\": \"当前可用任务能够覆盖积分缺口\", \"user_id\": 10, \"award_id\": 6, \"award_name\": \"手表\", \"current_points\": 50, \"required_points\": 200, \"points_gap\": 150, \"recommended_points\": 160, \"projected_points\": 210, \"remaining_gap\": 0, \"recommended_tasks\": [{\"task_id\": 1, \"task_name\": \"浏览奖励\", \"reward_points\": 60, \"status\": \"COMPLETED_UNCLAIMED\", \"action\": \"CLAIM_REWARD\"}, {\"task_id\": 2, \"task_name\": \"每日签到\", \"reward_points\": 100, \"status\": \"AVAILABLE\", \"action\": \"COMPLETE_TASK\"}]}}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "根据您之前保存的兑换目标，我为您整理了以下规划：\n\n## 兑换目标：6号手表\n\n**当前状态：积分不足，但可通过任务补齐**\n\n| 项目 | 数值 |\n|------|------|\n| 当前积分 | 50 |\n| 所需积分 | 200 |\n| 积分缺口 | 150 |\n\n### 推荐任务方案\n\n| 任务 | 奖励积分 | 状态 | 操作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 | 可参与 | 完成任务 |\n\n**方案效果：** 完成上述任务后预计积分可达 **210**，超出所需积分，缺口可完全覆盖 ✅\n\n### 建议动作\n1. 先**领取**「浏览奖励」的 60 积分（已完成待领取）\n2. 再完成「每日签到」获得 100 积分\n3. 完成后即可兑换 6 号手表\n\n需要我现在为您准备兑换，还是先完成这些任务呢？",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 4513,
+            "output_tokens": 225,
+            "total_tokens": 4738,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "P03",
+      "attempt": 1,
+      "category": "多目标消歧",
+      "source": "fixture",
+      "fixture": "insufficient_cover",
+      "question": "帮我规划之前保存的目标。",
+      "response": "你保存了多个长期目标，需要先确认要规划哪一个：\n\n1. **手表** — 以后想兑换手表\n2. **水杯** — 以后想兑换水杯\n\n请问你想为哪个目标制定积分方案呢？",
+      "elapsed_ms": 3300.32,
+      "model_metrics": {
+        "calls": 2,
+        "failures": 0,
+        "total_elapsed_ms": 3279.89,
+        "call_elapsed_ms": [
+          1343.76,
+          1936.13
+        ]
+      },
+      "usage": {
+        "input_tokens": 8560,
+        "output_tokens": 82,
+        "total_tokens": 8642
+      },
+      "tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {
+            "goal_query_chars": 0,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": []
+          },
+          "id": null
+        }
+      ],
+      "declared_tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {},
+          "id": "call_00_1qhrm84PMgg8qbpKCTYm6985"
+        }
+      ],
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "plan_points_for_saved_goal",
+          "arguments": {
+            "goal_query_chars": 0,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": []
+          },
+          "completed": true,
+          "business_success": null,
+          "result_code": "GOAL_NEEDS_SELECTION",
+          "elapsed_ms": 0.18,
+          "error_type": null
+        }
+      ],
+      "backend_calls": [],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_counts": true,
+          "arguments": true,
+          "tool_execution": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "plan_points_for_saved_goal"
+          ],
+          "actual_tool_counts": {
+            "plan_points_for_saved_goal": 1
+          },
+          "tool_count_failures": {},
+          "argument_failures": [],
+          "tool_execution_failures": [],
+          "actual_backend_calls": [],
+          "actual_backend_counts": {},
+          "backend_count_failures": {},
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "帮我规划之前保存的目标。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "",
+          "tool_calls": [
+            {
+              "name": "plan_points_for_saved_goal",
+              "args": {},
+              "id": "call_00_1qhrm84PMgg8qbpKCTYm6985",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 4170,
+            "output_tokens": 32,
+            "total_tokens": 4202,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "plan_points_for_saved_goal",
+          "content": "{\"status\": \"GOAL_NEEDS_SELECTION\", \"reason_code\": \"MULTIPLE_OR_UNCLEAR_GOALS\", \"message\": \"存在多个目标或当前描述无法唯一定位目标，请先选择要规划的目标\", \"goal_raw_text\": null, \"goal_time_expression\": null, \"target_date\": null, \"target_year\": null, \"goal_candidates\": [{\"raw_text\": \"我以后想兑换手表\", \"subject\": \"手表\", \"time_expression\": null, \"target_date\": null, \"target_year\": 2099}, {\"raw_text\": \"我以后想兑换水杯\", \"subject\": \"水杯\", \"time_expression\": null, \"target_date\": null, \"target_year\": 2099}], \"candidates\": [], \"plan\": null}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "你保存了多个长期目标，需要先确认要规划哪一个：\n\n1. **手表** — 以后想兑换手表\n2. **水杯** — 以后想兑换水杯\n\n请问你想为哪个目标制定积分方案呢？",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 4390,
+            "output_tokens": 50,
+            "total_tokens": 4440,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "P04",
+      "attempt": 1,
+      "category": "指定目标消歧",
+      "source": "fixture",
+      "fixture": "insufficient_cover",
+      "question": "请规划我保存的手表目标。",
+      "response": "已为您规划好**手表**目标的积分方案：\n\n**当前状态**\n- 目标奖品：手表（奖品 ID 6）\n- 当前积分：**50 分**\n- 所需积分：**200 分**\n- 积分缺口：**150 分**\n\n**推荐任务方案**（完成全部后预计 210 分，可覆盖缺口）\n\n| 任务 | 奖励 | 状态 | 动作 |\n|------|------|------|------|\n| 浏览奖励 | 60 分 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 分 | 可参与 | 完成任务 |\n\n完成以上任务后预计积分 **210 分**，兑换手表后剩余 **10 分**，缺口可完全覆盖。\n\n**建议下一步**：先领取\"浏览奖励\"的 60 分，再完成\"每日签到\"的 100 分，即可达到兑换条件。需要我帮您准备兑换手表吗？",
+      "elapsed_ms": 4184.62,
+      "model_metrics": {
+        "calls": 2,
+        "failures": 0,
+        "total_elapsed_ms": 4165.48,
+        "call_elapsed_ms": [
+          1625.11,
+          2540.37
+        ]
+      },
+      "usage": {
+        "input_tokens": 8692,
+        "output_tokens": 262,
+        "total_tokens": 8954
+      },
+      "tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {
+            "goal_query_chars": 2,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": []
+          },
+          "id": null
+        }
+      ],
+      "declared_tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {
+            "goal_query": "手表"
+          },
+          "id": "call_00_5Y6Ofvao7DwLyXFRxr8z0545"
+        }
+      ],
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "plan_points_for_saved_goal",
+          "arguments": {
+            "goal_query_chars": 2,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": []
+          },
+          "completed": true,
+          "business_success": null,
+          "result_code": "TARGET_RESOLVED",
+          "elapsed_ms": 0.28,
+          "error_type": null
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "check_exchange_eligibility",
+          "arguments": {
+            "user_id": 10,
+            "award_id": 6
+          }
+        },
+        {
+          "method": "get_award_detail",
+          "arguments": {
+            "award_id": 6
+          }
+        },
+        {
+          "method": "list_available_tasks",
+          "arguments": {
+            "user_id": 10
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_counts": true,
+          "arguments": true,
+          "tool_execution": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "plan_points_for_saved_goal"
+          ],
+          "actual_tool_counts": {
+            "plan_points_for_saved_goal": 1
+          },
+          "tool_count_failures": {},
+          "argument_failures": [],
+          "tool_execution_failures": [],
+          "actual_backend_calls": [
+            "check_exchange_eligibility",
+            "get_award_detail",
+            "list_available_tasks"
+          ],
+          "actual_backend_counts": {
+            "check_exchange_eligibility": 1,
+            "get_award_detail": 1,
+            "list_available_tasks": 1
+          },
+          "backend_count_failures": {},
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "请规划我保存的手表目标。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "我将为您规划已保存的手表目标。",
+          "tool_calls": [
+            {
+              "name": "plan_points_for_saved_goal",
+              "args": {
+                "goal_query": "手表"
+              },
+              "id": "call_00_5Y6Ofvao7DwLyXFRxr8z0545",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 4172,
+            "output_tokens": 58,
+            "total_tokens": 4230,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "plan_points_for_saved_goal",
+          "content": "{\"status\": \"TARGET_RESOLVED\", \"reason_code\": \"INSUFFICIENT_POINTS\", \"message\": \"当前可用任务能够覆盖积分缺口\", \"goal_raw_text\": \"我以后想兑换手表\", \"goal_time_expression\": null, \"target_date\": null, \"target_year\": 2099, \"goal_candidates\": [], \"candidates\": [], \"plan\": {\"status\": \"PLAN_READY\", \"reason_code\": \"INSUFFICIENT_POINTS\", \"message\": \"当前可用任务能够覆盖积分缺口\", \"user_id\": 10, \"award_id\": 6, \"award_name\": \"手表\", \"current_points\": 50, \"required_points\": 200, \"points_gap\": 150, \"recommended_points\": 160, \"projected_points\": 210, \"remaining_gap\": 0, \"recommended_tasks\": [{\"task_id\": 1, \"task_name\": \"浏览奖励\", \"reward_points\": 60, \"status\": \"COMPLETED_UNCLAIMED\", \"action\": \"CLAIM_REWARD\"}, {\"task_id\": 2, \"task_name\": \"每日签到\", \"reward_points\": 100, \"status\": \"AVAILABLE\", \"action\": \"COMPLETE_TASK\"}]}}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "已为您规划好**手表**目标的积分方案：\n\n**当前状态**\n- 目标奖品：手表（奖品 ID 6）\n- 当前积分：**50 分**\n- 所需积分：**200 分**\n- 积分缺口：**150 分**\n\n**推荐任务方案**（完成全部后预计 210 分，可覆盖缺口）\n\n| 任务 | 奖励 | 状态 | 动作 |\n|------|------|------|------|\n| 浏览奖励 | 60 分 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 分 | 可参与 | 完成任务 |\n\n完成以上任务后预计积分 **210 分**，兑换手表后剩余 **10 分**，缺口可完全覆盖。\n\n**建议下一步**：先领取\"浏览奖励\"的 60 分，再完成\"每日签到\"的 100 分，即可达到兑换条件。需要我帮您准备兑换手表吗？",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 4520,
+            "output_tokens": 204,
+            "total_tokens": 4724,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "P05",
+      "attempt": 1,
+      "category": "奖品候选消歧",
+      "source": "fixture",
+      "fixture": "multiple_wearables",
+      "question": "按我之前的手环目标做个积分计划。",
+      "response": "你的手环目标对应到两个当前可兑换的奖品，需要你先确认想兑换哪一个：\n\n| 奖品 | 所需积分 | 库存 |\n|------|---------|------|\n| 智能手环（ID 8） | 300 | 20 |\n| 运动手环（ID 10） | 260 | 30 |\n\n请告诉我你想选哪一个，我再为你生成对应的积分计划。",
+      "elapsed_ms": 3759.9,
+      "model_metrics": {
+        "calls": 2,
+        "failures": 0,
+        "total_elapsed_ms": 3738.42,
+        "call_elapsed_ms": [
+          1652.13,
+          2086.29
+        ]
+      },
+      "usage": {
+        "input_tokens": 8589,
+        "output_tokens": 159,
+        "total_tokens": 8748
+      },
+      "tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {
+            "goal_query_chars": 2,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": []
+          },
+          "id": null
+        }
+      ],
+      "declared_tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {
+            "goal_query": "手环"
+          },
+          "id": "call_00_AaSUbln7pZuHoyT7lcQX8405"
+        }
+      ],
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "plan_points_for_saved_goal",
+          "arguments": {
+            "goal_query_chars": 2,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": []
+          },
+          "completed": true,
+          "business_success": null,
+          "result_code": "AWARD_NEEDS_SELECTION",
+          "elapsed_ms": 0.25,
+          "error_type": null
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "list_awards",
+          "arguments": {
+            "user_id": 10,
+            "redeemable_only": false
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_counts": true,
+          "arguments": true,
+          "tool_execution": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "plan_points_for_saved_goal"
+          ],
+          "actual_tool_counts": {
+            "plan_points_for_saved_goal": 1
+          },
+          "tool_count_failures": {},
+          "argument_failures": [],
+          "tool_execution_failures": [],
+          "actual_backend_calls": [
+            "list_awards"
+          ],
+          "actual_backend_counts": {
+            "list_awards": 1
+          },
+          "backend_count_failures": {},
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "按我之前的手环目标做个积分计划。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "用户要求为之前保存的手环目标制定积分计划，我应该调用 `plan_points_for_saved_goal`。",
+          "tool_calls": [
+            {
+              "name": "plan_points_for_saved_goal",
+              "args": {
+                "goal_query": "手环"
+              },
+              "id": "call_00_AaSUbln7pZuHoyT7lcQX8405",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 4173,
+            "output_tokens": 74,
+            "total_tokens": 4247,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "plan_points_for_saved_goal",
+          "content": "{\"status\": \"AWARD_NEEDS_SELECTION\", \"reason_code\": \"MULTIPLE_MATCHING_AWARDS\", \"message\": \"长期目标对应多个当前奖品，请先选择具体奖品\", \"goal_raw_text\": \"我以后想换一个手环\", \"goal_time_expression\": null, \"target_date\": null, \"target_year\": 2099, \"goal_candidates\": [], \"candidates\": [{\"award_id\": 8, \"name\": \"智能手环\", \"required_points\": 300, \"inventory\": 20}, {\"award_id\": 10, \"name\": \"运动手环\", \"required_points\": 260, \"inventory\": 30}], \"plan\": null}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "你的手环目标对应到两个当前可兑换的奖品，需要你先确认想兑换哪一个：\n\n| 奖品 | 所需积分 | 库存 |\n|------|---------|------|\n| 智能手环（ID 8） | 300 | 20 |\n| 运动手环（ID 10） | 260 | 30 |\n\n请告诉我你想选哪一个，我再为你生成对应的积分计划。",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 4416,
+            "output_tokens": 85,
+            "total_tokens": 4501,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "P06",
+      "attempt": 1,
+      "category": "过期目标处理",
+      "source": "fixture",
+      "fixture": "insufficient_cover",
+      "question": "帮我规划以前保存的手表目标。",
+      "response": "您保存的手表目标时间已经过期了。\n\n**目标信息：** 您之前保存的目标是「计划在 2020 年兑换 6 号手表」，但该目标时间已经过去，因此无法基于它生成当前的积分方案。\n\n**建议：** 如果您仍然希望兑换这款手表，可以告诉我您新的目标时间，我来帮您更新目标并重新规划积分方案。或者，如果您想换一个目标奖品，也可以直接告诉我。请问您希望怎么处理呢？",
+      "elapsed_ms": 3941.94,
+      "model_metrics": {
+        "calls": 2,
+        "failures": 0,
+        "total_elapsed_ms": 3852.16,
+        "call_elapsed_ms": [
+          1734.63,
+          2117.53
+        ]
+      },
+      "usage": {
+        "input_tokens": 8512,
+        "output_tokens": 160,
+        "total_tokens": 8672
+      },
+      "tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {
+            "goal_query_chars": 2,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": []
+          },
+          "id": null
+        }
+      ],
+      "declared_tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {
+            "goal_query": "手表"
+          },
+          "id": "call_00_op5Tx90nljaNhOYA4jYi8717"
+        }
+      ],
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "plan_points_for_saved_goal",
+          "arguments": {
+            "goal_query_chars": 2,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": []
+          },
+          "completed": true,
+          "business_success": null,
+          "result_code": "GOAL_EXPIRED",
+          "elapsed_ms": 0.1,
+          "error_type": null
+        }
+      ],
+      "backend_calls": [],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_counts": true,
+          "arguments": true,
+          "tool_execution": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "plan_points_for_saved_goal"
+          ],
+          "actual_tool_counts": {
+            "plan_points_for_saved_goal": 1
+          },
+          "tool_count_failures": {},
+          "argument_failures": [],
+          "tool_execution_failures": [],
+          "actual_backend_calls": [],
+          "actual_backend_counts": {},
+          "backend_count_failures": {},
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "帮我规划以前保存的手表目标。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "我来为您规划已保存的手表目标。",
+          "tool_calls": [
+            {
+              "name": "plan_points_for_saved_goal",
+              "args": {
+                "goal_query": "手表"
+              },
+              "id": "call_00_op5Tx90nljaNhOYA4jYi8717",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 4172,
+            "output_tokens": 58,
+            "total_tokens": 4230,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "plan_points_for_saved_goal",
+          "content": "{\"status\": \"GOAL_EXPIRED\", \"reason_code\": \"SAVED_GOAL_EXPIRED\", \"message\": \"已保存目标的时间已经过去，请先更新目标时间\", \"goal_raw_text\": \"我计划在 2020 年兑换 6 号手表\", \"goal_time_expression\": null, \"target_date\": null, \"target_year\": 2020, \"goal_candidates\": [], \"candidates\": [], \"plan\": null}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "您保存的手表目标时间已经过期了。\n\n**目标信息：** 您之前保存的目标是「计划在 2020 年兑换 6 号手表」，但该目标时间已经过去，因此无法基于它生成当前的积分方案。\n\n**建议：** 如果您仍然希望兑换这款手表，可以告诉我您新的目标时间，我来帮您更新目标并重新规划积分方案。或者，如果您想换一个目标奖品，也可以直接告诉我。请问您希望怎么处理呢？",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 4340,
+            "output_tokens": 102,
+            "total_tokens": 4442,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "P07",
+      "attempt": 1,
+      "category": "缺少目标处理",
+      "source": "fixture",
+      "fixture": "insufficient_cover",
+      "question": "帮我规划之前保存的兑换目标。",
+      "response": "查询结果显示，您当前**没有已保存的长期兑换目标**，因此暂时无法为您生成积分规划方案。\n\n如果您有想兑换的奖品，可以告诉我奖品名称或 ID，我可以帮您制定攒分计划；或者您也可以先告诉我目标奖品，我帮您保存为长期目标后再规划。请问您想兑换哪个奖品呢？",
+      "elapsed_ms": 4361.51,
+      "model_metrics": {
+        "calls": 2,
+        "failures": 0,
+        "total_elapsed_ms": 4341.98,
+        "call_elapsed_ms": [
+          1996.34,
+          2345.64
+        ]
+      },
+      "usage": {
+        "input_tokens": 8476,
+        "output_tokens": 113,
+        "total_tokens": 8589
+      },
+      "tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {
+            "goal_query_chars": 0,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": []
+          },
+          "id": null
+        }
+      ],
+      "declared_tool_calls": [
+        {
+          "name": "plan_points_for_saved_goal",
+          "args": {},
+          "id": "call_00_ra9TQVvkoGJJttXFmYzN9397"
+        }
+      ],
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "plan_points_for_saved_goal",
+          "arguments": {
+            "goal_query_chars": 0,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": []
+          },
+          "completed": true,
+          "business_success": null,
+          "result_code": "NO_SAVED_GOAL",
+          "elapsed_ms": 0.06,
+          "error_type": null
+        }
+      ],
+      "backend_calls": [],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_counts": true,
+          "arguments": true,
+          "tool_execution": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "plan_points_for_saved_goal"
+          ],
+          "actual_tool_counts": {
+            "plan_points_for_saved_goal": 1
+          },
+          "tool_count_failures": {},
+          "argument_failures": [],
+          "tool_execution_failures": [],
+          "actual_backend_calls": [],
+          "actual_backend_counts": {},
+          "backend_count_failures": {},
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "帮我规划之前保存的兑换目标。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "我来为您规划之前保存的兑换目标。",
+          "tool_calls": [
+            {
+              "name": "plan_points_for_saved_goal",
+              "args": {},
+              "id": "call_00_ra9TQVvkoGJJttXFmYzN9397",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 4172,
+            "output_tokens": 41,
+            "total_tokens": 4213,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "plan_points_for_saved_goal",
+          "content": "{\"status\": \"NO_SAVED_GOAL\", \"reason_code\": \"NO_SAVED_GOAL\", \"message\": \"当前没有已保存的长期兑换目标\", \"goal_raw_text\": null, \"goal_time_expression\": null, \"target_date\": null, \"target_year\": null, \"goal_candidates\": [], \"candidates\": [], \"plan\": null}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "查询结果显示，您当前**没有已保存的长期兑换目标**，因此暂时无法为您生成积分规划方案。\n\n如果您有想兑换的奖品，可以告诉我奖品名称或 ID，我可以帮您制定攒分计划；或者您也可以先告诉我目标奖品，我帮您保存为长期目标后再规划。请问您想兑换哪个奖品呢？",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 4304,
+            "output_tokens": 72,
+            "total_tokens": 4376,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "P08",
+      "attempt": 1,
+      "category": "显式目标多约束规划",
+      "source": "fixture",
+      "fixture": "insufficient_cover",
+      "question": "我想在月底兑换 6 号奖品，但每天只能完成签到和浏览任务，请帮我规划。",
+      "response": "根据您的规划需求，我为您整理了6号奖品（手表）的积分方案：\n\n## 兑换方案：6号奖品（手表）\n\n**当前积分**：50 分\n**所需积分**：200 分\n**积分缺口**：150 分\n\n### 推荐任务（仅签到和浏览）\n\n| 任务 | 奖励积分 | 状态 | 操作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 分 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 分 | 可参与 | 完成任务 |\n\n**完成以上任务后预计积分**：210 分（50 + 60 + 100）\n\n### 结论\n✅ 完成这两项任务后，您的积分将达到 **210 分**，足以兑换手表（200 分），兑换后剩余 **10 分**。\n\n### 建议动作\n1. **先领取**「浏览奖励」的 60 分（已完成待领取）\n2. **完成**「每日签到」任务获得 100 分\n3. 积分达到 200 分后即可兑换手表\n\n方案完全符合您\"每天只能完成签到和浏览任务\"的约束，无需额外任务即可达成目标。需要我帮您准备兑换吗？",
+      "elapsed_ms": 5317.86,
+      "model_metrics": {
+        "calls": 2,
+        "failures": 0,
+        "total_elapsed_ms": 5296.86,
+        "call_elapsed_ms": [
+          2055.34,
+          3241.52
+        ]
+      },
+      "usage": {
+        "input_tokens": 8688,
+        "output_tokens": 378,
+        "total_tokens": 9066
+      },
+      "tool_calls": [
+        {
+          "name": "plan_points_for_award",
+          "args": {
+            "award_id": 6,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": [
+              "签到",
+              "浏览"
+            ]
+          },
+          "id": null
+        }
+      ],
+      "declared_tool_calls": [
+        {
+          "name": "plan_points_for_award",
+          "args": {
+            "award_id": 6,
+            "allowed_task_names": [
+              "签到",
+              "浏览"
+            ]
+          },
+          "id": "call_00_TecBHuOFdDQog513dyII3225"
+        }
+      ],
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "plan_points_for_award",
+          "arguments": {
+            "award_id": 6,
+            "excluded_task_ids": [],
+            "excluded_task_names": [],
+            "allowed_task_names": [
+              "签到",
+              "浏览"
+            ]
+          },
+          "completed": true,
+          "business_success": null,
+          "result_code": "PLAN_READY",
+          "elapsed_ms": 0.21,
+          "error_type": null
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "check_exchange_eligibility",
+          "arguments": {
+            "user_id": 10,
+            "award_id": 6
+          }
+        },
+        {
+          "method": "get_award_detail",
+          "arguments": {
+            "award_id": 6
+          }
+        },
+        {
+          "method": "list_available_tasks",
+          "arguments": {
+            "user_id": 10
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": false,
+        "checks": {
+          "tool_selection": true,
+          "tool_counts": true,
+          "arguments": true,
+          "tool_execution": true,
+          "backend_path": true,
+          "required_content": false,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "plan_points_for_award"
+          ],
+          "actual_tool_counts": {
+            "plan_points_for_award": 1
+          },
+          "tool_count_failures": {},
+          "argument_failures": [],
+          "tool_execution_failures": [],
+          "actual_backend_calls": [
+            "check_exchange_eligibility",
+            "get_award_detail",
+            "list_available_tasks"
+          ],
+          "actual_backend_counts": {
+            "check_exchange_eligibility": 1,
+            "get_award_detail": 1,
+            "list_available_tasks": 1
+          },
+          "backend_count_failures": {},
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [
+            [
+              "月底",
+              "期限"
+            ]
+          ],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "我想在月底兑换 6 号奖品，但每天只能完成签到和浏览任务，请帮我规划。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "我来为您规划6号奖品的积分方案。根据您的需求，您每天只能完成签到和浏览任务，我会将这些任务偏好纳入规划。\n\n让我先为您制定积分方案。",
+          "tool_calls": [
+            {
+              "name": "plan_points_for_award",
+              "args": {
+                "award_id": 6,
+                "allowed_task_names": [
+                  "签到",
+                  "浏览"
+                ]
+              },
+              "id": "call_00_TecBHuOFdDQog513dyII3225",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 4187,
+            "output_tokens": 108,
+            "total_tokens": 4295,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "plan_points_for_award",
+          "content": "{\"status\": \"PLAN_READY\", \"reason_code\": \"INSUFFICIENT_POINTS\", \"message\": \"当前可用任务能够覆盖积分缺口\", \"user_id\": 10, \"award_id\": 6, \"award_name\": \"手表\", \"current_points\": 50, \"required_points\": 200, \"points_gap\": 150, \"recommended_points\": 160, \"projected_points\": 210, \"remaining_gap\": 0, \"recommended_tasks\": [{\"task_id\": 1, \"task_name\": \"浏览奖励\", \"reward_points\": 60, \"status\": \"COMPLETED_UNCLAIMED\", \"action\": \"CLAIM_REWARD\"}, {\"task_id\": 2, \"task_name\": \"每日签到\", \"reward_points\": 100, \"status\": \"AVAILABLE\", \"action\": \"COMPLETE_TASK\"}]}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "根据您的规划需求，我为您整理了6号奖品（手表）的积分方案：\n\n## 兑换方案：6号奖品（手表）\n\n**当前积分**：50 分\n**所需积分**：200 分\n**积分缺口**：150 分\n\n### 推荐任务（仅签到和浏览）\n\n| 任务 | 奖励积分 | 状态 | 操作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 分 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 分 | 可参与 | 完成任务 |\n\n**完成以上任务后预计积分**：210 分（50 + 60 + 100）\n\n### 结论\n✅ 完成这两项任务后，您的积分将达到 **210 分**，足以兑换手表（200 分），兑换后剩余 **10 分**。\n\n### 建议动作\n1. **先领取**「浏览奖励」的 60 分（已完成待领取）\n2. **完成**「每日签到」任务获得 100 分\n3. 积分达到 200 分后即可兑换手表\n\n方案完全符合您\"每天只能完成签到和浏览任务\"的约束，无需额外任务即可达成目标。需要我帮您准备兑换吗？",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 4501,
+            "output_tokens": 270,
+            "total_tokens": 4771,
+            "input_token_details": {
+              "cache_read": 4096
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    }
+  ]
+}

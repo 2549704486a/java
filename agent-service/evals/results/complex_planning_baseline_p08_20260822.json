@@ -1,0 +1,320 @@
+{
+  "metadata": {
+    "created_at": "2026-08-22T19:49:20",
+    "model": "deepseek-chat",
+    "dataset": "planning",
+    "suite": "fixture",
+    "repeat": 1,
+    "user_id": 10,
+    "temperature": 0,
+    "system_prompt_sha256": "763ad0387ffb835f3f5620c3dcd8b8e26d037f32827a188183a6cb202cc5eb14",
+    "skills": [
+      {
+        "skill_name": "award-recommendation",
+        "skill_version": "1.0.0",
+        "skill_sha256": "dc8966972d6f9f6b171c9128d38615010fde91da3f22e8951da44f23658039ec"
+      },
+      {
+        "skill_name": "controlled-exchange",
+        "skill_version": "1.0.0",
+        "skill_sha256": "4341cc1abf8f953cd354f712928c78ac92cd91b9ac9b48cf5d003b414fa3b494"
+      },
+      {
+        "skill_name": "growth-memory",
+        "skill_version": "2.1.0",
+        "skill_sha256": "940d7e9a66837d65da9863aef96bf0b17f2a6b184742f88530c8cbfbf6513b30"
+      },
+      {
+        "skill_name": "points-planning",
+        "skill_version": "1.1.0",
+        "skill_sha256": "4074793a53ac8f1c53ca8e9ee1684f913eec72cb63aa5f7d3e065ea21682830b"
+      }
+    ],
+    "case_ids": [
+      "P08"
+    ],
+    "case_set_sha256": "eb675becc817c5a43882cd332e13cf18bf52d95931b6cc4f8505c2f5cae00c42",
+    "blind_details_redacted": false
+  },
+  "summary": {
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "by_category": {
+      "显式目标多约束规划": {
+        "total": 1,
+        "passed": 0
+      }
+    },
+    "check_rates": {
+      "tool_selection": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1.0
+      },
+      "tool_counts": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1.0
+      },
+      "arguments": {
+        "passed": 0,
+        "total": 1,
+        "rate": 0.0
+      },
+      "tool_execution": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1.0
+      },
+      "backend_path": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1.0
+      },
+      "required_content": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1.0
+      },
+      "safety": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1.0
+      }
+    },
+    "tool_metrics": {
+      "plan_points_for_award": {
+        "calls": 1,
+        "execution_failures": 0,
+        "average_elapsed_ms": 0.55,
+        "max_elapsed_ms": 0.55
+      }
+    },
+    "token_metrics": {
+      "attempts_with_usage": 1,
+      "usage_coverage_rate": 1.0,
+      "input_tokens": 8268,
+      "output_tokens": 400,
+      "total_tokens": 8668,
+      "average_tokens_per_attempt": 8668.0,
+      "estimated_cost": {
+        "available": false,
+        "currency": "USD",
+        "reason": "pricing_not_configured"
+      }
+    },
+    "model_metrics": {
+      "calls": 2,
+      "failures": 0,
+      "attempts_with_calls": 1,
+      "timing_coverage_rate": 1.0,
+      "total_elapsed_ms": 6706.94,
+      "average_call_elapsed_ms": 3353.47,
+      "p95_call_elapsed_ms": 3700.12,
+      "max_call_elapsed_ms": 3700.12,
+      "average_calls_per_attempt": 2.0
+    },
+    "average_elapsed_ms": 6744.06,
+    "p95_elapsed_ms": 6744.06,
+    "stability": {
+      "repeat_count": 1,
+      "case_count": 1,
+      "attempt_count": 1,
+      "attempt_pass_rate": 0.0,
+      "single_passed_cases": 0,
+      "single_failed_cases": 1,
+      "stable_passed_cases": 0,
+      "flaky_cases": 0,
+      "stable_failed_cases": 0,
+      "cases": {
+        "P08": {
+          "attempts": 1,
+          "passed": 0,
+          "pass_rate": 0.0,
+          "status": "single_fail",
+          "average_elapsed_ms": 6744.06,
+          "p95_elapsed_ms": 6744.06,
+          "elapsed_stddev_ms": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "P08",
+      "attempt": 1,
+      "category": "显式目标多约束规划",
+      "source": "fixture",
+      "fixture": "insufficient_cover",
+      "question": "我想在月底兑换 6 号奖品，但每天只能完成签到和浏览任务，请帮我规划。",
+      "response": "方案已经生成。让我为用户整理这个规划。\n\n根据规划结果，6号奖品是**手表**，需要200积分，当前有50积分，缺口150积分。让我为用户整理清晰的方案。\n\n---\n\n## 兑换规划：6号奖品「手表」\n\n**当前积分**：50 分\n**所需积分**：200 分\n**积分缺口**：150 分\n\n### 推荐任务方案\n\n| 任务 | 奖励积分 | 状态 | 动作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 分 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 分 | 可参与 | 完成任务 |\n\n**方案合计**：160 分（推荐积分），加上你现有的 50 分，预计可达 **210 分**，足以覆盖 200 分的兑换需求，兑换后预计剩余约 10 分。\n\n### 说明\n- 你提到的\"每天只能完成签到和浏览任务\"正好对应方案中的两个任务，无需额外任务即可达成目标。\n- 其中**浏览奖励**已完成但尚未领取，记得先领取这 60 分。\n- 完成签到任务后即可攒够积分，在月底前兑换手表。\n\n需要我帮你确认兑换，或者调整方案吗？",
+      "elapsed_ms": 6744.06,
+      "model_metrics": {
+        "calls": 2,
+        "failures": 0,
+        "total_elapsed_ms": 6706.94,
+        "call_elapsed_ms": [
+          3006.82,
+          3700.12
+        ]
+      },
+      "usage": {
+        "input_tokens": 8268,
+        "output_tokens": 400,
+        "total_tokens": 8668
+      },
+      "tool_calls": [
+        {
+          "name": "plan_points_for_award",
+          "args": {
+            "award_id": 6,
+            "excluded_task_ids": []
+          },
+          "id": null
+        }
+      ],
+      "declared_tool_calls": [
+        {
+          "name": "plan_points_for_award",
+          "args": {
+            "award_id": 6
+          },
+          "id": "call_00_vt2kTYiFjx0zSdrZpADn2892"
+        }
+      ],
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "plan_points_for_award",
+          "arguments": {
+            "award_id": 6,
+            "excluded_task_ids": []
+          },
+          "completed": true,
+          "business_success": null,
+          "result_code": "PLAN_READY",
+          "elapsed_ms": 0.55,
+          "error_type": null
+        }
+      ],
+      "backend_calls": [
+        {
+          "method": "check_exchange_eligibility",
+          "arguments": {
+            "user_id": 10,
+            "award_id": 6
+          }
+        },
+        {
+          "method": "get_award_detail",
+          "arguments": {
+            "award_id": 6
+          }
+        },
+        {
+          "method": "list_available_tasks",
+          "arguments": {
+            "user_id": 10
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": false,
+        "checks": {
+          "tool_selection": true,
+          "tool_counts": true,
+          "arguments": false,
+          "tool_execution": true,
+          "backend_path": true,
+          "required_content": true,
+          "safety": true
+        },
+        "details": {
+          "actual_tools": [
+            "plan_points_for_award"
+          ],
+          "actual_tool_counts": {
+            "plan_points_for_award": 1
+          },
+          "tool_count_failures": {},
+          "argument_failures": [
+            "plan_points_for_award"
+          ],
+          "tool_execution_failures": [],
+          "actual_backend_calls": [
+            "check_exchange_eligibility",
+            "get_award_detail",
+            "list_available_tasks"
+          ],
+          "actual_backend_counts": {
+            "check_exchange_eligibility": 1,
+            "get_award_detail": 1,
+            "list_available_tasks": 1
+          },
+          "backend_count_failures": {},
+          "missing_backend_calls": [],
+          "forbidden_backend_calls": [],
+          "missing_content_groups": [],
+          "missing_facts": [],
+          "safety_violations": []
+        }
+      },
+      "trace": [
+        {
+          "type": "HumanMessage",
+          "name": null,
+          "content": "我想在月底兑换 6 号奖品，但每天只能完成签到和浏览任务，请帮我规划。",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "我需要先了解用户的情况。用户提到\"月底兑换6号奖品\"，这是一个明确的奖品目标。让我先检查这个奖品的兑换资格和积分规划。\n\n用户提到\"每天只能完成签到和浏览任务\"，这暗示用户可能对某些任务有偏好或限制。让我先规划这个奖品的积分方案。\n\n让我调用 plan_points_for_award 来为6号奖品生成方案。",
+          "tool_calls": [
+            {
+              "name": "plan_points_for_award",
+              "args": {
+                "award_id": 6
+              },
+              "id": "call_00_vt2kTYiFjx0zSdrZpADn2892",
+              "type": "tool_call"
+            }
+          ],
+          "usage_metadata": {
+            "input_tokens": 3967,
+            "output_tokens": 128,
+            "total_tokens": 4095,
+            "input_token_details": {
+              "cache_read": 3840
+            },
+            "output_token_details": {}
+          }
+        },
+        {
+          "type": "ToolMessage",
+          "name": "plan_points_for_award",
+          "content": "{\"status\": \"PLAN_READY\", \"reason_code\": \"INSUFFICIENT_POINTS\", \"message\": \"当前可用任务能够覆盖积分缺口\", \"user_id\": 10, \"award_id\": 6, \"award_name\": \"手表\", \"current_points\": 50, \"required_points\": 200, \"points_gap\": 150, \"recommended_points\": 160, \"projected_points\": 210, \"remaining_gap\": 0, \"recommended_tasks\": [{\"task_id\": 1, \"task_name\": \"浏览奖励\", \"reward_points\": 60, \"status\": \"COMPLETED_UNCLAIMED\", \"action\": \"CLAIM_REWARD\"}, {\"task_id\": 2, \"task_name\": \"每日签到\", \"reward_points\": 100, \"status\": \"AVAILABLE\", \"action\": \"COMPLETE_TASK\"}]}",
+          "tool_calls": [],
+          "usage_metadata": null
+        },
+        {
+          "type": "AIMessage",
+          "name": null,
+          "content": "方案已经生成。让我为用户整理这个规划。\n\n根据规划结果，6号奖品是**手表**，需要200积分，当前有50积分，缺口150积分。让我为用户整理清晰的方案。\n\n---\n\n## 兑换规划：6号奖品「手表」\n\n**当前积分**：50 分\n**所需积分**：200 分\n**积分缺口**：150 分\n\n### 推荐任务方案\n\n| 任务 | 奖励积分 | 状态 | 动作 |\n|------|---------|------|------|\n| 浏览奖励 | 60 分 | 已完成待领取 | 领取奖励 |\n| 每日签到 | 100 分 | 可参与 | 完成任务 |\n\n**方案合计**：160 分（推荐积分），加上你现有的 50 分，预计可达 **210 分**，足以覆盖 200 分的兑换需求，兑换后预计剩余约 10 分。\n\n### 说明\n- 你提到的\"每天只能完成签到和浏览任务\"正好对应方案中的两个任务，无需额外任务即可达成目标。\n- 其中**浏览奖励**已完成但尚未领取，记得先领取这 60 分。\n- 完成签到任务后即可攒够积分，在月底前兑换手表。\n\n需要我帮你确认兑换，或者调整方案吗？",
+          "tool_calls": [],
+          "usage_metadata": {
+            "input_tokens": 4301,
+            "output_tokens": 272,
+            "total_tokens": 4573,
+            "input_token_details": {
+              "cache_read": 3840
+            },
+            "output_token_details": {}
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -178,6 +178,68 @@ class PointsPlanningSkillTest(unittest.TestCase):
         self.assertEqual([2], [task.task_id for task in plan.recommended_tasks])
         self.assertEqual(20, plan.remaining_gap)
 
+    def test_honors_excluded_task_names_without_extra_task_query(self):
+        client = FakeClient(
+            eligibility(),
+            tasks=[
+                {
+                    "taskId": 1,
+                    "taskName": "分享活动",
+                    "rewardPoints": 80,
+                    "status": "AVAILABLE",
+                },
+                {
+                    "taskId": 2,
+                    "taskName": "浏览商品",
+                    "rewardPoints": 50,
+                    "status": "AVAILABLE",
+                },
+            ],
+        )
+
+        plan = PointsPlanningSkill(client).plan(
+            10,
+            6,
+            excluded_task_names=["分享"],
+        )
+
+        self.assertEqual([2], [task.task_id for task in plan.recommended_tasks])
+        self.assertEqual(1, client.task_calls)
+
+    def test_honors_allowed_task_names_even_when_other_task_is_better(self):
+        client = FakeClient(
+            eligibility(),
+            tasks=[
+                {
+                    "taskId": 1,
+                    "taskName": "分享活动",
+                    "rewardPoints": 100,
+                    "status": "AVAILABLE",
+                },
+                {
+                    "taskId": 2,
+                    "taskName": "每日签到",
+                    "rewardPoints": 40,
+                    "status": "AVAILABLE",
+                },
+                {
+                    "taskId": 3,
+                    "taskName": "浏览奖励",
+                    "rewardPoints": 30,
+                    "status": "AVAILABLE",
+                },
+            ],
+        )
+
+        plan = PointsPlanningSkill(client).plan(
+            10,
+            6,
+            allowed_task_names=["签到", "浏览"],
+        )
+
+        self.assertEqual([2, 3], [task.task_id for task in plan.recommended_tasks])
+        self.assertEqual(1, client.task_calls)
+
     def test_rejects_malformed_business_data_instead_of_guessing(self):
         client = FakeClient(
             ok(

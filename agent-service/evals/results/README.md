@@ -13,3 +13,7 @@
 - `rag_agent_ra09_corrected_20260822.json`：澄清用例语义后的单条复验，不替换原始失败证据。
 - `rag_agent_faithfulness_final_scoped_20260822.json`：最终 11 条 Agent 评测；忠实度只统计适用的 7 条 RAG 规则用例。
 - `rag_retrieval_query_normalization_20260822.json`：受控 Query 标准化和双路召回的 4 条困难用例定向结果，Top1 为 `4/4`。
+- `complex_planning_baseline_20260822.json`：长期目标复杂规划 7 条基线，结果 `6/7`；P01 保留任务名称转 ID 导致重复查询的原始轨迹。
+- `complex_planning_baseline_p08_20260822.json`：显式奖品多约束基线；答案碰巧满足任务约束，但约束没有进入 Tool 参数。
+- `complex_planning_final_20260822.json`：任务契约修改后的 8 条结果，保留参数同义表达评分假阴性和期限遗漏证据，其余用例 `6/6`。
+- `complex_planning_final_constraints_20260822.json`：修正评分同义参数和期限表达后的 P01、P08 定向结果，`2/2`。

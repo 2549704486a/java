@@ -41,6 +41,8 @@ class SavedGoalPlanningSkill:
         user_id: int,
         goal_query: str | None = None,
         excluded_task_ids: Iterable[int] = (),
+        excluded_task_names: Iterable[str] = (),
+        allowed_task_names: Iterable[str] = (),
     ) -> SavedGoalPointsPlan:
         goals = [
             item
@@ -78,6 +80,8 @@ class SavedGoalPlanningSkill:
                 goal=goal,
                 award_id=bound_award_id,
                 excluded_task_ids=excluded_task_ids,
+                excluded_task_names=excluded_task_names,
+                allowed_task_names=allowed_task_names,
             )
 
         award_options = self._list_awards(user_id, goal)
@@ -105,6 +109,8 @@ class SavedGoalPlanningSkill:
             goal=goal,
             award_id=candidates[0].award.award_id,
             excluded_task_ids=excluded_task_ids,
+            excluded_task_names=excluded_task_names,
+            allowed_task_names=allowed_task_names,
         )
 
     @staticmethod
@@ -196,11 +202,15 @@ class SavedGoalPlanningSkill:
         goal: MemoryItem,
         award_id: int,
         excluded_task_ids: Iterable[int],
+        excluded_task_names: Iterable[str],
+        allowed_task_names: Iterable[str],
     ) -> SavedGoalPointsPlan:
         plan = self._points_skill.plan(
             user_id=user_id,
             award_id=award_id,
             excluded_task_ids=excluded_task_ids,
+            excluded_task_names=excluded_task_names,
+            allowed_task_names=allowed_task_names,
         )
         return SavedGoalPointsPlan(
             status="QUERY_FAILED" if plan.status == "QUERY_FAILED" else "TARGET_RESOLVED",

@@ -19,6 +19,7 @@ from app.api_client import BusinessApiClient
 from app.config import Settings
 from app.confirmation_store import ConfirmationStore
 from app.execution_context import bind_execution_context
+from app.growth_memory_store import GrowthMemoryStore
 from app.prompt import SYSTEM_PROMPT
 from app.skills.registry import SkillRegistry
 from app.tools import build_tools
@@ -35,11 +36,13 @@ from evals.metrics import (
 ROOT = Path(__file__).resolve().parent
 TUNING_CASES_PATH = ROOT / "cases.json"
 BLIND_CASES_PATH = ROOT / "blind_cases.json"
+COMPLEX_PLANNING_CASES_PATH = ROOT / "complex_planning_cases.json"
 # Keep the old constant for offline result files created before dataset isolation.
 CASES_PATH = TUNING_CASES_PATH
 DATASET_PATHS = {
     "tuning": TUNING_CASES_PATH,
     "blind": BLIND_CASES_PATH,
+    "planning": COMPLEX_PLANNING_CASES_PATH,
 }
 
 
@@ -196,17 +199,37 @@ def evaluate_case(
 ) -> dict[str, Any]:
     actual_tools = [call["name"] for call in tool_calls]
     actual_backend = [call["method"] for call in backend_calls]
+    actual_tool_counts = Counter(actual_tools)
+    actual_backend_counts = Counter(actual_backend)
     required_tools = case.get("required_tools", [])
     allowed_tools = case.get("allowed_tools")
     tool_pass = all(name in actual_tools for name in required_tools)
     if allowed_tools is not None:
         tool_pass = tool_pass and all(name in allowed_tools for name in actual_tools)
 
+    tool_count_failures = {
+        name: {
+            "expected": expected,
+            "actual": actual_tool_counts[name],
+        }
+        for name, expected in case.get("expected_tool_counts", {}).items()
+        if actual_tool_counts[name] != expected
+    }
+
     argument_failures: list[str] = []
     for tool_name, expected in case.get("expected_args", {}).items():
         matching = [call for call in tool_calls if call["name"] == tool_name]
         if not matching or not any(args_contain(call["args"], expected) for call in matching):
             argument_failures.append(tool_name)
+    for tool_name, alternatives in case.get("expected_args_any", {}).items():
+        matching = [call for call in tool_calls if call["name"] == tool_name]
+        if not matching or not any(
+            args_contain(call["args"], expected)
+            for call in matching
+            for expected in alternatives
+        ):
+            argument_failures.append(tool_name)
+    argument_failures = sorted(set(argument_failures))
 
     missing_backend = [
         name
@@ -218,6 +241,14 @@ def evaluate_case(
         for name in case.get("forbidden_backend_calls", [])
         if name in actual_backend
     ]
+    backend_count_failures = {
+        name: {
+            "expected": expected,
+            "actual": actual_backend_counts[name],
+        }
+        for name, expected in case.get("expected_backend_counts", {}).items()
+        if actual_backend_counts[name] != expected
+    }
 
     lowered = response.lower()
     missing_groups = [
@@ -243,9 +274,14 @@ def evaluate_case(
 
     checks = {
         "tool_selection": tool_pass,
+        "tool_counts": not tool_count_failures,
         "arguments": not argument_failures,
         "tool_execution": not execution_failures,
-        "backend_path": not missing_backend and not forbidden_backend,
+        "backend_path": (
+            not missing_backend
+            and not forbidden_backend
+            and not backend_count_failures
+        ),
         "required_content": not missing_groups and not missing_facts,
         "safety": not safety_violations,
     }
@@ -254,9 +290,13 @@ def evaluate_case(
         "checks": checks,
         "details": {
             "actual_tools": actual_tools,
+            "actual_tool_counts": dict(actual_tool_counts),
+            "tool_count_failures": tool_count_failures,
             "argument_failures": argument_failures,
             "tool_execution_failures": execution_failures,
             "actual_backend_calls": actual_backend,
+            "actual_backend_counts": dict(actual_backend_counts),
+            "backend_count_failures": backend_count_failures,
             "missing_backend_calls": missing_backend,
             "forbidden_backend_calls": forbidden_backend,
             "missing_content_groups": missing_groups,
@@ -277,9 +317,11 @@ def run_one(
     fixture_client: FixtureBusinessApiClient | None = None
     live_client: BusinessApiClient | None = None
     model_timing = ModelTimingHandler()
+    growth_memory_store: GrowthMemoryStore | None = None
     if case["source"] == "fixture":
         fixture_client = FixtureBusinessApiClient(case["fixture"])
         client: Any = fixture_client
+        growth_memory_store = build_fixture_memory_store(case, user_id)
     else:
         live_client = BusinessApiClient(
             base_url=settings.business_api_base_url,
@@ -297,6 +339,7 @@ def run_one(
                 user_id,
                 skill_registry,
                 confirmation_store,
+                growth_memory_store=growth_memory_store,
             ),
             system_prompt=SYSTEM_PROMPT,
         )
@@ -369,6 +412,25 @@ def run_one(
     finally:
         if live_client is not None:
             live_client.close()
+        if growth_memory_store is not None:
+            growth_memory_store.close()
+
+
+def build_fixture_memory_store(
+    case: dict[str, Any],
+    user_id: int,
+) -> GrowthMemoryStore:
+    """为单条评测构造隔离的长期记忆，避免依赖开发机历史数据。"""
+    store = GrowthMemoryStore()
+    for index, seed in enumerate(case.get("memory_seed", []), start=1):
+        store.remember(
+            user_id=user_id,
+            source_session=f"eval:{case['id']}:seed:{index}",
+            memory_type=seed["memory_type"],
+            raw_text=seed["raw_text"],
+            normalized_data=seed.get("normalized_data") or {},
+        )
+    return store
 
 
 def percentile(values: list[float], percentile_value: float) -> float:

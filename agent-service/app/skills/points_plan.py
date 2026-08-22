@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import unicodedata
 from collections.abc import Iterable
 
 from pydantic import ValidationError
@@ -26,6 +28,8 @@ class PointsPlanningSkill:
         user_id: int,
         award_id: int,
         excluded_task_ids: Iterable[int] = (),
+        excluded_task_names: Iterable[str] = (),
+        allowed_task_names: Iterable[str] = (),
     ) -> PointsPlan:
         if user_id <= 0 or award_id <= 0:
             return PointsPlan(
@@ -99,10 +103,17 @@ class PointsPlanningSkill:
             return self._invalid_response(user_id, award_id, "奖品或任务")
 
         excluded = set(excluded_task_ids)
+        excluded_names = self._normalize_constraints(excluded_task_names)
+        allowed_names = self._normalize_constraints(allowed_task_names)
         tasks = [
             task
             for task in tasks
             if task.task_id not in excluded
+            and not self._matches_any_name(task.task_name, excluded_names)
+            and (
+                not allowed_names
+                or self._matches_any_name(task.task_name, allowed_names)
+            )
             and task.reward_points > 0
             and task.status != "REWARDED"
         ]
@@ -174,6 +185,22 @@ class PointsPlanningSkill:
     @staticmethod
     def _task_sort_key(task: TaskData) -> tuple[int, int]:
         return (-task.reward_points, task.task_id)
+
+    @staticmethod
+    def _normalize_constraints(values: Iterable[str]) -> set[str]:
+        return {
+            normalized
+            for value in values
+            if (normalized := _normalize_task_name(value))
+        }
+
+    @staticmethod
+    def _matches_any_name(task_name: str, constraints: set[str]) -> bool:
+        normalized_task = _normalize_task_name(task_name)
+        return any(
+            constraint in normalized_task or normalized_task in constraint
+            for constraint in constraints
+        )
 
     @classmethod
     def _smallest_cover(cls, tasks: list[TaskData], target: int) -> list[TaskData]:
@@ -251,3 +278,8 @@ class PointsPlanningSkill:
             user_id=user_id,
             award_id=award_id,
         )
+
+
+def _normalize_task_name(value: str) -> str:
+    normalized = unicodedata.normalize("NFKC", value).casefold()
+    return re.sub(r"[^a-z0-9\u4e00-\u9fff]+", "", normalized)

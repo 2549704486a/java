@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from evals.runner import (
+    build_fixture_memory_store,
     evaluate_case,
     load_cases,
     redact_blind_result,
@@ -88,6 +89,81 @@ class EvalRunnerTest(unittest.TestCase):
             ["get_user_points"],
             evaluation["details"]["tool_execution_failures"],
         )
+
+    def test_checks_tool_and_backend_call_counts(self):
+        case = {
+            "required_tools": ["plan_points_for_saved_goal"],
+            "allowed_tools": ["plan_points_for_saved_goal"],
+            "expected_tool_counts": {"plan_points_for_saved_goal": 1},
+            "expected_backend_counts": {"list_available_tasks": 1},
+        }
+
+        evaluation = evaluate_case(
+            case,
+            "已生成方案。",
+            [
+                {"name": "plan_points_for_saved_goal", "args": {}},
+                {"name": "plan_points_for_saved_goal", "args": {}},
+            ],
+            [
+                {"method": "list_available_tasks", "arguments": {}},
+                {"method": "list_available_tasks", "arguments": {}},
+            ],
+        )
+
+        self.assertFalse(evaluation["passed"])
+        self.assertFalse(evaluation["checks"]["tool_counts"])
+        self.assertFalse(evaluation["checks"]["backend_path"])
+        self.assertEqual(
+            2,
+            evaluation["details"]["actual_tool_counts"][
+                "plan_points_for_saved_goal"
+            ],
+        )
+
+    def test_accepts_one_of_multiple_equivalent_argument_shapes(self):
+        case = {
+            "required_tools": ["plan_points_for_saved_goal"],
+            "allowed_tools": ["plan_points_for_saved_goal"],
+            "expected_args_any": {
+                "plan_points_for_saved_goal": [
+                    {"excluded_task_names": ["分享"]},
+                    {"excluded_task_names": ["分享活动"]},
+                ]
+            },
+        }
+
+        evaluation = evaluate_case(
+            case,
+            "已排除分享任务。",
+            [
+                {
+                    "name": "plan_points_for_saved_goal",
+                    "args": {"excluded_task_names": ["分享"]},
+                }
+            ],
+            [],
+        )
+
+        self.assertTrue(evaluation["passed"])
+
+    def test_builds_isolated_memory_from_case_seed(self):
+        case = {
+            "id": "P01",
+            "memory_seed": [
+                {
+                    "memory_type": "goal",
+                    "raw_text": "我想兑换一块手表",
+                    "normalized_data": {"subject": "手表", "awardId": 6},
+                }
+            ],
+        }
+
+        store = build_fixture_memory_store(case, 10)
+
+        memory = store.get(10)
+        self.assertEqual(1, len(memory.memories))
+        self.assertEqual("我想兑换一块手表", memory.memories[0].raw_text)
 
     def test_tuning_and_blind_cases_are_physically_separated(self):
         tuning_ids = {case["id"] for case in load_cases("fixture", None, "tuning")}

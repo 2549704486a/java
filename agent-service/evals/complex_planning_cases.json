@@ -1,0 +1,194 @@
+[
+  {
+    "id": "P01",
+    "category": "多约束任务规划",
+    "source": "fixture",
+    "fixture": "insufficient_cover",
+    "question": "请按我之前保存的手表目标规划积分，但不要安排分享活动。",
+    "memory_seed": [
+      {
+        "memory_type": "goal",
+        "raw_text": "我计划在 2099 年兑换 6 号手表",
+        "normalized_data": {
+          "subject": "手表",
+          "awardId": 6,
+          "targetYear": 2099
+        }
+      }
+    ],
+    "required_tools": ["plan_points_for_saved_goal"],
+    "allowed_tools": ["plan_points_for_saved_goal"],
+    "expected_tool_counts": {"plan_points_for_saved_goal": 1},
+    "expected_args_any": {
+      "plan_points_for_saved_goal": [
+        {"excluded_task_names": ["分享"]},
+        {"excluded_task_names": ["分享活动"]}
+      ]
+    },
+    "required_backend_calls": ["check_exchange_eligibility", "get_award_detail", "list_available_tasks"],
+    "expected_backend_counts": {
+      "check_exchange_eligibility": 1,
+      "get_award_detail": 1,
+      "list_available_tasks": 1
+    },
+    "required_groups": [["150", "缺口"], ["每日签到", "签到"], ["浏览奖励", "浏览"]],
+    "forbidden_phrases": ["分享活动：80", "完成分享活动"]
+  },
+  {
+    "id": "P02",
+    "category": "单目标实时规划",
+    "source": "fixture",
+    "fixture": "insufficient_cover",
+    "question": "帮我规划一下之前保存的兑换目标。",
+    "memory_seed": [
+      {
+        "memory_type": "goal",
+        "raw_text": "我计划在 2099 年兑换 6 号手表",
+        "normalized_data": {
+          "subject": "手表",
+          "awardId": 6,
+          "targetYear": 2099
+        }
+      }
+    ],
+    "required_tools": ["plan_points_for_saved_goal"],
+    "allowed_tools": ["plan_points_for_saved_goal"],
+    "expected_tool_counts": {"plan_points_for_saved_goal": 1},
+    "required_backend_calls": ["check_exchange_eligibility", "get_award_detail", "list_available_tasks"],
+    "expected_backend_counts": {
+      "check_exchange_eligibility": 1,
+      "get_award_detail": 1,
+      "list_available_tasks": 1
+    },
+    "required_groups": [["150", "缺口"], ["手表", "6 号"]]
+  },
+  {
+    "id": "P03",
+    "category": "多目标消歧",
+    "source": "fixture",
+    "fixture": "insufficient_cover",
+    "question": "帮我规划之前保存的目标。",
+    "memory_seed": [
+      {
+        "memory_type": "goal",
+        "raw_text": "我以后想兑换手表",
+        "normalized_data": {"subject": "手表", "awardId": 6, "targetYear": 2099}
+      },
+      {
+        "memory_type": "goal",
+        "raw_text": "我以后想兑换水杯",
+        "normalized_data": {"subject": "水杯", "awardId": 7, "targetYear": 2099}
+      }
+    ],
+    "required_tools": ["plan_points_for_saved_goal"],
+    "allowed_tools": ["plan_points_for_saved_goal"],
+    "expected_tool_counts": {"plan_points_for_saved_goal": 1},
+    "forbidden_backend_calls": ["list_awards", "check_exchange_eligibility", "get_award_detail", "list_available_tasks"],
+    "required_facts": ["手表", "水杯"],
+    "required_groups": [["选择", "哪个", "哪一个"]]
+  },
+  {
+    "id": "P04",
+    "category": "指定目标消歧",
+    "source": "fixture",
+    "fixture": "insufficient_cover",
+    "question": "请规划我保存的手表目标。",
+    "memory_seed": [
+      {
+        "memory_type": "goal",
+        "raw_text": "我以后想兑换手表",
+        "normalized_data": {"subject": "手表", "awardId": 6, "targetYear": 2099}
+      },
+      {
+        "memory_type": "goal",
+        "raw_text": "我以后想兑换水杯",
+        "normalized_data": {"subject": "水杯", "awardId": 7, "targetYear": 2099}
+      }
+    ],
+    "required_tools": ["plan_points_for_saved_goal"],
+    "allowed_tools": ["plan_points_for_saved_goal"],
+    "expected_tool_counts": {"plan_points_for_saved_goal": 1},
+    "required_backend_calls": ["check_exchange_eligibility", "get_award_detail", "list_available_tasks"],
+    "required_groups": [["150", "缺口"], ["手表", "6 号"]]
+  },
+  {
+    "id": "P05",
+    "category": "奖品候选消歧",
+    "source": "fixture",
+    "fixture": "multiple_wearables",
+    "question": "按我之前的手环目标做个积分计划。",
+    "memory_seed": [
+      {
+        "memory_type": "goal",
+        "raw_text": "我以后想换一个手环",
+        "normalized_data": {"subject": "手环", "targetYear": 2099}
+      }
+    ],
+    "required_tools": ["plan_points_for_saved_goal"],
+    "allowed_tools": ["plan_points_for_saved_goal"],
+    "expected_tool_counts": {"plan_points_for_saved_goal": 1},
+    "required_backend_calls": ["list_awards"],
+    "expected_backend_counts": {"list_awards": 1},
+    "forbidden_backend_calls": ["check_exchange_eligibility", "get_award_detail", "list_available_tasks"],
+    "required_facts": ["智能手环", "运动手环"],
+    "required_groups": [["选择", "具体", "哪一个"]]
+  },
+  {
+    "id": "P06",
+    "category": "过期目标处理",
+    "source": "fixture",
+    "fixture": "insufficient_cover",
+    "question": "帮我规划以前保存的手表目标。",
+    "memory_seed": [
+      {
+        "memory_type": "goal",
+        "raw_text": "我计划在 2020 年兑换 6 号手表",
+        "normalized_data": {
+          "subject": "手表",
+          "awardId": 6,
+          "targetYear": 2020
+        }
+      }
+    ],
+    "required_tools": ["plan_points_for_saved_goal"],
+    "allowed_tools": ["plan_points_for_saved_goal"],
+    "expected_tool_counts": {"plan_points_for_saved_goal": 1},
+    "forbidden_backend_calls": ["list_awards", "check_exchange_eligibility", "get_award_detail", "list_available_tasks"],
+    "required_groups": [["过期", "已经过去"], ["更新", "重新保存"]]
+  },
+  {
+    "id": "P07",
+    "category": "缺少目标处理",
+    "source": "fixture",
+    "fixture": "insufficient_cover",
+    "question": "帮我规划之前保存的兑换目标。",
+    "memory_seed": [],
+    "required_tools": ["plan_points_for_saved_goal"],
+    "allowed_tools": ["plan_points_for_saved_goal"],
+    "expected_tool_counts": {"plan_points_for_saved_goal": 1},
+    "forbidden_backend_calls": ["list_awards", "check_exchange_eligibility", "get_award_detail", "list_available_tasks"],
+    "required_groups": [["没有", "未保存"], ["保存", "新增", "告诉我"]]
+  },
+  {
+    "id": "P08",
+    "category": "显式目标多约束规划",
+    "source": "fixture",
+    "fixture": "insufficient_cover",
+    "question": "我想在月底兑换 6 号奖品，但每天只能完成签到和浏览任务，请帮我规划。",
+    "memory_seed": [],
+    "required_tools": ["plan_points_for_award"],
+    "allowed_tools": ["plan_points_for_award"],
+    "expected_tool_counts": {"plan_points_for_award": 1},
+    "expected_args": {
+      "plan_points_for_award": {"allowed_task_names": ["签到", "浏览"]}
+    },
+    "required_backend_calls": ["check_exchange_eligibility", "get_award_detail", "list_available_tasks"],
+    "expected_backend_counts": {
+      "check_exchange_eligibility": 1,
+      "get_award_detail": 1,
+      "list_available_tasks": 1
+    },
+    "required_groups": [["月底", "期限"], ["每日签到", "签到"], ["浏览奖励", "浏览"]],
+    "forbidden_phrases": ["分享活动：80", "完成分享活动"]
+  }
+]

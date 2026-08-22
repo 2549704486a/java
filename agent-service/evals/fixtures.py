@@ -205,6 +205,56 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         ],
         "tasks": [],
     },
+    "multiple_wearables": {
+        "points": 50,
+        "award": {
+            "awardId": 8,
+            "name": "智能手环",
+            "requiredPoints": 300,
+            "inventory": 20,
+        },
+        "eligibility": {
+            "userId": 10,
+            "awardId": 8,
+            "eligible": False,
+            "reasonCode": "INSUFFICIENT_POINTS",
+            "reason": "积分不足",
+            "currentPoints": 50,
+            "requiredPoints": 300,
+            "pointsGap": 250,
+        },
+        "awards": [
+            {
+                "award": {
+                    "awardId": 8,
+                    "name": "智能手环",
+                    "requiredPoints": 300,
+                    "inventory": 20,
+                },
+                "redeemable": False,
+                "pointsGap": 250,
+                "reasonCode": "INSUFFICIENT_POINTS",
+            },
+            {
+                "award": {
+                    "awardId": 10,
+                    "name": "运动手环",
+                    "requiredPoints": 260,
+                    "inventory": 30,
+                },
+                "redeemable": False,
+                "pointsGap": 210,
+                "reasonCode": "INSUFFICIENT_POINTS",
+            },
+            {
+                "award": BASE_AWARD,
+                "redeemable": False,
+                "pointsGap": 150,
+                "reasonCode": "INSUFFICIENT_POINTS",
+            },
+        ],
+        "tasks": [],
+    },
 }
 
 

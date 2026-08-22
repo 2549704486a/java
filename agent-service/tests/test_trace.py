@@ -59,7 +59,15 @@ class ToolTraceTest(unittest.TestCase):
         self.assertEqual("PLAN_READY", result["status"])
         self.assertEqual("plan_points_for_award", event["tool_name"])
         self.assertEqual("PLAN_READY", event["result_code"])
-        self.assertEqual({"award_id": 6, "excluded_task_ids": []}, event["arguments"])
+        self.assertEqual(
+            {
+                "award_id": 6,
+                "excluded_task_ids": [],
+                "excluded_task_names": [],
+                "allowed_task_names": [],
+            },
+            event["arguments"],
+        )
 
 
 if __name__ == "__main__":

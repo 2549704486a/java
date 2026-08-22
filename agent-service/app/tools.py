@@ -42,6 +42,16 @@ class PlanPointsInput(BaseModel):
         default_factory=list,
         description="用户明确不想参与的任务 ID；没有时传空数组",
     )
+    excluded_task_names: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="用户明确不想参与的任务名称；没有时传空数组",
+    )
+    allowed_task_names: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="用户明确表示只能或只愿意完成的任务名称；没有此约束时传空数组",
+    )
 
 
 class PlanSavedGoalInput(BaseModel):
@@ -53,6 +63,16 @@ class PlanSavedGoalInput(BaseModel):
     excluded_task_ids: list[int] = Field(
         default_factory=list,
         description="用户明确不想参与的任务 ID；没有时传空数组",
+    )
+    excluded_task_names: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="用户明确不想参与的任务名称；没有时传空数组",
+    )
+    allowed_task_names: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="用户明确表示只能或只愿意完成的任务名称；没有此约束时传空数组",
     )
 
 
@@ -240,11 +260,16 @@ def build_tools(
         extras=points_manifest.trace_metadata(),
     )
     def plan_points_for_award(
-        award_id: int, excluded_task_ids: list[int] | None = None
+        award_id: int,
+        excluded_task_ids: list[int] | None = None,
+        excluded_task_names: list[str] | None = None,
+        allowed_task_names: list[str] | None = None,
     ) -> dict:
         arguments = {
             "award_id": award_id,
             "excluded_task_ids": excluded_task_ids or [],
+            "excluded_task_names": excluded_task_names or [],
+            "allowed_task_names": allowed_task_names or [],
         }
 
         def execute() -> dict:
@@ -275,10 +300,14 @@ def build_tools(
     def plan_points_for_saved_goal(
         goal_query: str | None = None,
         excluded_task_ids: list[int] | None = None,
+        excluded_task_names: list[str] | None = None,
+        allowed_task_names: list[str] | None = None,
     ) -> dict:
         arguments = {
             "goal_query_chars": len(goal_query or ""),
             "excluded_task_ids": excluded_task_ids or [],
+            "excluded_task_names": excluded_task_names or [],
+            "allowed_task_names": allowed_task_names or [],
         }
 
         def execute() -> dict:
@@ -288,6 +317,8 @@ def build_tools(
                 user_id=user_id,
                 goal_query=goal_query,
                 excluded_task_ids=excluded_task_ids or [],
+                excluded_task_names=excluded_task_names or [],
+                allowed_task_names=allowed_task_names or [],
             )
             logger.info(
                 "skill_complete name=%s version=%s operation=saved_goal_plan "
