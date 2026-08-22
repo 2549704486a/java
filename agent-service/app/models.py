@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 
 class ToolEnvelope(BaseModel):
@@ -249,3 +249,117 @@ class GrowthMemoryData(BaseModel):
     goal: RedemptionGoalData | None = None
     preferences: UserPreferenceData | None = None
     memories: list[MemoryItem] = Field(default_factory=list)
+
+
+class CampaignBrief(BaseModel):
+    """运营人员提交的活动目标和硬约束，不承载库存等动态事实。"""
+
+    objective: str = Field(min_length=2, max_length=200)
+    target_segment: str = Field(min_length=2, max_length=200)
+    budget_points: int = Field(gt=0)
+    start_at: AwareDatetime
+    end_at: AwareDatetime
+    max_tasks: int = Field(default=2, ge=1, le=5)
+    max_awards: int = Field(default=2, ge=1, le=5)
+
+    @model_validator(mode="after")
+    def validate_time_window(self) -> "CampaignBrief":
+        if self.end_at <= self.start_at:
+            raise ValueError("活动结束时间必须晚于开始时间")
+        return self
+
+
+class CampaignSegmentSnapshot(BaseModel):
+    segment_key: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    estimated_users: int = Field(ge=0)
+    as_of: AwareDatetime
+
+
+class CampaignTaskSnapshot(BaseModel):
+    task_id: int = Field(gt=0)
+    task_name: str = Field(min_length=1)
+    reward_points: int = Field(gt=0)
+    max_completions_per_user: int = Field(default=1, ge=1)
+    active: bool = True
+    source_ref: str = Field(min_length=1)
+
+    @property
+    def max_reward_per_user(self) -> int:
+        return self.reward_points * self.max_completions_per_user
+
+
+class CampaignAwardSnapshot(BaseModel):
+    award_id: int = Field(gt=0)
+    award_name: str = Field(min_length=1)
+    required_points: int = Field(gt=0)
+    inventory: int = Field(ge=0)
+    active: bool = True
+    available_from: AwareDatetime | None = None
+    available_until: AwareDatetime | None = None
+    source_ref: str = Field(min_length=1)
+
+
+class HistoricalCampaignMetric(BaseModel):
+    metric_name: Literal["participation_rate"]
+    value: float = Field(ge=0, le=1)
+    sample_size: int = Field(gt=0)
+    as_of: AwareDatetime
+    source_ref: str = Field(min_length=1)
+
+
+class CampaignPlanningSnapshot(BaseModel):
+    """生成草案时使用的只读事实快照。"""
+
+    snapshot_id: str = Field(min_length=1)
+    generated_at: AwareDatetime
+    segment: CampaignSegmentSnapshot
+    tasks: list[CampaignTaskSnapshot] = Field(default_factory=list)
+    awards: list[CampaignAwardSnapshot] = Field(default_factory=list)
+    historical_metrics: list[HistoricalCampaignMetric] = Field(default_factory=list)
+
+
+class SuggestedCampaignTask(BaseModel):
+    task_id: int
+    task_name: str
+    max_reward_per_user: int
+    source_ref: str
+
+
+class SuggestedCampaignAward(BaseModel):
+    award_id: int
+    award_name: str
+    required_points: int
+    inventory: int
+    source_ref: str
+
+
+class CampaignRisk(BaseModel):
+    code: str
+    severity: Literal["INFO", "WARNING", "BLOCKING"]
+    message: str
+
+
+class CampaignPlanDraft(BaseModel):
+    """可编辑、可追溯且必须人工审核的运营活动草案。"""
+
+    status: Literal["DRAFT_READY", "NEEDS_DATA", "CONSTRAINT_CONFLICT"]
+    reason_code: str
+    message: str
+    lifecycle_status: Literal["DRAFT"] = "DRAFT"
+    editable: Literal[True] = True
+    publishable: Literal[False] = False
+    review_required: Literal[True] = True
+    objective: str
+    target_segment: str
+    budget_points: int
+    start_at: AwareDatetime
+    end_at: AwareDatetime
+    estimated_participants: int | None = None
+    estimated_point_cost: int | None = None
+    suggested_tasks: list[SuggestedCampaignTask] = Field(default_factory=list)
+    suggested_awards: list[SuggestedCampaignAward] = Field(default_factory=list)
+    risks: list[CampaignRisk] = Field(default_factory=list)
+    source_snapshot_id: str
+    source_generated_at: AwareDatetime
+    generated_at: AwareDatetime

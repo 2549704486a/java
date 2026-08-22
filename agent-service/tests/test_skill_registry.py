@@ -58,6 +58,7 @@ class SkillRegistryTest(unittest.TestCase):
         self.assertEqual(
             {
                 "award-recommendation",
+                "campaign-planning",
                 "controlled-exchange",
                 "growth-memory",
                 "points-planning",
@@ -74,6 +75,7 @@ class SkillRegistryTest(unittest.TestCase):
         manifest = registry.require_manifest("points-planning")
         tools = build_tools(EligibleClient(), 10, registry)
         plan_tool = next(tool for tool in tools if tool.name == "plan_points_for_award")
+        self.assertNotIn("draft_campaign_plan", {tool.name for tool in tools})
 
         with patch.object(registry, "activate", wraps=registry.activate) as activate:
             result = plan_tool.invoke({"award_id": 6, "excluded_task_ids": []})
