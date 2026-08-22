@@ -17,3 +17,4 @@
 - `complex_planning_baseline_p08_20260822.json`：显式奖品多约束基线；答案碰巧满足任务约束，但约束没有进入 Tool 参数。
 - `complex_planning_final_20260822.json`：任务契约修改后的 8 条结果，保留参数同义表达评分假阴性和期限遗漏证据，其余用例 `6/6`。
 - `complex_planning_final_constraints_20260822.json`：修正评分同义参数和期限表达后的 P01、P08 定向结果，`2/2`。
+- `campaign_planning_baseline_20260822.json`：8 条冻结运营场景的确定性基线；权限隔离 `16/16`、数据引用 `21/21`、约束满足 `32/32`、草案完整性 `20/20`。

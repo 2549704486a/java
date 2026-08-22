@@ -1,0 +1,1389 @@
+{
+  "metadata": {
+    "suite": "campaign_planning_fixture",
+    "schema_version": 1,
+    "frozen_at": "2026-08-22T12:00:00+08:00",
+    "deterministic": true,
+    "model_calls": 0
+  },
+  "summary": {
+    "passed_cases": 8,
+    "total_cases": 8,
+    "case_pass_rate": 1.0,
+    "categories": {
+      "permission_isolation": {
+        "passed": 16,
+        "total": 16,
+        "rate": 1.0
+      },
+      "data_reference_correctness": {
+        "passed": 21,
+        "total": 21,
+        "rate": 1.0
+      },
+      "constraint_satisfaction": {
+        "passed": 32,
+        "total": 32,
+        "rate": 1.0
+      },
+      "draft_completeness": {
+        "passed": 20,
+        "total": 20,
+        "rate": 1.0
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "C01",
+      "category": "完整活动草案",
+      "operation": "draft",
+      "passed": true,
+      "checks": [
+        {
+          "category": "permission_isolation",
+          "name": "具有读取权限时暴露只读快照工具",
+          "passed": true,
+          "expected": true,
+          "actual": true
+        },
+        {
+          "category": "permission_isolation",
+          "name": "草案工具严格服从服务端草案权限",
+          "passed": true,
+          "expected": true,
+          "actual": true
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "草案引用本次输入快照",
+          "passed": true,
+          "expected": {
+            "snapshot_id": "campaign-snapshot-ready-001",
+            "generated_at": "2026-08-22T11:00:00+08:00"
+          },
+          "actual": {
+            "snapshot_id": "campaign-snapshot-ready-001",
+            "generated_at": "2026-08-22T11:00:00+08:00"
+          }
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "客群键和说明来自同一事实快照",
+          "passed": true,
+          "expected": {
+            "key": "POINTS_AT_LEAST_500",
+            "description": "当前积分不少于 500 的用户"
+          },
+          "actual": {
+            "key": "POINTS_AT_LEAST_500",
+            "description": "当前积分不少于 500 的用户"
+          }
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "任务字段和来源可回查到快照",
+          "passed": true,
+          "expected": true,
+          "actual": [
+            {
+              "task_id": 1,
+              "source_ref": "task_config:1"
+            },
+            {
+              "task_id": 2,
+              "source_ref": "task_config:2"
+            }
+          ]
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "奖品字段和来源可回查到快照",
+          "passed": true,
+          "expected": true,
+          "actual": [
+            {
+              "award_id": 6,
+              "source_ref": "award_inventory_split:6:sum"
+            },
+            {
+              "award_id": 8,
+              "source_ref": "award_inventory_split:8:sum"
+            }
+          ]
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "状态和原因码符合冻结用例",
+          "passed": true,
+          "expected": {
+            "status": "DRAFT_READY",
+            "reason_code": "CAMPAIGN_DRAFT_READY"
+          },
+          "actual": {
+            "status": "DRAFT_READY",
+            "reason_code": "CAMPAIGN_DRAFT_READY"
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "候选任务与奖品符合冻结预期",
+          "passed": true,
+          "expected": {
+            "task_ids": [
+              1,
+              2
+            ],
+            "award_ids": [
+              6,
+              8
+            ]
+          },
+          "actual": {
+            "task_ids": [
+              1,
+              2
+            ],
+            "award_ids": [
+              6,
+              8
+            ]
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "候选数量不超过运营简报上限",
+          "passed": true,
+          "expected": {
+            "max_tasks": 2,
+            "max_awards": 2
+          },
+          "actual": {
+            "task_count": 2,
+            "award_count": 2
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "入选任务和奖品在完整活动窗口内可用",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "task_ids": [
+              1,
+              2
+            ],
+            "award_ids": [
+              6,
+              8
+            ]
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "积分成本由参与人数和任务奖励重新计算且不超预算",
+          "passed": true,
+          "expected": {
+            "budget_points": 50000
+          },
+          "actual": {
+            "estimated_participants": 200,
+            "estimated_point_cost": 36000
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "estimated_participants 符合冻结预期",
+          "passed": true,
+          "expected": 200,
+          "actual": 200
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "estimated_point_cost 符合冻结预期",
+          "passed": true,
+          "expected": 36000,
+          "actual": 36000
+        },
+        {
+          "category": "draft_completeness",
+          "name": "草案固定为可编辑、不可发布、必须人工审核",
+          "passed": true,
+          "expected": {
+            "lifecycle_status": "DRAFT",
+            "editable": true,
+            "publishable": false,
+            "review_required": true
+          },
+          "actual": {
+            "lifecycle_status": "DRAFT",
+            "editable": true,
+            "publishable": false,
+            "review_required": true
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "阻断风险与草案状态一致",
+          "passed": true,
+          "expected": "DRAFT_READY 无阻断风险；其他状态至少一个阻断风险",
+          "actual": {
+            "status": "DRAFT_READY",
+            "blocking": false
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "核心说明、目标和来源字段完整",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "message": true,
+            "reason_code": true,
+            "objective": true,
+            "target_segment": true,
+            "source_snapshot_id": true
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "可用草案包含估算和候选，待补数据草案不伪造估算",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "status": "DRAFT_READY",
+            "estimated_participants": 200,
+            "estimated_point_cost": 36000,
+            "task_count": 2,
+            "award_count": 2
+          }
+        }
+      ],
+      "output": {
+        "status": "DRAFT_READY",
+        "reason_code": "CAMPAIGN_DRAFT_READY",
+        "message": "活动草案已生成，发布前仍需运营人员编辑和审核",
+        "lifecycle_status": "DRAFT",
+        "editable": true,
+        "publishable": false,
+        "review_required": true,
+        "objective": "召回高积分用户",
+        "target_segment_key": "POINTS_AT_LEAST_500",
+        "target_segment": "当前积分不少于 500 的用户",
+        "budget_points": 50000,
+        "start_at": "2026-09-01T00:00:00+08:00",
+        "end_at": "2026-09-07T23:59:59+08:00",
+        "estimated_participants": 200,
+        "estimated_point_cost": 36000,
+        "suggested_tasks": [
+          {
+            "task_id": 1,
+            "task_name": "每日签到",
+            "max_reward_per_user": 100,
+            "source_ref": "task_config:1"
+          },
+          {
+            "task_id": 2,
+            "task_name": "浏览指定商品",
+            "max_reward_per_user": 80,
+            "source_ref": "task_config:2"
+          }
+        ],
+        "suggested_awards": [
+          {
+            "award_id": 6,
+            "award_name": "智能手环",
+            "required_points": 1000,
+            "inventory": 150,
+            "source_ref": "award_inventory_split:6:sum"
+          },
+          {
+            "award_id": 8,
+            "award_name": "蓝牙耳机",
+            "required_points": 1500,
+            "inventory": 20,
+            "source_ref": "award_inventory_split:8:sum"
+          }
+        ],
+        "risks": [
+          {
+            "code": "AWARD_WINDOW_MISMATCH",
+            "severity": "WARNING",
+            "message": "有 2 个奖品未覆盖完整活动时间窗口或库存为零"
+          },
+          {
+            "code": "AWARD_INVENTORY_COVERAGE_LOW",
+            "severity": "WARNING",
+            "message": "候选奖品库存仅覆盖预计参与人数的 170/200"
+          },
+          {
+            "code": "AWARD_RELEVANCE_REVIEW_REQUIRED",
+            "severity": "INFO",
+            "message": "当前仅按可用性和库存选择奖品，仍需人工审核奖品与活动目标的匹配度"
+          }
+        ],
+        "source_snapshot_id": "campaign-snapshot-ready-001",
+        "source_generated_at": "2026-08-22T11:00:00+08:00",
+        "generated_at": "2026-08-22T12:00:00+08:00"
+      }
+    },
+    {
+      "id": "C02",
+      "category": "只读运营权限",
+      "operation": "tool_inventory",
+      "passed": true,
+      "checks": [
+        {
+          "category": "permission_isolation",
+          "name": "具有读取权限时暴露只读快照工具",
+          "passed": true,
+          "expected": true,
+          "actual": true
+        },
+        {
+          "category": "permission_isolation",
+          "name": "草案工具严格服从服务端草案权限",
+          "passed": true,
+          "expected": false,
+          "actual": false
+        },
+        {
+          "category": "permission_isolation",
+          "name": "只读运营身份不能获得草案工具",
+          "passed": true,
+          "expected": [
+            "get_campaign_planning_snapshot"
+          ],
+          "actual": [
+            "get_campaign_planning_snapshot"
+          ]
+        }
+      ],
+      "output": {
+        "tool_names": [
+          "get_campaign_planning_snapshot"
+        ]
+      }
+    },
+    {
+      "id": "C03",
+      "category": "缺少读取权限",
+      "operation": "tool_inventory",
+      "passed": true,
+      "checks": [
+        {
+          "category": "permission_isolation",
+          "name": "缺少读取权限时拒绝构建运营工具",
+          "passed": true,
+          "expected": "OperatorPermissionError",
+          "actual": "OperatorPermissionError"
+        }
+      ],
+      "output": null
+    },
+    {
+      "id": "C04",
+      "category": "未知客群拒绝",
+      "operation": "snapshot",
+      "passed": true,
+      "checks": [
+        {
+          "category": "permission_isolation",
+          "name": "具有读取权限时暴露只读快照工具",
+          "passed": true,
+          "expected": true,
+          "actual": true
+        },
+        {
+          "category": "permission_isolation",
+          "name": "草案工具严格服从服务端草案权限",
+          "passed": true,
+          "expected": false,
+          "actual": false
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "未知客群返回明确结果而非猜测数据",
+          "passed": true,
+          "expected": {
+            "success": false,
+            "code": "CAMPAIGN_SEGMENT_NOT_FOUND"
+          },
+          "actual": {
+            "success": false,
+            "code": "CAMPAIGN_SEGMENT_NOT_FOUND"
+          }
+        }
+      ],
+      "output": {
+        "success": false,
+        "code": "CAMPAIGN_SEGMENT_NOT_FOUND",
+        "data": null,
+        "message": "找不到客群 'UNKNOWN_SEGMENT' 的规划快照",
+        "retryable": false
+      }
+    },
+    {
+      "id": "C05",
+      "category": "缺少历史指标",
+      "operation": "draft",
+      "passed": true,
+      "checks": [
+        {
+          "category": "permission_isolation",
+          "name": "具有读取权限时暴露只读快照工具",
+          "passed": true,
+          "expected": true,
+          "actual": true
+        },
+        {
+          "category": "permission_isolation",
+          "name": "草案工具严格服从服务端草案权限",
+          "passed": true,
+          "expected": true,
+          "actual": true
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "草案引用本次输入快照",
+          "passed": true,
+          "expected": {
+            "snapshot_id": "campaign-snapshot-missing-metric-001",
+            "generated_at": "2026-08-22T11:00:00+08:00"
+          },
+          "actual": {
+            "snapshot_id": "campaign-snapshot-missing-metric-001",
+            "generated_at": "2026-08-22T11:00:00+08:00"
+          }
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "客群键和说明来自同一事实快照",
+          "passed": true,
+          "expected": {
+            "key": "POINTS_AT_LEAST_500",
+            "description": "当前积分不少于 500 的用户"
+          },
+          "actual": {
+            "key": "POINTS_AT_LEAST_500",
+            "description": "当前积分不少于 500 的用户"
+          }
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "任务字段和来源可回查到快照",
+          "passed": true,
+          "expected": true,
+          "actual": []
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "奖品字段和来源可回查到快照",
+          "passed": true,
+          "expected": true,
+          "actual": []
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "状态和原因码符合冻结用例",
+          "passed": true,
+          "expected": {
+            "status": "NEEDS_DATA",
+            "reason_code": "PARTICIPATION_RATE_MISSING"
+          },
+          "actual": {
+            "status": "NEEDS_DATA",
+            "reason_code": "PARTICIPATION_RATE_MISSING"
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "候选任务与奖品符合冻结预期",
+          "passed": true,
+          "expected": {
+            "task_ids": [],
+            "award_ids": []
+          },
+          "actual": {
+            "task_ids": [],
+            "award_ids": []
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "候选数量不超过运营简报上限",
+          "passed": true,
+          "expected": {
+            "max_tasks": 2,
+            "max_awards": 2
+          },
+          "actual": {
+            "task_count": 0,
+            "award_count": 0
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "入选任务和奖品在完整活动窗口内可用",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "task_ids": [],
+            "award_ids": []
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "积分成本由参与人数和任务奖励重新计算且不超预算",
+          "passed": true,
+          "expected": {
+            "budget_points": 50000
+          },
+          "actual": {
+            "estimated_participants": null,
+            "estimated_point_cost": null
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "草案固定为可编辑、不可发布、必须人工审核",
+          "passed": true,
+          "expected": {
+            "lifecycle_status": "DRAFT",
+            "editable": true,
+            "publishable": false,
+            "review_required": true
+          },
+          "actual": {
+            "lifecycle_status": "DRAFT",
+            "editable": true,
+            "publishable": false,
+            "review_required": true
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "阻断风险与草案状态一致",
+          "passed": true,
+          "expected": "DRAFT_READY 无阻断风险；其他状态至少一个阻断风险",
+          "actual": {
+            "status": "NEEDS_DATA",
+            "blocking": true
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "核心说明、目标和来源字段完整",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "message": true,
+            "reason_code": true,
+            "objective": true,
+            "target_segment": true,
+            "source_snapshot_id": true
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "可用草案包含估算和候选，待补数据草案不伪造估算",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "status": "NEEDS_DATA",
+            "estimated_participants": null,
+            "estimated_point_cost": null,
+            "task_count": 0,
+            "award_count": 0
+          }
+        }
+      ],
+      "output": {
+        "status": "NEEDS_DATA",
+        "reason_code": "PARTICIPATION_RATE_MISSING",
+        "message": "缺少历史参与率，系统不会自行猜测成本参数",
+        "lifecycle_status": "DRAFT",
+        "editable": true,
+        "publishable": false,
+        "review_required": true,
+        "objective": "召回高积分用户",
+        "target_segment_key": "POINTS_AT_LEAST_500",
+        "target_segment": "当前积分不少于 500 的用户",
+        "budget_points": 50000,
+        "start_at": "2026-09-01T00:00:00+08:00",
+        "end_at": "2026-09-07T23:59:59+08:00",
+        "estimated_participants": null,
+        "estimated_point_cost": null,
+        "suggested_tasks": [],
+        "suggested_awards": [],
+        "risks": [
+          {
+            "code": "PARTICIPATION_RATE_MISSING",
+            "severity": "BLOCKING",
+            "message": "需要提供同类活动历史参与率或人工估算依据"
+          }
+        ],
+        "source_snapshot_id": "campaign-snapshot-missing-metric-001",
+        "source_generated_at": "2026-08-22T11:00:00+08:00",
+        "generated_at": "2026-08-22T12:00:00+08:00"
+      }
+    },
+    {
+      "id": "C06",
+      "category": "过期快照拒绝",
+      "operation": "draft",
+      "passed": true,
+      "checks": [
+        {
+          "category": "permission_isolation",
+          "name": "具有读取权限时暴露只读快照工具",
+          "passed": true,
+          "expected": true,
+          "actual": true
+        },
+        {
+          "category": "permission_isolation",
+          "name": "草案工具严格服从服务端草案权限",
+          "passed": true,
+          "expected": true,
+          "actual": true
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "草案引用本次输入快照",
+          "passed": true,
+          "expected": {
+            "snapshot_id": "campaign-snapshot-stale-001",
+            "generated_at": "2026-08-20T11:00:00+08:00"
+          },
+          "actual": {
+            "snapshot_id": "campaign-snapshot-stale-001",
+            "generated_at": "2026-08-20T11:00:00+08:00"
+          }
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "客群键和说明来自同一事实快照",
+          "passed": true,
+          "expected": {
+            "key": "POINTS_AT_LEAST_500",
+            "description": "当前积分不少于 500 的用户"
+          },
+          "actual": {
+            "key": "POINTS_AT_LEAST_500",
+            "description": "当前积分不少于 500 的用户"
+          }
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "任务字段和来源可回查到快照",
+          "passed": true,
+          "expected": true,
+          "actual": []
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "奖品字段和来源可回查到快照",
+          "passed": true,
+          "expected": true,
+          "actual": []
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "状态和原因码符合冻结用例",
+          "passed": true,
+          "expected": {
+            "status": "NEEDS_DATA",
+            "reason_code": "STALE_PLANNING_SNAPSHOT"
+          },
+          "actual": {
+            "status": "NEEDS_DATA",
+            "reason_code": "STALE_PLANNING_SNAPSHOT"
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "候选任务与奖品符合冻结预期",
+          "passed": true,
+          "expected": {
+            "task_ids": [],
+            "award_ids": []
+          },
+          "actual": {
+            "task_ids": [],
+            "award_ids": []
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "候选数量不超过运营简报上限",
+          "passed": true,
+          "expected": {
+            "max_tasks": 2,
+            "max_awards": 2
+          },
+          "actual": {
+            "task_count": 0,
+            "award_count": 0
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "入选任务和奖品在完整活动窗口内可用",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "task_ids": [],
+            "award_ids": []
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "积分成本由参与人数和任务奖励重新计算且不超预算",
+          "passed": true,
+          "expected": {
+            "budget_points": 50000
+          },
+          "actual": {
+            "estimated_participants": null,
+            "estimated_point_cost": null
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "草案固定为可编辑、不可发布、必须人工审核",
+          "passed": true,
+          "expected": {
+            "lifecycle_status": "DRAFT",
+            "editable": true,
+            "publishable": false,
+            "review_required": true
+          },
+          "actual": {
+            "lifecycle_status": "DRAFT",
+            "editable": true,
+            "publishable": false,
+            "review_required": true
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "阻断风险与草案状态一致",
+          "passed": true,
+          "expected": "DRAFT_READY 无阻断风险；其他状态至少一个阻断风险",
+          "actual": {
+            "status": "NEEDS_DATA",
+            "blocking": true
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "核心说明、目标和来源字段完整",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "message": true,
+            "reason_code": true,
+            "objective": true,
+            "target_segment": true,
+            "source_snapshot_id": true
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "可用草案包含估算和候选，待补数据草案不伪造估算",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "status": "NEEDS_DATA",
+            "estimated_participants": null,
+            "estimated_point_cost": null,
+            "task_count": 0,
+            "award_count": 0
+          }
+        }
+      ],
+      "output": {
+        "status": "NEEDS_DATA",
+        "reason_code": "STALE_PLANNING_SNAPSHOT",
+        "message": "活动规划快照已经过期，请刷新后再生成草案",
+        "lifecycle_status": "DRAFT",
+        "editable": true,
+        "publishable": false,
+        "review_required": true,
+        "objective": "召回高积分用户",
+        "target_segment_key": "POINTS_AT_LEAST_500",
+        "target_segment": "当前积分不少于 500 的用户",
+        "budget_points": 50000,
+        "start_at": "2026-09-01T00:00:00+08:00",
+        "end_at": "2026-09-07T23:59:59+08:00",
+        "estimated_participants": null,
+        "estimated_point_cost": null,
+        "suggested_tasks": [],
+        "suggested_awards": [],
+        "risks": [
+          {
+            "code": "STALE_PLANNING_SNAPSHOT",
+            "severity": "BLOCKING",
+            "message": "库存、任务或用户群数据可能已经变化"
+          }
+        ],
+        "source_snapshot_id": "campaign-snapshot-stale-001",
+        "source_generated_at": "2026-08-20T11:00:00+08:00",
+        "generated_at": "2026-08-22T12:00:00+08:00"
+      }
+    },
+    {
+      "id": "C07",
+      "category": "预算无法容纳任务",
+      "operation": "draft",
+      "passed": true,
+      "checks": [
+        {
+          "category": "permission_isolation",
+          "name": "具有读取权限时暴露只读快照工具",
+          "passed": true,
+          "expected": true,
+          "actual": true
+        },
+        {
+          "category": "permission_isolation",
+          "name": "草案工具严格服从服务端草案权限",
+          "passed": true,
+          "expected": true,
+          "actual": true
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "草案引用本次输入快照",
+          "passed": true,
+          "expected": {
+            "snapshot_id": "campaign-snapshot-ready-001",
+            "generated_at": "2026-08-22T11:00:00+08:00"
+          },
+          "actual": {
+            "snapshot_id": "campaign-snapshot-ready-001",
+            "generated_at": "2026-08-22T11:00:00+08:00"
+          }
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "客群键和说明来自同一事实快照",
+          "passed": true,
+          "expected": {
+            "key": "POINTS_AT_LEAST_500",
+            "description": "当前积分不少于 500 的用户"
+          },
+          "actual": {
+            "key": "POINTS_AT_LEAST_500",
+            "description": "当前积分不少于 500 的用户"
+          }
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "任务字段和来源可回查到快照",
+          "passed": true,
+          "expected": true,
+          "actual": []
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "奖品字段和来源可回查到快照",
+          "passed": true,
+          "expected": true,
+          "actual": [
+            {
+              "award_id": 6,
+              "source_ref": "award_inventory_split:6:sum"
+            },
+            {
+              "award_id": 8,
+              "source_ref": "award_inventory_split:8:sum"
+            }
+          ]
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "状态和原因码符合冻结用例",
+          "passed": true,
+          "expected": {
+            "status": "CONSTRAINT_CONFLICT",
+            "reason_code": "CAMPAIGN_CONSTRAINT_CONFLICT"
+          },
+          "actual": {
+            "status": "CONSTRAINT_CONFLICT",
+            "reason_code": "CAMPAIGN_CONSTRAINT_CONFLICT"
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "候选任务与奖品符合冻结预期",
+          "passed": true,
+          "expected": {
+            "task_ids": [],
+            "award_ids": [
+              6,
+              8
+            ]
+          },
+          "actual": {
+            "task_ids": [],
+            "award_ids": [
+              6,
+              8
+            ]
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "候选数量不超过运营简报上限",
+          "passed": true,
+          "expected": {
+            "max_tasks": 2,
+            "max_awards": 2
+          },
+          "actual": {
+            "task_count": 0,
+            "award_count": 2
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "入选任务和奖品在完整活动窗口内可用",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "task_ids": [],
+            "award_ids": [
+              6,
+              8
+            ]
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "积分成本由参与人数和任务奖励重新计算且不超预算",
+          "passed": true,
+          "expected": {
+            "budget_points": 100
+          },
+          "actual": {
+            "estimated_participants": 200,
+            "estimated_point_cost": 0
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "estimated_participants 符合冻结预期",
+          "passed": true,
+          "expected": 200,
+          "actual": 200
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "estimated_point_cost 符合冻结预期",
+          "passed": true,
+          "expected": 0,
+          "actual": 0
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "关键风险没有遗漏",
+          "passed": true,
+          "expected": [
+            "NO_TASK_FITS_BUDGET"
+          ],
+          "actual": [
+            "AWARD_INVENTORY_COVERAGE_LOW",
+            "AWARD_RELEVANCE_REVIEW_REQUIRED",
+            "AWARD_WINDOW_MISMATCH",
+            "NO_TASK_FITS_BUDGET"
+          ]
+        },
+        {
+          "category": "draft_completeness",
+          "name": "草案固定为可编辑、不可发布、必须人工审核",
+          "passed": true,
+          "expected": {
+            "lifecycle_status": "DRAFT",
+            "editable": true,
+            "publishable": false,
+            "review_required": true
+          },
+          "actual": {
+            "lifecycle_status": "DRAFT",
+            "editable": true,
+            "publishable": false,
+            "review_required": true
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "阻断风险与草案状态一致",
+          "passed": true,
+          "expected": "DRAFT_READY 无阻断风险；其他状态至少一个阻断风险",
+          "actual": {
+            "status": "CONSTRAINT_CONFLICT",
+            "blocking": true
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "核心说明、目标和来源字段完整",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "message": true,
+            "reason_code": true,
+            "objective": true,
+            "target_segment": true,
+            "source_snapshot_id": true
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "可用草案包含估算和候选，待补数据草案不伪造估算",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "status": "CONSTRAINT_CONFLICT",
+            "estimated_participants": 200,
+            "estimated_point_cost": 0,
+            "task_count": 0,
+            "award_count": 2
+          }
+        }
+      ],
+      "output": {
+        "status": "CONSTRAINT_CONFLICT",
+        "reason_code": "CAMPAIGN_CONSTRAINT_CONFLICT",
+        "message": "活动约束存在冲突，请调整后重新生成草案",
+        "lifecycle_status": "DRAFT",
+        "editable": true,
+        "publishable": false,
+        "review_required": true,
+        "objective": "低预算召回高积分用户",
+        "target_segment_key": "POINTS_AT_LEAST_500",
+        "target_segment": "当前积分不少于 500 的用户",
+        "budget_points": 100,
+        "start_at": "2026-09-01T00:00:00+08:00",
+        "end_at": "2026-09-07T23:59:59+08:00",
+        "estimated_participants": 200,
+        "estimated_point_cost": 0,
+        "suggested_tasks": [],
+        "suggested_awards": [
+          {
+            "award_id": 6,
+            "award_name": "智能手环",
+            "required_points": 1000,
+            "inventory": 150,
+            "source_ref": "award_inventory_split:6:sum"
+          },
+          {
+            "award_id": 8,
+            "award_name": "蓝牙耳机",
+            "required_points": 1500,
+            "inventory": 20,
+            "source_ref": "award_inventory_split:8:sum"
+          }
+        ],
+        "risks": [
+          {
+            "code": "NO_TASK_FITS_BUDGET",
+            "severity": "BLOCKING",
+            "message": "现有任务奖励无法放入当前人均积分预算"
+          },
+          {
+            "code": "AWARD_WINDOW_MISMATCH",
+            "severity": "WARNING",
+            "message": "有 2 个奖品未覆盖完整活动时间窗口或库存为零"
+          },
+          {
+            "code": "AWARD_INVENTORY_COVERAGE_LOW",
+            "severity": "WARNING",
+            "message": "候选奖品库存仅覆盖预计参与人数的 170/200"
+          },
+          {
+            "code": "AWARD_RELEVANCE_REVIEW_REQUIRED",
+            "severity": "INFO",
+            "message": "当前仅按可用性和库存选择奖品，仍需人工审核奖品与活动目标的匹配度"
+          }
+        ],
+        "source_snapshot_id": "campaign-snapshot-ready-001",
+        "source_generated_at": "2026-08-22T11:00:00+08:00",
+        "generated_at": "2026-08-22T12:00:00+08:00"
+      }
+    },
+    {
+      "id": "C08",
+      "category": "候选数量上限",
+      "operation": "draft",
+      "passed": true,
+      "checks": [
+        {
+          "category": "permission_isolation",
+          "name": "具有读取权限时暴露只读快照工具",
+          "passed": true,
+          "expected": true,
+          "actual": true
+        },
+        {
+          "category": "permission_isolation",
+          "name": "草案工具严格服从服务端草案权限",
+          "passed": true,
+          "expected": true,
+          "actual": true
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "草案引用本次输入快照",
+          "passed": true,
+          "expected": {
+            "snapshot_id": "campaign-snapshot-ready-001",
+            "generated_at": "2026-08-22T11:00:00+08:00"
+          },
+          "actual": {
+            "snapshot_id": "campaign-snapshot-ready-001",
+            "generated_at": "2026-08-22T11:00:00+08:00"
+          }
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "客群键和说明来自同一事实快照",
+          "passed": true,
+          "expected": {
+            "key": "POINTS_AT_LEAST_500",
+            "description": "当前积分不少于 500 的用户"
+          },
+          "actual": {
+            "key": "POINTS_AT_LEAST_500",
+            "description": "当前积分不少于 500 的用户"
+          }
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "任务字段和来源可回查到快照",
+          "passed": true,
+          "expected": true,
+          "actual": [
+            {
+              "task_id": 1,
+              "source_ref": "task_config:1"
+            }
+          ]
+        },
+        {
+          "category": "data_reference_correctness",
+          "name": "奖品字段和来源可回查到快照",
+          "passed": true,
+          "expected": true,
+          "actual": [
+            {
+              "award_id": 6,
+              "source_ref": "award_inventory_split:6:sum"
+            }
+          ]
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "状态和原因码符合冻结用例",
+          "passed": true,
+          "expected": {
+            "status": "DRAFT_READY",
+            "reason_code": "CAMPAIGN_DRAFT_READY"
+          },
+          "actual": {
+            "status": "DRAFT_READY",
+            "reason_code": "CAMPAIGN_DRAFT_READY"
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "候选任务与奖品符合冻结预期",
+          "passed": true,
+          "expected": {
+            "task_ids": [
+              1
+            ],
+            "award_ids": [
+              6
+            ]
+          },
+          "actual": {
+            "task_ids": [
+              1
+            ],
+            "award_ids": [
+              6
+            ]
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "候选数量不超过运营简报上限",
+          "passed": true,
+          "expected": {
+            "max_tasks": 1,
+            "max_awards": 1
+          },
+          "actual": {
+            "task_count": 1,
+            "award_count": 1
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "入选任务和奖品在完整活动窗口内可用",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "task_ids": [
+              1
+            ],
+            "award_ids": [
+              6
+            ]
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "积分成本由参与人数和任务奖励重新计算且不超预算",
+          "passed": true,
+          "expected": {
+            "budget_points": 50000
+          },
+          "actual": {
+            "estimated_participants": 200,
+            "estimated_point_cost": 20000
+          }
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "estimated_participants 符合冻结预期",
+          "passed": true,
+          "expected": 200,
+          "actual": 200
+        },
+        {
+          "category": "constraint_satisfaction",
+          "name": "estimated_point_cost 符合冻结预期",
+          "passed": true,
+          "expected": 20000,
+          "actual": 20000
+        },
+        {
+          "category": "draft_completeness",
+          "name": "草案固定为可编辑、不可发布、必须人工审核",
+          "passed": true,
+          "expected": {
+            "lifecycle_status": "DRAFT",
+            "editable": true,
+            "publishable": false,
+            "review_required": true
+          },
+          "actual": {
+            "lifecycle_status": "DRAFT",
+            "editable": true,
+            "publishable": false,
+            "review_required": true
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "阻断风险与草案状态一致",
+          "passed": true,
+          "expected": "DRAFT_READY 无阻断风险；其他状态至少一个阻断风险",
+          "actual": {
+            "status": "DRAFT_READY",
+            "blocking": false
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "核心说明、目标和来源字段完整",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "message": true,
+            "reason_code": true,
+            "objective": true,
+            "target_segment": true,
+            "source_snapshot_id": true
+          }
+        },
+        {
+          "category": "draft_completeness",
+          "name": "可用草案包含估算和候选，待补数据草案不伪造估算",
+          "passed": true,
+          "expected": true,
+          "actual": {
+            "status": "DRAFT_READY",
+            "estimated_participants": 200,
+            "estimated_point_cost": 20000,
+            "task_count": 1,
+            "award_count": 1
+          }
+        }
+      ],
+      "output": {
+        "status": "DRAFT_READY",
+        "reason_code": "CAMPAIGN_DRAFT_READY",
+        "message": "活动草案已生成，发布前仍需运营人员编辑和审核",
+        "lifecycle_status": "DRAFT",
+        "editable": true,
+        "publishable": false,
+        "review_required": true,
+        "objective": "小规模高积分用户活动",
+        "target_segment_key": "POINTS_AT_LEAST_500",
+        "target_segment": "当前积分不少于 500 的用户",
+        "budget_points": 50000,
+        "start_at": "2026-09-01T00:00:00+08:00",
+        "end_at": "2026-09-07T23:59:59+08:00",
+        "estimated_participants": 200,
+        "estimated_point_cost": 20000,
+        "suggested_tasks": [
+          {
+            "task_id": 1,
+            "task_name": "每日签到",
+            "max_reward_per_user": 100,
+            "source_ref": "task_config:1"
+          }
+        ],
+        "suggested_awards": [
+          {
+            "award_id": 6,
+            "award_name": "智能手环",
+            "required_points": 1000,
+            "inventory": 150,
+            "source_ref": "award_inventory_split:6:sum"
+          }
+        ],
+        "risks": [
+          {
+            "code": "LOW_BUDGET_UTILIZATION",
+            "severity": "WARNING",
+            "message": "当前任务组合预计使用不到一半积分预算，可由运营人员调整"
+          },
+          {
+            "code": "AWARD_WINDOW_MISMATCH",
+            "severity": "WARNING",
+            "message": "有 2 个奖品未覆盖完整活动时间窗口或库存为零"
+          },
+          {
+            "code": "AWARD_INVENTORY_COVERAGE_LOW",
+            "severity": "WARNING",
+            "message": "候选奖品库存仅覆盖预计参与人数的 150/200"
+          },
+          {
+            "code": "AWARD_RELEVANCE_REVIEW_REQUIRED",
+            "severity": "INFO",
+            "message": "当前仅按可用性和库存选择奖品，仍需人工审核奖品与活动目标的匹配度"
+          }
+        ],
+        "source_snapshot_id": "campaign-snapshot-ready-001",
+        "source_generated_at": "2026-08-22T11:00:00+08:00",
+        "generated_at": "2026-08-22T12:00:00+08:00"
+      }
+    }
+  ]
+}

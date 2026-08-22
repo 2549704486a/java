@@ -1,0 +1,254 @@
+{
+  "schema_version": 1,
+  "frozen_at": "2026-08-22T12:00:00+08:00",
+  "snapshots": {
+    "ready": {
+      "snapshotId": "campaign-snapshot-ready-001",
+      "generatedAt": "2026-08-22T11:00:00+08:00",
+      "segment": {
+        "segmentKey": "POINTS_AT_LEAST_500",
+        "description": "当前积分不少于 500 的用户",
+        "estimatedUsers": 1000,
+        "asOf": "2026-08-22T11:00:00+08:00"
+      },
+      "tasks": [
+        {
+          "taskId": 1,
+          "taskName": "每日签到",
+          "rewardPoints": 100,
+          "maxCompletionsPerUser": 1,
+          "active": true,
+          "sourceRef": "task_config:1"
+        },
+        {
+          "taskId": 2,
+          "taskName": "浏览指定商品",
+          "rewardPoints": 80,
+          "maxCompletionsPerUser": 1,
+          "active": true,
+          "sourceRef": "task_config:2"
+        },
+        {
+          "taskId": 3,
+          "taskName": "已停用分享任务",
+          "rewardPoints": 60,
+          "maxCompletionsPerUser": 1,
+          "active": false,
+          "sourceRef": "task_config:3"
+        },
+        {
+          "taskId": 4,
+          "taskName": "短期加分任务",
+          "rewardPoints": 200,
+          "maxCompletionsPerUser": 1,
+          "active": true,
+          "availableUntil": "2026-09-03T23:59:59+08:00",
+          "sourceRef": "task_config:4"
+        }
+      ],
+      "awards": [
+        {
+          "awardId": 6,
+          "awardName": "智能手环",
+          "requiredPoints": 1000,
+          "inventory": 150,
+          "active": true,
+          "availableFrom": "2026-08-01T00:00:00+08:00",
+          "availableUntil": "2026-10-01T00:00:00+08:00",
+          "sourceRef": "award_inventory_split:6:sum"
+        },
+        {
+          "awardId": 8,
+          "awardName": "蓝牙耳机",
+          "requiredPoints": 1500,
+          "inventory": 20,
+          "active": true,
+          "availableFrom": "2026-08-01T00:00:00+08:00",
+          "availableUntil": "2026-10-01T00:00:00+08:00",
+          "sourceRef": "award_inventory_split:8:sum"
+        },
+        {
+          "awardId": 9,
+          "awardName": "库存为零的水杯",
+          "requiredPoints": 500,
+          "inventory": 0,
+          "active": true,
+          "sourceRef": "award_inventory_split:9:sum"
+        },
+        {
+          "awardId": 10,
+          "awardName": "活动中途过期奖品",
+          "requiredPoints": 800,
+          "inventory": 500,
+          "active": true,
+          "availableUntil": "2026-09-03T23:59:59+08:00",
+          "sourceRef": "award_inventory_split:10:sum"
+        }
+      ],
+      "historical_metrics": [
+        {
+          "metricName": "participation_rate",
+          "value": 0.2,
+          "sampleSize": 3000,
+          "asOf": "2026-08-15T20:00:00+08:00",
+          "sourceRef": "campaign_metric_history:101"
+        }
+      ]
+    },
+    "missing_metric": {
+      "copy_from": "ready",
+      "snapshotId": "campaign-snapshot-missing-metric-001",
+      "historical_metrics": []
+    },
+    "stale": {
+      "copy_from": "ready",
+      "snapshotId": "campaign-snapshot-stale-001",
+      "generatedAt": "2026-08-20T11:00:00+08:00"
+    }
+  },
+  "cases": [
+    {
+      "id": "C01",
+      "category": "完整活动草案",
+      "operation": "draft",
+      "snapshot": "ready",
+      "permissions": ["campaign:read", "campaign:draft"],
+      "brief": {
+        "target_segment_key": "POINTS_AT_LEAST_500",
+        "objective": "召回高积分用户",
+        "budget_points": 50000,
+        "start_at": "2026-09-01T00:00:00+08:00",
+        "end_at": "2026-09-07T23:59:59+08:00",
+        "max_tasks": 2,
+        "max_awards": 2
+      },
+      "expected": {
+        "status": "DRAFT_READY",
+        "reason_code": "CAMPAIGN_DRAFT_READY",
+        "task_ids": [1, 2],
+        "award_ids": [6, 8],
+        "estimated_participants": 200,
+        "estimated_point_cost": 36000
+      }
+    },
+    {
+      "id": "C02",
+      "category": "只读运营权限",
+      "operation": "tool_inventory",
+      "snapshot": "ready",
+      "permissions": ["campaign:read"],
+      "expected": {
+        "tool_names": ["get_campaign_planning_snapshot"]
+      }
+    },
+    {
+      "id": "C03",
+      "category": "缺少读取权限",
+      "operation": "tool_inventory",
+      "snapshot": "ready",
+      "permissions": ["campaign:draft"],
+      "expected": {
+        "error_type": "OperatorPermissionError"
+      }
+    },
+    {
+      "id": "C04",
+      "category": "未知客群拒绝",
+      "operation": "snapshot",
+      "snapshot": "ready",
+      "permissions": ["campaign:read"],
+      "target_segment_key": "UNKNOWN_SEGMENT",
+      "expected": {
+        "success": false,
+        "code": "CAMPAIGN_SEGMENT_NOT_FOUND"
+      }
+    },
+    {
+      "id": "C05",
+      "category": "缺少历史指标",
+      "operation": "draft",
+      "snapshot": "missing_metric",
+      "permissions": ["campaign:read", "campaign:draft"],
+      "brief": {
+        "target_segment_key": "POINTS_AT_LEAST_500",
+        "objective": "召回高积分用户",
+        "budget_points": 50000,
+        "start_at": "2026-09-01T00:00:00+08:00",
+        "end_at": "2026-09-07T23:59:59+08:00"
+      },
+      "expected": {
+        "status": "NEEDS_DATA",
+        "reason_code": "PARTICIPATION_RATE_MISSING",
+        "task_ids": [],
+        "award_ids": []
+      }
+    },
+    {
+      "id": "C06",
+      "category": "过期快照拒绝",
+      "operation": "draft",
+      "snapshot": "stale",
+      "permissions": ["campaign:read", "campaign:draft"],
+      "brief": {
+        "target_segment_key": "POINTS_AT_LEAST_500",
+        "objective": "召回高积分用户",
+        "budget_points": 50000,
+        "start_at": "2026-09-01T00:00:00+08:00",
+        "end_at": "2026-09-07T23:59:59+08:00"
+      },
+      "expected": {
+        "status": "NEEDS_DATA",
+        "reason_code": "STALE_PLANNING_SNAPSHOT",
+        "task_ids": [],
+        "award_ids": []
+      }
+    },
+    {
+      "id": "C07",
+      "category": "预算无法容纳任务",
+      "operation": "draft",
+      "snapshot": "ready",
+      "permissions": ["campaign:read", "campaign:draft"],
+      "brief": {
+        "target_segment_key": "POINTS_AT_LEAST_500",
+        "objective": "低预算召回高积分用户",
+        "budget_points": 100,
+        "start_at": "2026-09-01T00:00:00+08:00",
+        "end_at": "2026-09-07T23:59:59+08:00"
+      },
+      "expected": {
+        "status": "CONSTRAINT_CONFLICT",
+        "reason_code": "CAMPAIGN_CONSTRAINT_CONFLICT",
+        "task_ids": [],
+        "award_ids": [6, 8],
+        "estimated_participants": 200,
+        "estimated_point_cost": 0,
+        "risk_codes": ["NO_TASK_FITS_BUDGET"]
+      }
+    },
+    {
+      "id": "C08",
+      "category": "候选数量上限",
+      "operation": "draft",
+      "snapshot": "ready",
+      "permissions": ["campaign:read", "campaign:draft"],
+      "brief": {
+        "target_segment_key": "POINTS_AT_LEAST_500",
+        "objective": "小规模高积分用户活动",
+        "budget_points": 50000,
+        "start_at": "2026-09-01T00:00:00+08:00",
+        "end_at": "2026-09-07T23:59:59+08:00",
+        "max_tasks": 1,
+        "max_awards": 1
+      },
+      "expected": {
+        "status": "DRAFT_READY",
+        "reason_code": "CAMPAIGN_DRAFT_READY",
+        "task_ids": [1],
+        "award_ids": [6],
+        "estimated_participants": 200,
+        "estimated_point_cost": 20000
+      }
+    }
+  ]
+}
