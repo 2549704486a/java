@@ -7,7 +7,13 @@ from datetime import date
 from pydantic import ValidationError
 
 from app.api_client import BusinessApiClient, BusinessApiError
-from app.growth_memory_store import ForgetScope, GrowthMemoryStoreBackend, MemoryChangeResult
+from app.growth_memory_store import (
+    ForgetScope,
+    GrowthMemoryStoreBackend,
+    MemoryChangeResult,
+    MemoryType,
+    MemoryWriteResult,
+)
 from app.models import AwardData, ToolEnvelope
 
 
@@ -32,6 +38,34 @@ class GrowthMemorySkill:
             data=data,
             message="已读取用户长期目标与偏好" if any(data.values()) else "当前还没有长期目标或偏好",
         )
+
+    def remember(
+        self,
+        *,
+        user_id: int,
+        session_id: str,
+        memory_type: MemoryType,
+        raw_text: str,
+        subject: str | None = None,
+        polarity: str | None = None,
+        time_expression: str | None = None,
+        target_year: int | None = None,
+    ) -> ToolEnvelope:
+        # 原文是事实来源；结构化字段只帮助检索和冲突识别，缺失时照样可以保存。
+        normalized_data = {
+            "subject": subject,
+            "polarity": polarity,
+            "timeExpression": time_expression,
+            "targetYear": target_year,
+        }
+        result = self.store.remember(
+            user_id=user_id,
+            source_session=session_id,
+            memory_type=memory_type,
+            raw_text=raw_text,
+            normalized_data=normalized_data,
+        )
+        return self._written(result)
 
     def save_goal(
         self,
@@ -133,13 +167,34 @@ class GrowthMemorySkill:
         for value in data.values():
             if isinstance(value, dict):
                 value.pop("sourceSession", None)
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        item.pop("sourceSession", None)
+                        item.pop("sourceMessageId", None)
         return data
+
+    def _written(self, result: MemoryWriteResult) -> ToolEnvelope:
+        memory = result.memory.model_dump(mode="json", by_alias=True)
+        memory.pop("sourceSession", None)
+        memory.pop("sourceMessageId", None)
+        return ToolEnvelope(
+            success=True,
+            code=result.code,
+            data={"action": result.action, "memory": memory},
+            message=result.message,
+        )
 
     def _changed(self, result: MemoryChangeResult) -> ToolEnvelope:
         data = result.memory.model_dump(mode="json", by_alias=True)
         for value in data.values():
             if isinstance(value, dict):
                 value.pop("sourceSession", None)
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        item.pop("sourceSession", None)
+                        item.pop("sourceMessageId", None)
         return ToolEnvelope(
             # 幂等遗忘没有命中记录也属于成功处理，而不是系统失败。
             success=result.applied or result.code == "NOTHING_TO_FORGET",

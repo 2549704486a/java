@@ -125,5 +125,31 @@ class GrowthMemorySkillTest(unittest.TestCase):
         self.assertIsNone(queried["data"]["goal"])
 
 
+    def test_generic_memory_tool_accepts_incomplete_natural_language_memory(self):
+        tools = build_tools(
+            AwardClient(),
+            10,
+            growth_memory_store=self.store,
+        )
+        by_name = {item.name: item for item in tools}
+
+        with bind_execution_context("user:10:session:natural-memory"):
+            result = by_name["remember_user_memory"].invoke(
+                {
+                    "memory_type": "goal",
+                    "raw_text": "我打算明年换一个手环",
+                    "subject": "手环",
+                    "time_expression": "明年",
+                    "target_year": 2027,
+                }
+            )
+
+        self.assertEqual("MEMORY_ADDED", result["code"])
+        self.assertEqual("我打算明年换一个手环", result["data"]["memory"]["rawText"])
+        queried = by_name["get_growth_memory"].invoke({})
+        self.assertEqual(1, len(queried["data"]["memories"]))
+        self.assertNotIn("sourceSession", queried["data"]["memories"][0])
+
+
 if __name__ == "__main__":
     unittest.main()

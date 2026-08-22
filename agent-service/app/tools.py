@@ -66,6 +66,37 @@ class SaveRedemptionGoalInput(BaseModel):
     target_date: date = Field(description="用户计划完成兑换的目标日期，格式 YYYY-MM-DD")
 
 
+class RememberUserMemoryInput(BaseModel):
+    memory_type: Literal["preference", "goal", "profile"] = Field(
+        description="记忆类型：稳定偏好、长期目标或相对稳定的个人信息"
+    )
+    raw_text: str = Field(
+        min_length=1,
+        max_length=500,
+        description="忠实保留用户表达的原文，不要改写成业务字段列表",
+    )
+    subject: str | None = Field(
+        default=None,
+        max_length=100,
+        description="可选主题，例如小鸟、手环、数码商品；无法确定时留空",
+    )
+    polarity: Literal["LIKE", "DISLIKE"] | None = Field(
+        default=None,
+        description="仅偏好有明确喜欢或不喜欢时填写",
+    )
+    time_expression: str | None = Field(
+        default=None,
+        max_length=100,
+        description="用户原始时间表达，例如明年；没有时留空",
+    )
+    target_year: int | None = Field(
+        default=None,
+        ge=2000,
+        le=2100,
+        description="能够无歧义换算时填写目标年份，否则留空",
+    )
+
+
 class SaveUserPreferencesInput(BaseModel):
     preferred_categories: list[str] = Field(
         default_factory=list,
@@ -85,7 +116,7 @@ class SaveUserPreferencesInput(BaseModel):
 
 
 class ForgetGrowthMemoryInput(BaseModel):
-    scope: Literal["goal", "preferences", "all"] = Field(
+    scope: Literal["goal", "preferences", "profile", "all"] = Field(
         description="要遗忘的范围：兑换目标、偏好或全部长期记忆"
     )
 
@@ -298,6 +329,48 @@ def build_tools(
         )
 
     @tool(
+        args_schema=RememberUserMemoryInput,
+        description=(
+            "用户直接表达跨会话仍有价值的偏好、目标或稳定个人信息时使用。"
+            "原文可以宽泛或不完整，不得为了保存记忆追问奖品 ID、精确日期或业务分类；"
+            "结构化字段只是可选辅助。临时条件、实时业务事实、敏感信息和模型推测不得写入。"
+        ),
+        extras=memory_manifest.trace_metadata(),
+    )
+    def remember_user_memory(
+        memory_type: str,
+        raw_text: str,
+        subject: str | None = None,
+        polarity: str | None = None,
+        time_expression: str | None = None,
+        target_year: int | None = None,
+    ) -> dict:
+        arguments = {
+            "memory_type": memory_type,
+            "raw_text_chars": len(raw_text),
+            "has_subject": bool(subject),
+            "has_time_expression": bool(time_expression),
+        }
+
+        def execute() -> dict:
+            context_error = exchange_context_error()
+            if context_error is not None:
+                return context_error
+            registry.activate(memory_manifest.name)
+            return growth_memory_skill.remember(
+                user_id=user_id,
+                session_id=current_thread_id() or "",
+                memory_type=memory_type,
+                raw_text=raw_text,
+                subject=subject,
+                polarity=polarity,
+                time_expression=time_expression,
+                target_year=target_year,
+            ).model_dump(mode="json")
+
+        return execute_traced("remember_user_memory", arguments, execute)
+
+    @tool(
         args_schema=SaveRedemptionGoalInput,
         description=(
             "用户直接声明稳定的长期兑换目标，或明确要求记住、修改目标时使用，并立即保存。"
@@ -393,6 +466,7 @@ def build_tools(
         prepare_exchange,
         cancel_exchange,
         get_growth_memory,
+        remember_user_memory,
         save_redemption_goal,
         save_user_preferences,
         forget_growth_memory,

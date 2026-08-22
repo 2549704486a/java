@@ -56,6 +56,13 @@ class Settings:
     growth_memory_store: str = "memory"
     growth_memory_redis_url: str = "redis://127.0.0.1:6379/0"
     growth_memory_redis_prefix: str = "agent:growth:memory"
+    growth_memory_mysql_host: str = "127.0.0.1"
+    growth_memory_mysql_port: int = 3306
+    growth_memory_mysql_database: str = "budou"
+    growth_memory_mysql_user: str = "root"
+    growth_memory_mysql_password: str = "root"
+    growth_memory_mysql_table: str = "agent_long_term_memory"
+    growth_memory_mysql_connect_timeout: int = 3
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -143,7 +150,7 @@ class Settings:
                 os.getenv("EXCHANGE_CONFIRMATION_RETENTION_SECONDS", "3600")
             ),
             growth_memory_store=os.getenv(
-                "GROWTH_MEMORY_STORE", "redis"
+                "GROWTH_MEMORY_STORE", "mysql"
             ).strip().lower(),
             growth_memory_redis_url=(
                 os.getenv("GROWTH_MEMORY_REDIS_URL")
@@ -156,6 +163,29 @@ class Settings:
                 "GROWTH_MEMORY_REDIS_PREFIX",
                 "agent:growth:memory",
             ).strip(),
+            growth_memory_mysql_host=os.getenv(
+                "GROWTH_MEMORY_MYSQL_HOST", "127.0.0.1"
+            ).strip(),
+            growth_memory_mysql_port=int(
+                os.getenv("GROWTH_MEMORY_MYSQL_PORT", "3306")
+            ),
+            growth_memory_mysql_database=os.getenv(
+                "GROWTH_MEMORY_MYSQL_DATABASE", "budou"
+            ).strip(),
+            growth_memory_mysql_user=os.getenv(
+                "GROWTH_MEMORY_MYSQL_USER",
+                os.getenv("SPRING_DATASOURCE_USERNAME", "root"),
+            ).strip(),
+            growth_memory_mysql_password=os.getenv(
+                "GROWTH_MEMORY_MYSQL_PASSWORD",
+                os.getenv("SPRING_DATASOURCE_PASSWORD", "root"),
+            ),
+            growth_memory_mysql_table=os.getenv(
+                "GROWTH_MEMORY_MYSQL_TABLE", "agent_long_term_memory"
+            ).strip(),
+            growth_memory_mysql_connect_timeout=int(
+                os.getenv("GROWTH_MEMORY_MYSQL_CONNECT_TIMEOUT", "3")
+            ),
         )
 
     def require_llm_api_key(self) -> str:

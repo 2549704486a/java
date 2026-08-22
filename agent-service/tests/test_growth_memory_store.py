@@ -71,5 +71,49 @@ class GrowthMemoryStoreTest(unittest.TestCase):
         self.assertEqual("user:10:session:b", second.memory.preferences.source_session)
 
 
+    def test_atomic_memory_preserves_raw_text_and_handles_duplicate_and_conflict(self):
+        added = self.store.remember(
+            user_id=10,
+            source_session="user:10:session:a",
+            memory_type="preference",
+            raw_text="我喜欢小鸟",
+            normalized_data={"subject": "小鸟", "polarity": "LIKE"},
+        )
+        duplicate = self.store.remember(
+            user_id=10,
+            source_session="user:10:session:b",
+            memory_type="preference",
+            raw_text="我喜欢小鸟",
+            normalized_data={"subject": "小鸟", "polarity": "LIKE"},
+        )
+        superseded = self.store.remember(
+            user_id=10,
+            source_session="user:10:session:c",
+            memory_type="preference",
+            raw_text="我现在不喜欢小鸟了",
+            normalized_data={"subject": "小鸟", "polarity": "DISLIKE"},
+        )
+        goal = self.store.remember(
+            user_id=10,
+            source_session="user:10:session:c",
+            memory_type="goal",
+            raw_text="我打算明年换一个手环",
+            normalized_data={
+                "subject": "手环",
+                "timeExpression": "明年",
+                "targetYear": 2027,
+            },
+        )
+
+        self.assertEqual("ADD", added.action)
+        self.assertEqual("NOOP", duplicate.action)
+        self.assertEqual("SUPERSEDE", superseded.action)
+        self.assertEqual("ADD", goal.action)
+        memories = self.store.get(10).memories
+        self.assertEqual(2, len(memories))
+        self.assertIn("我现在不喜欢小鸟了", {item.raw_text for item in memories})
+        self.assertIn("我打算明年换一个手环", {item.raw_text for item in memories})
+
+
 if __name__ == "__main__":
     unittest.main()

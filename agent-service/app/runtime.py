@@ -18,6 +18,7 @@ from app.growth_memory_store import GrowthMemoryStore, GrowthMemoryStoreBackend
 from app.config import Settings
 from app.knowledge_search import KnowledgeSearchService, open_knowledge_search
 from app.models import PendingExchangeData, ToolEnvelope
+from app.mysql_growth_memory_store import MysqlGrowthMemoryStore
 from app.redis_confirmation_store import RedisConfirmationStore
 from app.redis_growth_memory_store import RedisGrowthMemoryStore
 from app.skills.controlled_exchange import (
@@ -398,6 +399,16 @@ def build_growth_memory_store(settings: Settings) -> GrowthMemoryStoreBackend:
         return RedisGrowthMemoryStore.from_url(
             settings.growth_memory_redis_url,
             key_prefix=settings.growth_memory_redis_prefix,
+        )
+    if backend == "mysql":
+        return MysqlGrowthMemoryStore(
+            host=settings.growth_memory_mysql_host,
+            port=settings.growth_memory_mysql_port,
+            database=settings.growth_memory_mysql_database,
+            user=settings.growth_memory_mysql_user,
+            password=settings.growth_memory_mysql_password,
+            table_name=settings.growth_memory_mysql_table,
+            connect_timeout=settings.growth_memory_mysql_connect_timeout,
         )
     raise ValueError(
         "GROWTH_MEMORY_STORE 仅支持 memory 或 redis，"

@@ -15,14 +15,14 @@
 - 建立受控 RAG 知识源目录，已实现文档切分、本地 Chroma 索引、在线只读检索、来源引用和新鲜度门禁。
 - Tool 层只对 GET 请求的瞬时网络错误做有限重试；兑换 POST 绝不自动重试。
 - 兑换必须经过“准备摘要 -> 用户明确确认 -> 服务端确定性路由 -> 原子消费一次性凭证”，确认凭证不进入模型上下文，受理后仍由旧事务消息链路异步完成。
-- 用户直接明确表达的稳定兑换目标和偏好经校验后直接写入，支持跨会话读取、修改、遗忘和目标过期标记；临时需求与模型推断不写入。
-- 不直连业务 MySQL 和 RocketMQ；只使用独立 Redis Key 前缀保存 Agent 自己的确认授权与长期记忆，不直接修改积分、库存和任务状态。
+- 用户直接明确表达的目标、偏好和非敏感个人信息按原文保存，支持跨会话读取、增量更新、冲突替代和遗忘；临时需求与模型推断不写入。
+- 长期记忆使用业务 MySQL 中的独立表作为事实来源；Redis 继续保存一次性确认凭证，并暂时保留旧记忆后端兼容能力。Agent 不直接修改积分、库存和任务状态。
 
 课程讲义中的 `langgraph.prebuilt.create_react_agent` 在当前版本已由 `langchain.agents.create_agent` 取代，二者承担相同的“模型决定工具 -> 执行工具 -> 返回结果 -> 继续推理”循环。
 
 ## 2. 环境准备
 
-要求 Python 3.11。先启动 Redis 和 Java 服务，默认地址分别为 `127.0.0.1:6379` 和 `http://127.0.0.1:8088`。
+要求 Python 3.11。先启动 MySQL、Redis 和 Java 服务，默认地址分别为 `127.0.0.1:3306`、`127.0.0.1:6379` 和 `http://127.0.0.1:8088`。首次升级执行 `sql/migrate_agent_long_term_memory.sql` 创建长期记忆表。
 
 ```powershell
 cd D:\工作\incentive-事务消息\agent-service
@@ -70,9 +70,13 @@ AGENT_ACCESS_TOKEN_TTL_SECONDS=3600
 AGENT_SESSION_TTL_SECONDS=3600
 AGENT_CONTEXT_MAX_TOKENS=6000
 AGENT_CONTEXT_MAX_TURNS=12
-GROWTH_MEMORY_STORE=redis
-GROWTH_MEMORY_REDIS_URL=redis://127.0.0.1:6379/0
-GROWTH_MEMORY_REDIS_PREFIX=agent:growth:memory
+GROWTH_MEMORY_STORE=mysql
+GROWTH_MEMORY_MYSQL_HOST=127.0.0.1
+GROWTH_MEMORY_MYSQL_PORT=3306
+GROWTH_MEMORY_MYSQL_DATABASE=budou
+GROWTH_MEMORY_MYSQL_USER=root
+GROWTH_MEMORY_MYSQL_PASSWORD=本地MySQL密码
+GROWTH_MEMORY_MYSQL_TABLE=agent_long_term_memory
 ```
 
 ## 3. 先验证业务 Skill
@@ -102,7 +106,7 @@ Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Too
 
 受控兑换示例：先说“我想兑换 6 号奖品”，Agent 展示奖品和积分摘要后，再在同一会话明确回复“确认兑换”。`EXCHANGE_PROCESSING` 只表示已进入旧链路处理流程，最终结果需要到订单页面查看；遇到 `SUBMISSION_UNKNOWN` 时先核对订单，不要立即重复提交。
 
-长期记忆示例：说“我喜欢数码类奖品”或“请记住，我想在 2026-09-01 前兑换 6 号奖品”，Agent 会把直接、稳定的陈述校验后保存，并明确告知结果。之后的新会话可以询问“你记得我喜欢什么奖品吗”或“我的兑换目标是什么”。“这次想看数码类奖品”只作为本轮条件，不会保存；说“忘掉我的兑换目标”时会按明确范围直接删除。
+长期记忆示例：说“我喜欢小鸟”或“我打算明年换一个手环”，Agent 会忠实保存原文，不会为了内部结构追问奖品 ID、精确日期或分类。只有真正兑换或制定精确计划时才补充业务参数。之后的新会话可以询问“你记得我喜欢什么吗”或“我的目标是什么”。“这次想看数码类商品”只作为本轮条件，不会保存。
 
 ## 5. 运行 HTTP 服务与前端
 

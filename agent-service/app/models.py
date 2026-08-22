@@ -183,8 +183,31 @@ class UserPreferenceData(BaseModel):
     source_session: str = Field(alias="sourceSession")
 
 
+class MemoryItem(BaseModel):
+    """一条可独立新增、更新和失效的长期记忆。"""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    memory_id: str = Field(alias="memoryId", min_length=1)
+    user_id: int = Field(alias="userId")
+    memory_type: Literal["preference", "goal", "profile", "episode"] = Field(
+        alias="memoryType"
+    )
+    memory_key: str = Field(alias="memoryKey", min_length=1)
+    raw_text: str = Field(alias="rawText", min_length=1, max_length=500)
+    normalized_data: dict = Field(default_factory=dict, alias="normalizedData")
+    status: Literal["ACTIVE", "SUPERSEDED", "DELETED"]
+    valid_from: datetime | None = Field(default=None, alias="validFrom")
+    valid_to: datetime | None = Field(default=None, alias="validTo")
+    source_session: str = Field(alias="sourceSession")
+    source_message_id: str | None = Field(default=None, alias="sourceMessageId")
+    created_at: datetime = Field(alias="createdAt")
+    updated_at: datetime = Field(alias="updatedAt")
+
+
 class GrowthMemoryData(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     goal: RedemptionGoalData | None = None
     preferences: UserPreferenceData | None = None
+    memories: list[MemoryItem] = Field(default_factory=list)
