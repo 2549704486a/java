@@ -8,16 +8,24 @@ from app.knowledge_search import (
     KnowledgeSearchError,
     KnowledgeSearchService,
     normalized_euclidean_relevance,
+    validate_index_freshness,
 )
+from app.knowledge_catalog import KnowledgeCatalog
 from app.tools import build_tools
 from app.trace import capture_tool_trace
 from evals.fixtures import FixtureBusinessApiClient
 
 
 class FakeVectorStore:
-    def __init__(self, results=None, error: Exception | None = None) -> None:
+    def __init__(
+        self,
+        results=None,
+        error: Exception | None = None,
+        metadatas: list[dict] | None = None,
+    ) -> None:
         self.results = results or []
         self.error = error
+        self.metadatas = metadatas or []
         self.queries: list[tuple[str, int]] = []
 
     def similarity_search_with_relevance_scores(self, query: str, k: int):
@@ -25,6 +33,12 @@ class FakeVectorStore:
         if self.error is not None:
             raise self.error
         return list(self.results)
+
+    def get(self, **kwargs):
+        return {
+            "ids": [str(index) for index in range(len(self.metadatas))],
+            "metadatas": list(self.metadatas),
+        }
 
 
 def rule_document(chunk_id: str = "exchange:1.0.0:0001") -> Document:
@@ -43,6 +57,54 @@ def rule_document(chunk_id: str = "exchange:1.0.0:0001") -> Document:
 
 
 class KnowledgeSearchServiceTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.snapshot = KnowledgeCatalog().load()
+
+    def _fresh_metadatas(self) -> list[dict]:
+        return [
+            {
+                "catalog_version": self.snapshot.version,
+                "knowledge_id": document.metadata.knowledge_id,
+                "knowledge_version": document.metadata.version,
+            }
+            for document in self.snapshot.documents
+        ]
+
+    def test_accepts_index_matching_catalog_and_document_versions(self):
+        validate_index_freshness(
+            FakeVectorStore(metadatas=self._fresh_metadatas()),
+            self.snapshot,
+        )
+
+    def test_rejects_stale_catalog_version(self):
+        metadatas = self._fresh_metadatas()
+        metadatas[0]["catalog_version"] = "2026.08.21.1"
+
+        with self.assertRaisesRegex(KnowledgeSearchError, "版本.*不一致"):
+            validate_index_freshness(
+                FakeVectorStore(metadatas=metadatas),
+                self.snapshot,
+            )
+
+    def test_rejects_missing_or_mixed_document_versions(self):
+        metadatas = self._fresh_metadatas()
+        metadatas[0]["knowledge_version"] = "0.9.0"
+        metadatas.pop()
+
+        with self.assertRaisesRegex(KnowledgeSearchError, "版本.*不一致"):
+            validate_index_freshness(
+                FakeVectorStore(metadatas=metadatas),
+                self.snapshot,
+            )
+
+    def test_rejects_index_without_version_metadata(self):
+        with self.assertRaisesRegex(KnowledgeSearchError, "缺少版本元数据"):
+            validate_index_freshness(
+                FakeVectorStore(metadatas=[{"knowledge_id": "legacy"}]),
+                self.snapshot,
+            )
+
     def test_normalized_relevance_is_bounded(self):
         self.assertEqual(1.0, normalized_euclidean_relevance(0.0))
         self.assertEqual(0.0, normalized_euclidean_relevance(10.0))

@@ -1,0 +1,174 @@
+{
+  "metadata": {
+    "created_at": "2026-08-22T12:39:11",
+    "embedding_model": "text-embedding-v4",
+    "chat_model": "deepseek-chat",
+    "relevance_threshold": 0.3,
+    "split": "all",
+    "case_ids": [
+      "RA09"
+    ]
+  },
+  "summary": {
+    "retrieval": {
+      "total": 0,
+      "passed": 0,
+      "top1_accuracy": 0.0,
+      "hit_at_3": 0.0,
+      "negative_rejection_rate": 0.0,
+      "citation_valid_rate": 0.0,
+      "positive_top_score": {
+        "min": null,
+        "average": null,
+        "max": null
+      },
+      "negative_top_score": {
+        "min": null,
+        "average": null,
+        "max": null
+      }
+    },
+    "agent": {
+      "total": 1,
+      "passed": 1,
+      "check_rates": {
+        "tool_selection": 1.0,
+        "tool_execution": 1.0,
+        "knowledge_hit": 1.0,
+        "citation": 1.0,
+        "user_language": 1.0,
+        "citation_concise": 1.0,
+        "required_content": 1.0,
+        "faithfulness": 1.0
+      }
+    }
+  },
+  "retrieval_results": [],
+  "agent_results": [
+    {
+      "id": "RA09",
+      "category": "口语表达",
+      "question": "活干完了咋还得自己领分，这到底是啥规矩？",
+      "response": "根据积分与任务规则，我来为您解释一下这个规矩：\n\n**完成任务和领取积分是两个不同的动作**，这是系统设计上的明确规则。[积分与任务规则 / 规则说明]\n\n具体来说：\n- **完成任务**：表示您已经完成了任务要求的内容。\n- **领取积分**：任务完成后，积分并不会自动到账，需要您主动去领取，积分才会真正计入您的账户。\n\n所以您看到的\"已完成待领取\"状态，就是指任务已经完成、但积分还没领取的情况。您需要主动去领取，积分才会到账。\n\n如果您想查看当前有哪些已完成待领取的任务，或者想了解自己的积分情况，我可以帮您实时查询一下，需要吗？",
+      "citation_fallback_applied": true,
+      "elapsed_ms": 6395.55,
+      "usage": {
+        "input_tokens": 5540,
+        "output_tokens": 214,
+        "total_tokens": 5754
+      },
+      "tool_execution_trace": [
+        {
+          "sequence": 1,
+          "tool_name": "search_business_knowledge",
+          "arguments": {
+            "query_chars": 11,
+            "limit": 3
+          },
+          "completed": true,
+          "business_success": true,
+          "result_code": "KNOWLEDGE_FOUND",
+          "elapsed_ms": 1688.42,
+          "error_type": null
+        }
+      ],
+      "knowledge_search_calls": [
+        {
+          "query": "任务完成后积分领取规则",
+          "limit": 3,
+          "result": {
+            "success": true,
+            "code": "KNOWLEDGE_FOUND",
+            "data": {
+              "matches": [
+                {
+                  "content": "# 积分与任务规则  \n## 适用问题  \n用于解释积分如何获得、任务完成但奖励还没领取是什么意思，以及 Agent 如何生成积分规划。它不提供某个用户当前有多少积分，也不承诺当前一定存在某项任务。",
+                  "score": 0.6435,
+                  "citation": "[积分与任务规则 / 适用问题]",
+                  "knowledgeId": "points-and-tasks",
+                  "knowledgeVersion": "1.1.0",
+                  "title": "积分与任务规则",
+                  "section": "适用问题",
+                  "sourcePath": "documents/points-and-tasks.md",
+                  "sourceRefs": [
+                    "incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java",
+                    "agent-service/app/skills/points_plan.py"
+                  ]
+                },
+                {
+                  "content": "## 规则说明  \n- 用户通过完成有效任务并领取奖励获得积分，完成任务和领取积分是两个不同动作。\n- “可以参与”表示任务尚未完成；“已完成待领取”表示任务已经完成但积分尚未领取；“奖励已领取”表示积分已经到账，不应再次推荐该任务。\n- Agent 可以根据目标奖品所需积分、用户当前积分和当前可用任务生成任务组合。\n- 当所有可用任务的奖励仍不能覆盖积分缺口时，Agent 应明确说明完成这些任务后仍差多少积分，不能虚构额外任务。",
+                  "score": 0.642,
+                  "citation": "[积分与任务规则 / 规则说明]",
+                  "knowledgeId": "points-and-tasks",
+                  "knowledgeVersion": "1.1.0",
+                  "title": "积分与任务规则",
+                  "section": "规则说明",
+                  "sourcePath": "documents/points-and-tasks.md",
+                  "sourceRefs": [
+                    "incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java",
+                    "agent-service/app/skills/points_plan.py"
+                  ]
+                },
+                {
+                  "content": "## 实时信息边界  \n用户当前积分、当前有效任务、每项任务奖励和任务状态都可能变化，回答前必须使用系统的实时查询或积分规划能力。本文档只能解释规则，不能替代实时结果。",
+                  "score": 0.5738,
+                  "citation": "[积分与任务规则 / 实时信息边界]",
+                  "knowledgeId": "points-and-tasks",
+                  "knowledgeVersion": "1.1.0",
+                  "title": "积分与任务规则",
+                  "section": "实时信息边界",
+                  "sourcePath": "documents/points-and-tasks.md",
+                  "sourceRefs": [
+                    "incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java",
+                    "agent-service/app/skills/points_plan.py"
+                  ]
+                }
+              ]
+            },
+            "message": "已找到可引用的业务规则",
+            "retryable": false
+          }
+        }
+      ],
+      "evaluation": {
+        "passed": true,
+        "checks": {
+          "tool_selection": true,
+          "tool_execution": true,
+          "knowledge_hit": true,
+          "citation": true,
+          "user_language": true,
+          "citation_concise": true,
+          "required_content": true,
+          "faithfulness": true
+        },
+        "details": {
+          "actual_tools": [
+            "search_business_knowledge"
+          ],
+          "returned_knowledge_ids": [
+            "points-and-tasks",
+            "points-and-tasks",
+            "points-and-tasks"
+          ],
+          "returned_citations": [
+            "[积分与任务规则 / 适用问题]",
+            "[积分与任务规则 / 规则说明]",
+            "[积分与任务规则 / 实时信息边界]"
+          ],
+          "expected_citations": [
+            "[积分与任务规则 / 适用问题]",
+            "[积分与任务规则 / 规则说明]",
+            "[积分与任务规则 / 实时信息边界]"
+          ],
+          "forbidden_terms_found": [],
+          "citation_occurrences_by_knowledge": {
+            "points-and-tasks": 1
+          },
+          "missing_content_groups": [],
+          "unsupported_grounding_groups": []
+        }
+      }
+    }
+  ]
+}

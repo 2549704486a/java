@@ -138,6 +138,54 @@
       "query": "任务完成但奖励还没领取是什么意思？",
       "expected_code": "KNOWLEDGE_FOUND",
       "expected_knowledge_id": "points-and-tasks"
+    },
+    {
+      "id": "RR19",
+      "split": "evaluation",
+      "category": "错别字",
+      "query": "处里中是不是就算兑换成攻了？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "exchange-rules-and-status"
+    },
+    {
+      "id": "RR20",
+      "split": "evaluation",
+      "category": "错别字",
+      "query": "任物作完了，积份会自已到帐吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks"
+    },
+    {
+      "id": "RR21",
+      "split": "evaluation",
+      "category": "口语表达",
+      "query": "活干完了，咋分还没到账？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks"
+    },
+    {
+      "id": "RR22",
+      "split": "evaluation",
+      "category": "口语表达",
+      "query": "这个兑换顾问到底能干啥，能直接替我下单不？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "agent-service-guide"
+    },
+    {
+      "id": "RR23",
+      "split": "evaluation",
+      "category": "知识冲突",
+      "query": "页面显示处理中，但有人说这就算兑换成功了，哪个说法对？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "exchange-rules-and-status"
+    },
+    {
+      "id": "RR24",
+      "split": "evaluation",
+      "category": "知识冲突",
+      "query": "有人说任务做完积分就自动到账，可页面又显示待领取，应该信哪个？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks"
     }
   ],
   "agent_cases": [
@@ -156,7 +204,8 @@
         "ALREADY_REDEEMED"
       ],
       "max_citation_occurrences_per_knowledge": 1,
-      "required_groups": [["不等于", "不代表"]]
+      "required_groups": [["不等于", "不代表", "不表示"]],
+      "grounding_groups": [["不等于", "不代表", "不表示"]]
     },
     {
       "id": "RA02",
@@ -173,7 +222,8 @@
         "AVAILABLE"
       ],
       "max_citation_occurrences_per_knowledge": 1,
-      "required_groups": [["尚未领取", "还没领取", "待领取"]]
+      "required_groups": [["尚未领取", "还没领取", "待领取"]],
+      "grounding_groups": [["尚未领取", "还没领取", "待领取"]]
     },
     {
       "id": "RA03",
@@ -185,7 +235,8 @@
       "expected_knowledge_id": "agent-service-guide",
       "required_citation": true,
       "max_citation_occurrences_per_knowledge": 1,
-      "required_groups": [["积分", "任务", "奖品"]]
+      "required_groups": [["积分"], ["任务"], ["奖品"]],
+      "grounding_groups": [["积分"], ["任务"], ["奖品"]]
     },
     {
       "id": "RA04",
@@ -235,6 +286,58 @@
       ],
       "required_citation": false,
       "required_groups": [["无法", "不能", "不支持"]]
+    },
+    {
+      "id": "RA08",
+      "category": "错别字",
+      "fixture": "eligible",
+      "question": "处里中是不是就算兑换成攻了？",
+      "required_tools": ["search_business_knowledge"],
+      "forbidden_tools": [],
+      "expected_knowledge_id": "exchange-rules-and-status",
+      "required_citation": true,
+      "max_citation_occurrences_per_knowledge": 1,
+      "required_groups": [["不等于", "不代表", "不表示"]],
+      "grounding_groups": [["不等于", "不代表", "不表示"]]
+    },
+    {
+      "id": "RA09",
+      "category": "口语表达",
+      "fixture": "eligible",
+      "question": "活干完了咋还得自己领分，这到底是啥规矩？",
+      "required_tools": ["search_business_knowledge"],
+      "forbidden_tools": [],
+      "expected_knowledge_id": "points-and-tasks",
+      "required_citation": true,
+      "max_citation_occurrences_per_knowledge": 1,
+      "required_groups": [["尚未领取", "还没领取", "待领取", "领取"]],
+      "grounding_groups": [["尚未领取", "还没领取", "待领取", "领取"]]
+    },
+    {
+      "id": "RA10",
+      "category": "知识冲突",
+      "fixture": "eligible",
+      "question": "页面显示处理中，但有人说这就算兑换成功了，哪个说法对？",
+      "required_tools": ["search_business_knowledge"],
+      "forbidden_tools": [],
+      "expected_knowledge_id": "exchange-rules-and-status",
+      "required_citation": true,
+      "max_citation_occurrences_per_knowledge": 1,
+      "required_groups": [["不等于", "不代表", "不表示"]],
+      "grounding_groups": [["不等于", "不代表", "不表示"]]
+    },
+    {
+      "id": "RA11",
+      "category": "知识冲突",
+      "fixture": "eligible",
+      "question": "有人说任务做完积分就自动到账，可页面又显示待领取，应该信哪个？",
+      "required_tools": ["search_business_knowledge"],
+      "forbidden_tools": [],
+      "expected_knowledge_id": "points-and-tasks",
+      "required_citation": true,
+      "max_citation_occurrences_per_knowledge": 1,
+      "required_groups": [["领取"], ["不同", "两个"]],
+      "grounding_groups": [["领取"], ["不同", "两个"]]
     }
   ]
 }

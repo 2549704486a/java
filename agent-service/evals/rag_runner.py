@@ -219,6 +219,25 @@ def evaluate_agent_case(
         for group in case.get("required_groups", [])
         if not any(str(item).lower() in lowered for item in group)
     ]
+    evidence_text = "\n".join(
+        str(match.get("content", ""))
+        for match in returned_matches
+        if expected_id is None or match.get("knowledgeId") == expected_id
+    ).lower()
+    grounding_groups = case.get("grounding_groups", [])
+    unsupported_grounding_groups = []
+    for group in grounding_groups:
+        normalized_group = [str(item).lower() for item in group]
+        answer_supported = any(item in lowered for item in normalized_group)
+        evidence_supported = any(item in evidence_text for item in normalized_group)
+        if not answer_supported or not evidence_supported:
+            unsupported_grounding_groups.append(
+                {
+                    "group": group,
+                    "answer_supported": answer_supported,
+                    "evidence_supported": evidence_supported,
+                }
+            )
     checks = {
         "tool_selection": tool_selection,
         "tool_execution": tool_execution,
@@ -228,6 +247,10 @@ def evaluate_agent_case(
         "citation_concise": citation_concise,
         "required_content": not missing_groups,
     }
+    if grounding_groups:
+        # 忠实度只评估声明了关键结论的 RAG 用例，不让动态 Tool 用例
+        # 以“无检查项通过”的方式稀释指标。
+        checks["faithfulness"] = not unsupported_grounding_groups
     return {
         "passed": all(checks.values()),
         "checks": checks,
@@ -241,6 +264,7 @@ def evaluate_agent_case(
                 citation_occurrences_by_knowledge
             ),
             "missing_content_groups": missing_groups,
+            "unsupported_grounding_groups": unsupported_grounding_groups,
         },
     }
 
@@ -333,6 +357,10 @@ def summarize_agent(results: list[dict[str, Any]]) -> dict[str, Any]:
         "passed": sum(item["evaluation"]["passed"] for item in results),
         "check_rates": {
             name: rate(sum(values), len(values)) for name, values in checks.items()
+        },
+        "check_counts": {
+            name: {"passed": sum(values), "total": len(values)}
+            for name, values in checks.items()
         },
     }
 

@@ -6,3 +6,9 @@
 
 - `tool_trace_multiskill_20260820.json`：新增四个多 Skill 路由场景的定向验证，结果 `4/4`。
 - `tool_trace_full_20260820.json`：接入结构化执行轨迹后的 22 个固定场景全量回归，结果 `22/22`。
+- `rag_retrieval_hard_cases_20260822.json`：旧阈值下的困难检索原始结果，保留口语用例误拒答证据。
+- `rag_retrieval_hard_cases_threshold_20260822.json`：阈值校准后的 24 条完整检索结果。
+- `rag_retrieval_post_rebuild_20260822.json`：重建索引后的错别字、口语定向复验。
+- `rag_agent_faithfulness_hard_cases_20260822.json`：困难 Agent 用例的原始结果，保留歧义口语问题错误路由证据。
+- `rag_agent_ra09_corrected_20260822.json`：澄清用例语义后的单条复验，不替换原始失败证据。
+- `rag_agent_faithfulness_final_scoped_20260822.json`：最终 11 条 Agent 评测；忠实度只统计适用的 7 条 RAG 规则用例。

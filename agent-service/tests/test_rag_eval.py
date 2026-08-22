@@ -26,6 +26,13 @@ class RagEvalTest(unittest.TestCase):
             {case["split"] for case in retrieval},
         )
         self.assertTrue(select_cases(retrieval, None, "evaluation"))
+        self.assertTrue(
+            {"错别字", "口语表达", "知识冲突"}
+            <= {case["category"] for case in retrieval}
+        )
+        for case in agent:
+            if case.get("expected_knowledge_id"):
+                self.assertTrue(case.get("grounding_groups"), case["id"])
 
     def test_agent_evaluation_requires_returned_citation_in_answer(self):
         case = {
@@ -150,6 +157,109 @@ class RagEvalTest(unittest.TestCase):
         self.assertEqual(
             ["EXCHANGE_PROCESSING"],
             evaluation["details"]["forbidden_terms_found"],
+        )
+
+    def test_faithfulness_requires_key_claim_in_answer_and_retrieved_evidence(self):
+        case = {
+            "required_tools": ["search_business_knowledge"],
+            "forbidden_tools": [],
+            "expected_knowledge_id": "exchange-rules-and-status",
+            "required_citation": True,
+            "required_groups": [["订单页面"]],
+            "grounding_groups": [["订单页面", "订单"]],
+        }
+        trace = [
+            {"tool_name": "search_business_knowledge", "completed": True}
+        ]
+        citation = "[奖品兑换规则与状态 / 规则说明]"
+        grounded_calls = [
+            {
+                "result": {
+                    "data": {
+                        "matches": [
+                            {
+                                "knowledgeId": "exchange-rules-and-status",
+                                "citation": citation,
+                                "content": "最终结果应在订单页面查看。",
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+        unsupported_calls = [
+            {
+                "result": {
+                    "data": {
+                        "matches": [
+                            {
+                                "knowledgeId": "exchange-rules-and-status",
+                                "citation": citation,
+                                "content": "处理中不代表兑换成功。",
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+
+        grounded = evaluate_agent_case(
+            case,
+            f"请到订单页面查看。{citation}",
+            trace,
+            grounded_calls,
+        )
+        unsupported = evaluate_agent_case(
+            case,
+            f"请到订单页面查看。{citation}",
+            trace,
+            unsupported_calls,
+        )
+
+        self.assertTrue(grounded["checks"]["faithfulness"])
+        self.assertFalse(unsupported["checks"]["faithfulness"])
+        self.assertEqual(
+            False,
+            unsupported["details"]["unsupported_grounding_groups"][0][
+                "evidence_supported"
+            ],
+        )
+
+    def test_faithfulness_is_not_reported_for_non_rag_case(self):
+        case = {
+            "required_tools": ["get_user_points"],
+            "forbidden_tools": ["search_business_knowledge"],
+            "required_citation": False,
+            "required_groups": [["300"]],
+        }
+
+        evaluation = evaluate_agent_case(
+            case,
+            "当前积分为 300。",
+            [{"tool_name": "get_user_points", "completed": True}],
+            [],
+        )
+
+        self.assertTrue(evaluation["passed"])
+        self.assertNotIn("faithfulness", evaluation["checks"])
+
+    def test_agent_summary_preserves_each_check_denominator(self):
+        results = [
+            {"evaluation": {"passed": True, "checks": {"citation": True}}},
+            {
+                "evaluation": {
+                    "passed": True,
+                    "checks": {"citation": True, "faithfulness": True},
+                }
+            },
+        ]
+
+        summary = summarize_agent(results)
+
+        self.assertEqual(summary["check_counts"]["citation"], {"passed": 2, "total": 2})
+        self.assertEqual(
+            summary["check_counts"]["faithfulness"],
+            {"passed": 1, "total": 1},
         )
 
     def test_summaries_separate_retrieval_and_agent_metrics(self):

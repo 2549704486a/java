@@ -1,0 +1,131 @@
+{
+  "metadata": {
+    "created_at": "2026-08-22T12:47:08",
+    "embedding_model": "text-embedding-v4",
+    "chat_model": null,
+    "relevance_threshold": 0.3,
+    "split": "all",
+    "case_ids": [
+      "RR20",
+      "RR21"
+    ]
+  },
+  "summary": {
+    "retrieval": {
+      "total": 2,
+      "passed": 2,
+      "top1_accuracy": 0.5,
+      "hit_at_3": 1.0,
+      "negative_rejection_rate": 0.0,
+      "citation_valid_rate": 1.0,
+      "positive_top_score": {
+        "min": 0.3446,
+        "average": 0.3614,
+        "max": 0.3781
+      },
+      "negative_top_score": {
+        "min": null,
+        "average": null,
+        "max": null
+      }
+    },
+    "agent": {
+      "total": 0,
+      "passed": 0,
+      "check_rates": {}
+    }
+  },
+  "retrieval_results": [
+    {
+      "id": "RR20",
+      "split": "evaluation",
+      "category": "错别字",
+      "query": "任物作完了，积份会自已到帐吗？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "agent-service-guide",
+        "points-and-tasks",
+        "points-and-tasks"
+      ],
+      "top_score": 0.3781,
+      "raw_candidates": [
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "",
+          "score": 0.3781
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.3772
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.3745
+        }
+      ],
+      "elapsed_ms": 1606.57,
+      "checks": {
+        "result_code": true,
+        "top1_hit": false,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    },
+    {
+      "id": "RR21",
+      "split": "evaluation",
+      "category": "口语表达",
+      "query": "活干完了，咋分还没到账？",
+      "expected_code": "KNOWLEDGE_FOUND",
+      "expected_knowledge_id": "points-and-tasks",
+      "actual_code": "KNOWLEDGE_FOUND",
+      "actual_knowledge_ids": [
+        "points-and-tasks",
+        "agent-service-guide",
+        "points-and-tasks"
+      ],
+      "top_score": 0.3446,
+      "raw_candidates": [
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.3446
+        },
+        {
+          "knowledge_id": "agent-service-guide",
+          "chunk_id": "",
+          "score": 0.3446
+        },
+        {
+          "knowledge_id": "points-and-tasks",
+          "chunk_id": "",
+          "score": 0.3394
+        }
+      ],
+      "elapsed_ms": 461.79,
+      "checks": {
+        "result_code": true,
+        "top1_hit": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "acceptance_checks": {
+        "result_code": true,
+        "hit_at_3": true,
+        "citation_valid": true
+      },
+      "passed": true
+    }
+  ],
+  "agent_results": []
+}

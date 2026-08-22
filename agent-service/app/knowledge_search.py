@@ -10,6 +10,7 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 
 from app.config import Settings
+from app.knowledge_catalog import KnowledgeCatalog, KnowledgeCatalogSnapshot
 from app.knowledge_index import (
     build_openai_embeddings,
     close_vector_store,
@@ -33,6 +34,8 @@ class KnowledgeVectorStore(Protocol):
         query: str,
         k: int,
     ) -> list[tuple[Document, float]]: ...
+
+    def get(self, **kwargs: Any) -> dict[str, Any]: ...
 
 
 @dataclass(frozen=True)
@@ -172,6 +175,65 @@ class KnowledgeSearchService:
         )
 
 
+def validate_index_freshness(
+    vector_store: KnowledgeVectorStore,
+    snapshot: KnowledgeCatalogSnapshot,
+) -> None:
+    """要求正式索引与当前受控目录及单篇文档版本完全一致。"""
+    try:
+        payload = vector_store.get(include=["metadatas"])
+    except Exception as exc:
+        raise KnowledgeSearchError("无法读取 RAG 索引版本信息") from exc
+
+    ids = payload.get("ids") or []
+    metadatas = payload.get("metadatas") or []
+    if not ids or not metadatas:
+        raise KnowledgeSearchError(
+            "RAG 索引集合为空，请先执行 python -m app.knowledge_index build"
+        )
+    if len(ids) != len(metadatas):
+        raise KnowledgeSearchError(
+            "RAG 索引版本元数据不完整，请重新执行 python -m app.knowledge_index build"
+        )
+
+    actual_catalog_versions: set[str] = set()
+    actual_document_versions: dict[str, set[str]] = {}
+    for metadata in metadatas:
+        if not isinstance(metadata, dict):
+            raise KnowledgeSearchError(
+                "RAG 索引缺少版本元数据，请重新执行 python -m app.knowledge_index build"
+            )
+        catalog_version = str(metadata.get("catalog_version", "")).strip()
+        knowledge_id = str(metadata.get("knowledge_id", "")).strip()
+        knowledge_version = str(metadata.get("knowledge_version", "")).strip()
+        if not catalog_version or not knowledge_id or not knowledge_version:
+            raise KnowledgeSearchError(
+                "RAG 索引缺少版本元数据，请重新执行 python -m app.knowledge_index build"
+            )
+        actual_catalog_versions.add(catalog_version)
+        actual_document_versions.setdefault(knowledge_id, set()).add(
+            knowledge_version
+        )
+
+    expected_document_versions = {
+        document.metadata.knowledge_id: document.metadata.version
+        for document in snapshot.documents
+    }
+    index_is_fresh = (
+        actual_catalog_versions == {snapshot.version}
+        and set(actual_document_versions) == set(expected_document_versions)
+        and all(
+            actual_document_versions[knowledge_id] == {knowledge_version}
+            for knowledge_id, knowledge_version in expected_document_versions.items()
+        )
+    )
+    if not index_is_fresh:
+        raise KnowledgeSearchError(
+            "RAG 索引版本与受控知识目录不一致，请重新执行 "
+            "python -m app.knowledge_index build"
+        )
+
+
 def open_knowledge_search(settings: Settings) -> KnowledgeSearchService:
     """打开已有持久化集合；未建库时拒绝以空知识库启动。"""
     index_dir = resolve_index_dir(settings.rag_index_dir)
@@ -186,11 +248,11 @@ def open_knowledge_search(settings: Settings) -> KnowledgeSearchService:
         persist_directory=str(index_dir),
         relevance_score_fn=normalized_euclidean_relevance,
     )
-    if not vector_store.get(limit=1).get("ids"):
+    try:
+        validate_index_freshness(vector_store, KnowledgeCatalog().load())
+    except Exception:
         close_vector_store(vector_store)
-        raise KnowledgeSearchError(
-            "RAG 索引集合为空，请先执行 python -m app.knowledge_index build"
-        )
+        raise
     return KnowledgeSearchService(
         vector_store=vector_store,
         relevance_threshold=settings.rag_relevance_threshold,

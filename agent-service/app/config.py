@@ -34,7 +34,7 @@ class Settings:
     rag_index_dir: str = "knowledge/index"
     rag_collection_name: str = "incentive-business-rules"
     rag_enabled: bool = False
-    rag_relevance_threshold: float = 0.35
+    rag_relevance_threshold: float = 0.30
     rag_top_k: int = 3
     agent_host: str = "127.0.0.1"
     agent_port: int = 8090
@@ -91,7 +91,7 @@ class Settings:
             ).strip(),
             rag_enabled=env_bool("RAG_ENABLED", False),
             rag_relevance_threshold=float(
-                os.getenv("RAG_RELEVANCE_THRESHOLD", "0.35")
+                os.getenv("RAG_RELEVANCE_THRESHOLD", "0.30")
             ),
             rag_top_k=int(os.getenv("RAG_TOP_K", "3")),
             agent_host=os.getenv("AGENT_HOST", "127.0.0.1"),
