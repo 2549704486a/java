@@ -1,7 +1,7 @@
 ---
 knowledge_id: agent-service-guide
 title: 积分兑换顾问使用说明
-version: 1.0.0
+version: 1.1.0
 status: active
 audience: [end_user]
 topics: [agent, guidance, safety]
@@ -16,7 +16,7 @@ source_refs:
 
 ## 适用问题
 
-用于说明积分兑换顾问可以帮助用户做什么、哪些操作不能代替用户完成，以及遇到异常时应该如何处理。
+用于说明积分兑换顾问可以帮助用户做什么、为什么不能跳过确认直接兑换，以及遇到异常时应该如何处理。
 
 ## 规则说明
 

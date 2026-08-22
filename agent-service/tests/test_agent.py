@@ -57,6 +57,7 @@ class RunAgentTest(unittest.TestCase):
 
         self.assertIn("检索来源：", answer)
         self.assertIn("[积分与任务规则 / 规则说明]", answer)
+        self.assertNotIn("[兑换规则与状态 / 实时信息边界]", answer)
 
     def test_does_not_duplicate_existing_tool_citation(self):
         citation = "[积分与任务规则 / 规则说明]"
@@ -67,7 +68,7 @@ class RunAgentTest(unittest.TestCase):
                 tool_call_id="call-1",
                 name="search_business_knowledge",
             ),
-            AIMessage(content=f"任务完成后仍需要领取奖励。{citation}"),
+            AIMessage(content=f"任务完成后仍需要领取奖励。{citation}{citation}"),
         ]
 
         answer = ensure_knowledge_citations(messages, messages[-1].content)

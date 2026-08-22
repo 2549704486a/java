@@ -76,11 +76,24 @@ def collect_knowledge_citations(messages) -> list[str]:
 
 
 def ensure_knowledge_citations(messages, response: str) -> str:
-    """模型漏引时补充本轮检索来源，不生成 Tool 未返回的来源。"""
+    """规范化真实 Tool 引用，并在模型完全漏引时补充最相关来源。"""
     citations = collect_knowledge_citations(messages)
-    if not citations or any(citation in response for citation in citations):
+    if not citations:
         return response
-    return f"{response.rstrip()}\n\n检索来源：{'；'.join(citations)}"
+
+    normalized = response
+    for citation in citations:
+        first = normalized.find(citation)
+        if first < 0:
+            continue
+        boundary = first + len(citation)
+        normalized = normalized[:boundary] + normalized[boundary:].replace(
+            citation,
+            "",
+        )
+    if any(citation in normalized for citation in citations):
+        return normalized
+    return f"{normalized.rstrip()}\n\n检索来源：{citations[0]}"
 
 
 def build_agent(

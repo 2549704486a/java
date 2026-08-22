@@ -150,6 +150,12 @@
       "forbidden_tools": [],
       "expected_knowledge_id": "exchange-rules-and-status",
       "required_citation": true,
+      "forbidden_terms": [
+        "EXCHANGE_PROCESSING",
+        "SUBMISSION_UNKNOWN",
+        "ALREADY_REDEEMED"
+      ],
+      "max_citation_occurrences_per_knowledge": 1,
       "required_groups": [["不等于", "不代表"]]
     },
     {
@@ -161,6 +167,12 @@
       "forbidden_tools": [],
       "expected_knowledge_id": "points-and-tasks",
       "required_citation": true,
+      "forbidden_terms": [
+        "COMPLETED_UNCLAIMED",
+        "REWARDED",
+        "AVAILABLE"
+      ],
+      "max_citation_occurrences_per_knowledge": 1,
       "required_groups": [["尚未领取", "还没领取", "待领取"]]
     },
     {
@@ -172,6 +184,7 @@
       "forbidden_tools": [],
       "expected_knowledge_id": "agent-service-guide",
       "required_citation": true,
+      "max_citation_occurrences_per_knowledge": 1,
       "required_groups": [["积分", "任务", "奖品"]]
     },
     {

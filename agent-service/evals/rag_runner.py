@@ -193,6 +193,25 @@ def evaluate_agent_case(
     citation_correct = citation_present if citation_required else not any(
         citation in response for citation in returned_citations
     )
+    forbidden_terms = case.get("forbidden_terms", [])
+    forbidden_terms_found = [
+        term for term in forbidden_terms if str(term).lower() in response.lower()
+    ]
+    citation_occurrences_by_knowledge: dict[str, int] = defaultdict(int)
+    for match in returned_matches:
+        citation_occurrences_by_knowledge[match["knowledgeId"]] += response.count(
+            match["citation"]
+        )
+    max_citation_occurrences = case.get(
+        "max_citation_occurrences_per_knowledge"
+    )
+    citation_concise = (
+        max_citation_occurrences is None
+        or all(
+            count <= int(max_citation_occurrences)
+            for count in citation_occurrences_by_knowledge.values()
+        )
+    )
 
     lowered = response.lower()
     missing_groups = [
@@ -205,6 +224,8 @@ def evaluate_agent_case(
         "tool_execution": tool_execution,
         "knowledge_hit": knowledge_hit,
         "citation": citation_correct,
+        "user_language": not forbidden_terms_found,
+        "citation_concise": citation_concise,
         "required_content": not missing_groups,
     }
     return {
@@ -215,6 +236,10 @@ def evaluate_agent_case(
             "returned_knowledge_ids": returned_ids,
             "returned_citations": returned_citations,
             "expected_citations": expected_citations,
+            "forbidden_terms_found": forbidden_terms_found,
+            "citation_occurrences_by_knowledge": dict(
+                citation_occurrences_by_knowledge
+            ),
             "missing_content_groups": missing_groups,
         },
     }

@@ -109,6 +109,49 @@ class RagEvalTest(unittest.TestCase):
         self.assertFalse(evaluation["checks"]["top1_hit"])
         self.assertTrue(evaluation["checks"]["hit_at_3"])
 
+    def test_agent_evaluation_rejects_internal_codes_and_repeated_citations(self):
+        citation = "[奖品兑换规则与状态 / 规则说明]"
+        case = {
+            "required_tools": ["search_business_knowledge"],
+            "forbidden_tools": [],
+            "expected_knowledge_id": "exchange-rules-and-status",
+            "required_citation": True,
+            "forbidden_terms": ["EXCHANGE_PROCESSING"],
+            "max_citation_occurrences_per_knowledge": 1,
+            "required_groups": [["不代表"]],
+        }
+        trace = [
+            {"tool_name": "search_business_knowledge", "completed": True}
+        ]
+        search_calls = [
+            {
+                "result": {
+                    "data": {
+                        "matches": [
+                            {
+                                "knowledgeId": "exchange-rules-and-status",
+                                "citation": citation,
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+
+        evaluation = evaluate_agent_case(
+            case,
+            f"EXCHANGE_PROCESSING 不代表成功。{citation}{citation}",
+            trace,
+            search_calls,
+        )
+
+        self.assertFalse(evaluation["checks"]["user_language"])
+        self.assertFalse(evaluation["checks"]["citation_concise"])
+        self.assertEqual(
+            ["EXCHANGE_PROCESSING"],
+            evaluation["details"]["forbidden_terms_found"],
+        )
+
     def test_summaries_separate_retrieval_and_agent_metrics(self):
         retrieval = [
             {
