@@ -64,4 +64,8 @@ Invoke-RestMethod `
     -Headers @{ Authorization = "Bearer $token" }
 ```
 
+## 5. 运营工作台
+
+用户端入口为 `/`，智能运营工作台入口为 `/operator`。两者分别使用用户 JWT 和独立运营令牌，浏览器会将令牌保存在不同的 `sessionStorage` 键中，避免身份混用。运营工作台目前支持连续对话、实时快照、运营知识检索和不可发布的活动草案。
+
 当前使用 Vite 5 以兼容本机 Node.js 18。页面生产运行不启动 Vite 开发服务器。

@@ -2,6 +2,8 @@ import type {
   ChatResponse,
   CurrentUserResponse,
   DashboardResponse,
+  CurrentOperatorResponse,
+  OperatorChatResponse,
   OrdersResponse
 } from "./types";
 
@@ -53,6 +55,15 @@ export async function fetchCurrentUser(
   return readJson<CurrentUserResponse>(response);
 }
 
+export async function fetchCurrentOperator(
+  accessToken: string
+): Promise<CurrentOperatorResponse> {
+  const response = await fetch("/v1/operator/me", {
+    headers: authenticatedHeaders(accessToken)
+  });
+  return readJson<CurrentOperatorResponse>(response);
+}
+
 export async function fetchDashboard(
   accessToken: string,
   signal?: AbortSignal
@@ -92,6 +103,25 @@ export async function sendChat(
     })
   });
   return readJson<ChatResponse>(response);
+}
+
+export async function sendOperatorChat(
+  accessToken: string,
+  sessionId: string | null,
+  message: string
+): Promise<OperatorChatResponse> {
+  const response = await fetch("/v1/operator/chat", {
+    method: "POST",
+    headers: {
+      ...authenticatedHeaders(accessToken),
+      "Content-Type": "application/json; charset=utf-8"
+    },
+    body: JSON.stringify({
+      session_id: sessionId,
+      message
+    })
+  });
+  return readJson<OperatorChatResponse>(response);
 }
 
 export async function fetchHealth(): Promise<boolean> {

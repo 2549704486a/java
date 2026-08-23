@@ -56,13 +56,16 @@ def _as_tool_payload(value) -> dict | None:
     return None
 
 
-def collect_knowledge_citations(messages) -> list[str]:
+def collect_knowledge_citations(
+    messages,
+    tool_names: frozenset[str] = frozenset({"search_business_knowledge"}),
+) -> list[str]:
     """只从本轮知识检索 Tool 的真实返回值中提取用户可读引用。"""
     citations: list[str] = []
     for message in messages:
         if (
             getattr(message, "type", None) != "tool"
-            or getattr(message, "name", None) != "search_business_knowledge"
+            or getattr(message, "name", None) not in tool_names
         ):
             continue
         payload = _as_tool_payload(getattr(message, "artifact", None))
@@ -77,9 +80,13 @@ def collect_knowledge_citations(messages) -> list[str]:
     return citations
 
 
-def ensure_knowledge_citations(messages, response: str) -> str:
+def ensure_knowledge_citations(
+    messages,
+    response: str,
+    tool_names: frozenset[str] = frozenset({"search_business_knowledge"}),
+) -> str:
     """规范化真实 Tool 引用，并在模型完全漏引时补充最相关来源。"""
-    citations = collect_knowledge_citations(messages)
+    citations = collect_knowledge_citations(messages, tool_names)
     if not citations:
         return response
 

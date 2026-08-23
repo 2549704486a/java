@@ -92,6 +92,8 @@ Invoke-RestMethod `
   -Headers $headers
 ```
 
+启动服务后可访问 `http://127.0.0.1:8090/operator` 进入独立运营工作台。页面使用 `OPERATOR_ACCESS_TOKEN` 登录；对话接口为 `POST /v1/operator/chat`，身份校验接口为 `GET /v1/operator/me`。运营 Agent 只读取快照、查询知识并生成待人工审阅草案，不具备发布能力。
+
 ## 3. 先验证业务 Skill
 
 这一步不调用大模型，只验证 Java 接口和确定性积分计算：

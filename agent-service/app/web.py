@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+import threading
 import uuid
 from collections.abc import Callable
 from contextlib import asynccontextmanager
@@ -36,6 +37,7 @@ from app.operator_auth import (
     OperatorPermissionError,
     operator_authenticator_from_settings,
 )
+from app.operator_agent import OperatorAgentRuntime
 from app.operator_tools import (
     CAMPAIGN_DRAFT,
     CAMPAIGN_READ,
@@ -52,6 +54,10 @@ RuntimeFactory = Callable[[], AgentRuntime]
 AuthenticatorFactory = Callable[[], JwtAuthenticator]
 OperatorAuthenticatorFactory = Callable[[], OperatorAuthenticator]
 CampaignDataProviderFactory = Callable[[AgentRuntime], CampaignDataProvider]
+OperatorAgentRuntimeFactory = Callable[
+    [AgentRuntime, CampaignDataProvider],
+    OperatorAgentRuntime,
+]
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "web-ui" / "dist"
 
 
@@ -131,6 +137,19 @@ class OperatorErrorResponse(BaseModel):
     message: str
 
 
+class OperatorCurrentResponse(BaseModel):
+    operator_id: str
+    permissions: list[str]
+
+
+class OperatorChatResponse(BaseModel):
+    request_id: str
+    session_id: str
+    operator_id: str
+    answer: str
+    elapsed_ms: float
+
+
 def default_runtime_factory() -> AgentRuntime:
     load_dotenv()
     return AgentRuntime(Settings.from_env())
@@ -152,6 +171,17 @@ def default_campaign_data_provider_factory(
     return HttpCampaignDataProvider(runtime.client)
 
 
+def default_operator_agent_runtime_factory(
+    runtime: AgentRuntime,
+    data_provider: CampaignDataProvider,
+) -> OperatorAgentRuntime:
+    return OperatorAgentRuntime(
+        settings=runtime.settings,
+        data_provider=data_provider,
+        knowledge_search=runtime.operator_knowledge_search,
+    )
+
+
 def create_app(
     runtime_factory: RuntimeFactory = default_runtime_factory,
     authenticator_factory: AuthenticatorFactory = default_authenticator_factory,
@@ -160,6 +190,9 @@ def create_app(
     ),
     campaign_data_provider_factory: CampaignDataProviderFactory = (
         default_campaign_data_provider_factory
+    ),
+    operator_agent_runtime_factory: OperatorAgentRuntimeFactory = (
+        default_operator_agent_runtime_factory
     ),
 ) -> FastAPI:
     @asynccontextmanager
@@ -170,10 +203,16 @@ def create_app(
         application.state.authenticator = authenticator
         application.state.operator_authenticator = operator_authenticator_factory()
         application.state.campaign_data_provider = campaign_data_provider_factory(runtime)
+        application.state.operator_agent_runtime = None
+        application.state.operator_agent_runtime_factory = operator_agent_runtime_factory
+        application.state.operator_agent_runtime_lock = threading.Lock()
         logger.info("agent_http_started health=%s", runtime.health())
         try:
             yield
         finally:
+            operator_runtime = application.state.operator_agent_runtime
+            if operator_runtime is not None:
+                operator_runtime.close()
             runtime.close()
             logger.info("agent_http_stopped")
 
@@ -459,6 +498,83 @@ def create_app(
         )
 
     @application.get(
+        "/v1/operator/me",
+        response_model=OperatorCurrentResponse,
+        responses={401: {"model": AuthenticationErrorResponse}},
+    )
+    def current_operator(
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ) -> OperatorCurrentResponse:
+        operator = authenticate_operator_request(request, authorization)
+        return OperatorCurrentResponse(
+            operator_id=operator.operator_id,
+            permissions=sorted(operator.permissions),
+        )
+
+    @application.post(
+        "/v1/operator/chat",
+        response_model=OperatorChatResponse,
+        responses={
+            401: {"model": AuthenticationErrorResponse},
+            403: {"model": OperatorErrorResponse},
+            503: {"model": ErrorResponse},
+        },
+    )
+    def operator_chat(
+        payload: ChatRequest,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_READ)
+        request_id = normalize_request_id(x_request_id)
+        session_id = payload.session_id or uuid.uuid4().hex
+        logger.info(
+            "operator_agent_request_started request_id=%s session_id=%s operator_id=%s message_length=%s",
+            request_id,
+            session_id,
+            operator.operator_id,
+            len(payload.message),
+        )
+        try:
+            answer, elapsed_ms = get_operator_agent_runtime(request).answer(
+                operator=operator,
+                session_id=session_id,
+                message=payload.message,
+                request_id=request_id,
+            )
+        except Exception:
+            logger.exception(
+                "operator_agent_request_failed request_id=%s session_id=%s operator_id=%s",
+                request_id,
+                session_id,
+                operator.operator_id,
+            )
+            return JSONResponse(
+                status_code=503,
+                content=ErrorResponse(
+                    request_id=request_id,
+                    session_id=session_id,
+                    code="OPERATOR_AGENT_UNAVAILABLE",
+                    message="运营助手暂时不可用，请稍后再试",
+                ).model_dump(),
+                headers={"X-Request-ID": request_id},
+            )
+        response = OperatorChatResponse(
+            request_id=request_id,
+            session_id=session_id,
+            operator_id=operator.operator_id,
+            answer=answer,
+            elapsed_ms=elapsed_ms,
+        )
+        return JSONResponse(
+            content=response.model_dump(),
+            headers={"X-Request-ID": request_id},
+        )
+
+    @application.get(
         "/v1/operator/campaign/snapshots/{segment_key}",
         responses={
             401: {"model": AuthenticationErrorResponse},
@@ -603,6 +719,22 @@ def require_operator_permission(
     missing = [permission for permission in required if permission not in operator.permissions]
     if missing:
         raise OperatorPermissionError(f"运营身份缺少权限：{', '.join(missing)}")
+
+
+def get_operator_agent_runtime(request: Request) -> OperatorAgentRuntime:
+    runtime = request.app.state.operator_agent_runtime
+    if runtime is not None:
+        return runtime
+    # 首次运营对话时再创建模型运行时，避免只使用用户端时增加启动成本。
+    with request.app.state.operator_agent_runtime_lock:
+        runtime = request.app.state.operator_agent_runtime
+        if runtime is None:
+            runtime = request.app.state.operator_agent_runtime_factory(
+                request.app.state.runtime,
+                request.app.state.campaign_data_provider,
+            )
+            request.app.state.operator_agent_runtime = runtime
+        return runtime
 
 
 def dashboard_error(

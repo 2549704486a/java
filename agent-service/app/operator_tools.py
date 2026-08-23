@@ -29,7 +29,7 @@ class CampaignSnapshotInput(BaseModel):
     target_segment_key: str = Field(
         min_length=1,
         max_length=64,
-        description="服务端支持的固定客群标识",
+        description="服务端支持的固定客群标识，例如 POINTS_AT_LEAST_500",
     )
 
 
@@ -37,11 +37,11 @@ class CampaignDraftInput(CampaignSnapshotInput):
     objective: str = Field(min_length=2, max_length=200, description="活动目标")
     budget_amount_cents: int = Field(
         gt=0,
-        description="本次活动奖品的真实金额预算，单位分",
+        description="本次活动奖品的真实现金预算，单位为分",
     )
     points_issuance_cap: int = Field(
         gt=0,
-        description="本次活动任务最多发放的积分，与金额预算分别约束",
+        description="本次活动任务最多发放的积分，与现金预算分别约束",
     )
     start_at: AwareDatetime = Field(description="包含时区的活动开始时间")
     end_at: AwareDatetime = Field(description="包含时区的活动结束时间")
@@ -60,7 +60,7 @@ class OperatorKnowledgeSearchInput(BaseModel):
         "award_rules",
         "operations",
         "review_cases",
-    ] = Field(description="运营知识范围，由调用端按当前任务固定选择")
+    ] = Field(description="运营知识范围，由模型按当前任务选择")
     limit: int = Field(default=3, ge=1, le=5)
 
 
@@ -77,7 +77,7 @@ def build_operator_tools(
 
     @tool(args_schema=CampaignSnapshotInput)
     def get_campaign_planning_snapshot(target_segment_key: str) -> dict:
-        """读取活动草案所需的用户群、任务、奖品库存和历史参与率快照。"""
+        """读取活动草案所需的客群、任务、奖品库存和历史参与率快照。"""
 
         arguments = {
             "operator_id": operator.operator_id,
@@ -107,6 +107,7 @@ def build_operator_tools(
 
     available_tools = [get_campaign_planning_snapshot]
     if knowledge_search is not None:
+
         @tool(args_schema=OperatorKnowledgeSearchInput)
         def search_operator_knowledge(
             query: str,
@@ -119,6 +120,7 @@ def build_operator_tools(
             limit: int = 3,
         ) -> dict:
             """查询当前有效的运营制度、操作手册与历史案例，不替代实时规划快照。"""
+
             arguments = {
                 "operator_id": operator.operator_id,
                 "query_chars": len(query),

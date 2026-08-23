@@ -54,6 +54,11 @@ export interface CurrentUserResponse {
   user_id: number;
 }
 
+export interface CurrentOperatorResponse {
+  operator_id: string;
+  permissions: string[];
+}
+
 export interface ChatResponse {
   request_id: string;
   session_id: string;
@@ -61,6 +66,14 @@ export interface ChatResponse {
   answer: string;
   elapsed_ms: number;
   pending_exchange: PendingExchange | null;
+}
+
+export interface OperatorChatResponse {
+  request_id: string;
+  session_id: string;
+  operator_id: string;
+  answer: string;
+  elapsed_ms: number;
 }
 
 export interface PendingExchange {

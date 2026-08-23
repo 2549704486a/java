@@ -44,6 +44,25 @@ class FakeRuntime:
         pass
 
 
+class FakeOperatorAgentRuntime:
+    def __init__(self) -> None:
+        self.calls: list[dict] = []
+
+    def answer(self, operator, session_id, message, request_id):
+        self.calls.append(
+            {
+                "operator_id": operator.operator_id,
+                "session_id": session_id,
+                "message": message,
+                "request_id": request_id,
+            }
+        )
+        return "已根据实时快照生成一份待人工审阅的草案。", 12.5
+
+    def close(self) -> None:
+        pass
+
+
 def snapshot() -> CampaignPlanningSnapshot:
     return CampaignPlanningSnapshot(
         snapshot_id="snapshot-001",
@@ -104,17 +123,52 @@ class FakeOperatorKnowledgeSearch:
 def create_operator_app(
     permissions: frozenset[str],
     operator_knowledge_search=None,
+    operator_agent_runtime=None,
 ):
     provider = StaticCampaignDataProvider({SEGMENT_KEY: snapshot()})
+    agent_runtime = operator_agent_runtime or FakeOperatorAgentRuntime()
     return create_app(
         lambda: FakeRuntime(operator_knowledge_search),
         lambda: USER_AUTHENTICATOR,
         lambda: OperatorAuthenticator("operator-token", "operator-01", permissions),
         lambda runtime: provider,
+        lambda runtime, data_provider: agent_runtime,
     )
 
 
 class OperatorApiTest(unittest.TestCase):
+    def test_operator_identity_and_chat_use_independent_entry(self):
+        operator_runtime = FakeOperatorAgentRuntime()
+        app = create_operator_app(
+            frozenset({CAMPAIGN_READ, CAMPAIGN_DRAFT}),
+            operator_agent_runtime=operator_runtime,
+        )
+
+        with TestClient(app) as client:
+            identity = client.get(
+                "/v1/operator/me",
+                headers={"Authorization": "Bearer operator-token"},
+            )
+            chat = client.post(
+                "/v1/operator/chat",
+                headers={
+                    "Authorization": "Bearer operator-token",
+                    "X-Request-ID": "operator-chat-001",
+                },
+                json={
+                    "message": "为高积分用户生成一份活动草案",
+                    "session_id": "campaign-session-01",
+                },
+            )
+
+        self.assertEqual(200, identity.status_code)
+        self.assertEqual("operator-01", identity.json()["operator_id"])
+        self.assertEqual(200, chat.status_code)
+        self.assertEqual("operator-01", chat.json()["operator_id"])
+        self.assertEqual("campaign-session-01", chat.json()["session_id"])
+        self.assertEqual(1, len(operator_runtime.calls))
+        self.assertEqual("operator-chat-001", operator_runtime.calls[0]["request_id"])
+
     def test_operator_knowledge_search_requires_operator_token(self):
         app = create_operator_app(
             frozenset({CAMPAIGN_READ}),
