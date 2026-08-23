@@ -4,6 +4,7 @@ import com.budou.incentive.dto.agent.AgentToolResponse;
 import com.budou.incentive.dto.agent.AwardDetailView;
 import com.budou.incentive.dto.agent.AwardOptionView;
 import com.budou.incentive.dto.agent.ExchangeEligibilityView;
+import com.budou.incentive.dto.agent.ExchangeRecordView;
 import com.budou.incentive.dto.agent.TaskOptionView;
 import com.budou.incentive.dto.agent.UserPointsView;
 import com.budou.incentive.service.AgentQueryService;
@@ -53,5 +54,11 @@ public class AgentQueryController {
             @PathVariable Long awardId) {
         return agentQueryService.checkExchangeEligibility(userId, awardId);
     }
-}
 
+    @GetMapping("users/{userId}/exchanges")
+    public AgentToolResponse<List<ExchangeRecordView>> listExchangeRecords(
+            @PathVariable Long userId,
+            @RequestParam(required = false) Long awardId) {
+        return agentQueryService.listExchangeRecords(userId, awardId);
+    }
+}

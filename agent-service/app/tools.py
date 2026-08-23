@@ -36,6 +36,14 @@ class ListAwardsInput(BaseModel):
     )
 
 
+class ListExchangeRecordsInput(BaseModel):
+    award_id: int | None = Field(
+        default=None,
+        gt=0,
+        description="只查询指定奖品时填写奖品 ID；查看全部兑换记录时留空",
+    )
+
+
 class PlanPointsInput(BaseModel):
     award_id: int = Field(gt=0, description="目标奖品 ID")
     excluded_task_ids: list[int] = Field(
@@ -252,6 +260,15 @@ def build_tools(
             "check_exchange_eligibility",
             {"award_id": award_id},
             lambda: client.check_exchange_eligibility(user_id, award_id)
+        )
+
+    @tool(args_schema=ListExchangeRecordsInput)
+    def list_my_exchange_records(award_id: int | None = None) -> dict:
+        """查询当前用户真实的兑换记录和最终处理状态，可按奖品 ID 过滤。"""
+        return safe_result(
+            "list_my_exchange_records",
+            {"award_id": award_id},
+            lambda: client.list_exchange_records(user_id, award_id),
         )
 
     @tool(
@@ -586,6 +603,7 @@ def build_tools(
         get_award_detail,
         list_awards,
         check_exchange_eligibility,
+        list_my_exchange_records,
         plan_points_for_award,
         plan_points_for_saved_goal,
         recommend_awards,

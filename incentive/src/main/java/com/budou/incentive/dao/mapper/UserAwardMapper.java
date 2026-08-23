@@ -1,6 +1,9 @@
 package com.budou.incentive.dao.mapper;
 import com.budou.incentive.dao.model.UserAward;
+import com.budou.incentive.dao.model.UserAwardRecord;
 import org.apache.ibatis.annotations.*;
+
+import java.util.List;
 
 @Mapper
 public interface UserAwardMapper {
@@ -28,4 +31,18 @@ public interface UserAwardMapper {
 
     @Update("update user_award set status = -1 where id = #{id}")
     void updateStatusFail(Long id);
+
+    @Select({
+            "<script>",
+            "select ua.id as orderId, ua.awardId, ac.name as awardName, ua.status,",
+            "ua.createTime, ua.updateTime",
+            "from user_award ua",
+            "left join award_config ac on ac.awardId = ua.awardId",
+            "where ua.userId = #{userId}",
+            "<if test='awardId != null'>and ua.awardId = #{awardId}</if>",
+            "order by ua.createTime desc, ua.id desc",
+            "</script>"
+    })
+    List<UserAwardRecord> selectUserAwardRecords(@Param("userId") Long userId,
+                                                  @Param("awardId") Long awardId);
 }

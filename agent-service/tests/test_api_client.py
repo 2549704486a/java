@@ -86,6 +86,35 @@ class BusinessApiClientTest(unittest.TestCase):
         )
         http_client.close()
 
+    def test_lists_exchange_records_with_optional_award_filter(self):
+        observed_url = ""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            nonlocal observed_url
+            observed_url = str(request.url)
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "code": "EXCHANGE_RECORDS_FOUND",
+                    "data": [],
+                    "message": "兑换记录查询成功",
+                    "retryable": False,
+                },
+            )
+
+        http_client = httpx.Client(
+            base_url="http://test", transport=httpx.MockTransport(handler)
+        )
+        client = BusinessApiClient("http://test", client=http_client)
+
+        result = client.list_exchange_records(10, 6)
+
+        self.assertTrue(result.success)
+        self.assertIn("/agent/query/users/10/exchanges", observed_url)
+        self.assertIn("awardId=6", observed_url)
+        http_client.close()
+
     def test_post_exchange_never_retries_unknown_server_error(self):
         calls = 0
 

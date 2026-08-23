@@ -8,6 +8,7 @@ import com.budou.incentive.dao.mapper.UserCurrencyMapper;
 import com.budou.incentive.dao.model.AwardConfig;
 import com.budou.incentive.dao.model.FinishTaskRecord;
 import com.budou.incentive.dao.model.TaskConfig;
+import com.budou.incentive.dao.model.UserAwardRecord;
 import com.budou.incentive.dto.agent.AgentToolResponse;
 import com.budou.incentive.dto.agent.ExchangeEligibilityView;
 import com.budou.incentive.dto.agent.TaskOptionView;
@@ -124,6 +125,27 @@ class AgentQueryServiceTest {
         assertTrue(response.success());
         assertFalse(response.data().eligible());
         assertEquals("AWARD_NOT_STARTED", response.code());
+    }
+
+    @Test
+    void shouldMapPersistedExchangeStatusesForCurrentUser() {
+        Date now = new Date();
+        when(userCurrencyMapper.selectCurrency(10L)).thenReturn(900);
+        when(userAwardMapper.selectUserAwardRecords(10L, null)).thenReturn(List.of(
+                new UserAwardRecord(103L, 8L, "蓝牙耳机", -1, now, now),
+                new UserAwardRecord(102L, 7L, "视频会员", 1, now, now),
+                new UserAwardRecord(101L, 6L, "智能手表", 0, now, now)
+        ));
+
+        AgentToolResponse<?> response = service.listExchangeRecords(10L, null);
+
+        assertTrue(response.success());
+        assertEquals("EXCHANGE_RECORDS_FOUND", response.code());
+        @SuppressWarnings("unchecked")
+        List<com.budou.incentive.dto.agent.ExchangeRecordView> records =
+                (List<com.budou.incentive.dto.agent.ExchangeRecordView>) response.data();
+        assertEquals(List.of("FAILED", "SUCCESS", "PROCESSING"),
+                records.stream().map(com.budou.incentive.dto.agent.ExchangeRecordView::status).toList());
     }
 
     private TaskConfig task(Long taskId, String name, Integer rewardPoints) {

@@ -8,10 +8,12 @@ import com.budou.incentive.dao.mapper.UserCurrencyMapper;
 import com.budou.incentive.dao.model.AwardConfig;
 import com.budou.incentive.dao.model.FinishTaskRecord;
 import com.budou.incentive.dao.model.TaskConfig;
+import com.budou.incentive.dao.model.UserAwardRecord;
 import com.budou.incentive.dto.agent.AgentToolResponse;
 import com.budou.incentive.dto.agent.AwardDetailView;
 import com.budou.incentive.dto.agent.AwardOptionView;
 import com.budou.incentive.dto.agent.ExchangeEligibilityView;
+import com.budou.incentive.dto.agent.ExchangeRecordView;
 import com.budou.incentive.dto.agent.TaskOptionView;
 import com.budou.incentive.dto.agent.UserPointsView;
 import org.springframework.stereotype.Service;
@@ -125,6 +127,23 @@ public class AgentQueryService {
         return AgentToolResponse.ok(eligibility.reasonCode(), eligibility, eligibility.reason());
     }
 
+    public AgentToolResponse<List<ExchangeRecordView>> listExchangeRecords(Long userId, Long awardId) {
+        if (!isPositive(userId) || (awardId != null && !isPositive(awardId))) {
+            return AgentToolResponse.fail("INVALID_ARGUMENT", "userId 和 awardId 必须为正整数", false);
+        }
+        if (userCurrencyMapper.selectCurrency(userId) == null) {
+            return AgentToolResponse.fail("USER_NOT_FOUND", "用户不存在", false);
+        }
+
+        List<ExchangeRecordView> records = userAwardMapper.selectUserAwardRecords(userId, awardId)
+                .stream()
+                .map(this::toExchangeRecordView)
+                .toList();
+        String code = records.isEmpty() ? "EXCHANGE_RECORDS_EMPTY" : "EXCHANGE_RECORDS_FOUND";
+        String message = records.isEmpty() ? "当前没有兑换记录" : "兑换记录查询成功";
+        return AgentToolResponse.ok(code, records, message);
+    }
+
     private TaskOptionView toTaskView(TaskConfig task, Integer rewardStatus) {
         String status = rewardStatus == null
                 ? TASK_AVAILABLE
@@ -192,8 +211,34 @@ public class AgentQueryService {
         );
     }
 
+    private ExchangeRecordView toExchangeRecordView(UserAwardRecord record) {
+        String status;
+        String message;
+        if (record.getStatus() != null && record.getStatus() == 0) {
+            status = "PROCESSING";
+            message = "兑换正在处理中";
+        } else if (record.getStatus() != null && record.getStatus() == 1) {
+            status = "SUCCESS";
+            message = "兑换成功";
+        } else {
+            status = "FAILED";
+            message = "兑换失败";
+        }
+        String awardName = record.getAwardName() == null
+                ? "奖品 " + record.getAwardId()
+                : record.getAwardName();
+        return new ExchangeRecordView(
+                record.getOrderId(),
+                record.getAwardId(),
+                awardName,
+                status,
+                message,
+                record.getCreateTime(),
+                record.getUpdateTime()
+        );
+    }
+
     private boolean isPositive(Long value) {
         return value != null && value > 0;
     }
 }
-

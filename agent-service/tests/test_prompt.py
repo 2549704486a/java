@@ -28,6 +28,12 @@ class PromptTest(unittest.TestCase):
         self.assertNotIn("prepare_redemption_goal", prompt)
         self.assertNotIn("确认保存", prompt)
 
+    def test_exchange_result_uses_persisted_record_tool(self):
+        prompt = build_system_prompt(False)
+
+        self.assertIn("list_my_exchange_records", prompt)
+        self.assertIn("不得把“处理中”描述成成功", prompt)
+
 
 if __name__ == "__main__":
     unittest.main()

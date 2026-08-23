@@ -84,6 +84,18 @@ class PendingExchangeData(BaseModel):
     expires_at: datetime = Field(alias="expiresAt")
 
 
+class ExchangeRecordData(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    order_id: int = Field(alias="orderId")
+    award_id: int = Field(alias="awardId")
+    award_name: str = Field(alias="awardName")
+    status: Literal["PROCESSING", "SUCCESS", "FAILED"]
+    status_message: str = Field(alias="statusMessage")
+    create_time: datetime = Field(alias="createTime")
+    update_time: datetime = Field(alias="updateTime")
+
+
 class RecommendedAward(BaseModel):
     award_id: int
     name: str

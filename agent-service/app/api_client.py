@@ -78,6 +78,14 @@ class BusinessApiClient:
             f"/agent/query/users/{user_id}/awards/{award_id}/eligibility"
         )
 
+    def list_exchange_records(
+        self,
+        user_id: int,
+        award_id: int | None = None,
+    ) -> ToolEnvelope:
+        params = {"awardId": str(award_id)} if award_id is not None else None
+        return self._get(f"/agent/query/users/{user_id}/exchanges", params=params)
+
     def get_campaign_planning_snapshot(self, segment_key: str) -> ToolEnvelope:
         return self._get(
             f"/agent/operator/query/campaign-planning/snapshots/{segment_key}"
