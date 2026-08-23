@@ -3,8 +3,12 @@ import type {
   CurrentUserResponse,
   DashboardResponse,
   CurrentOperatorResponse,
+  CampaignActivityRecord,
+  CampaignDraftRecord,
+  CampaignEffectMetricRecord,
   OperatorChatResponse,
-  OrdersResponse
+  OrdersResponse,
+  ToolEnvelope
 } from "./types";
 
 interface ApiErrorBody {
@@ -122,6 +126,70 @@ export async function sendOperatorChat(
     })
   });
   return readJson<OperatorChatResponse>(response);
+}
+
+export async function fetchCampaignDrafts(
+  accessToken: string
+): Promise<ToolEnvelope<CampaignDraftRecord[]>> {
+  const response = await fetch("/v1/operator/campaign/drafts?limit=50", {
+    headers: authenticatedHeaders(accessToken)
+  });
+  return readJson<ToolEnvelope<CampaignDraftRecord[]>>(response);
+}
+
+export async function actOnCampaignDraft(
+  accessToken: string,
+  draftId: number,
+  action: "submit" | "approve" | "reject" | "publish",
+  version: number,
+  comment?: string
+): Promise<ToolEnvelope<CampaignDraftRecord | CampaignActivityRecord>> {
+  const response = await fetch(
+    `/v1/operator/campaign/drafts/${draftId}/${action}`,
+    {
+      method: "POST",
+      headers: {
+        ...authenticatedHeaders(accessToken),
+        "Content-Type": "application/json; charset=utf-8"
+      },
+      body: JSON.stringify({ version, comment: comment || null })
+    }
+  );
+  return readJson<ToolEnvelope<CampaignDraftRecord | CampaignActivityRecord>>(response);
+}
+
+export async function fetchCampaignActivities(
+  accessToken: string
+): Promise<ToolEnvelope<CampaignActivityRecord[]>> {
+  const response = await fetch("/v1/operator/campaign/activities?limit=50", {
+    headers: authenticatedHeaders(accessToken)
+  });
+  return readJson<ToolEnvelope<CampaignActivityRecord[]>>(response);
+}
+
+export async function recordCampaignMetric(
+  accessToken: string,
+  activityId: number,
+  payload: {
+    metric_name: string;
+    metric_value: number;
+    sample_size: number;
+    measured_at: string;
+    source_ref: string | null;
+  }
+): Promise<ToolEnvelope<CampaignEffectMetricRecord>> {
+  const response = await fetch(
+    `/v1/operator/campaign/activities/${activityId}/metrics`,
+    {
+      method: "POST",
+      headers: {
+        ...authenticatedHeaders(accessToken),
+        "Content-Type": "application/json; charset=utf-8"
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+  return readJson<ToolEnvelope<CampaignEffectMetricRecord>>(response);
 }
 
 export async function fetchHealth(): Promise<boolean> {

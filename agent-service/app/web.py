@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator
 
 from app.api_client import BusinessApiError
 from app.auth import (
@@ -40,7 +40,10 @@ from app.operator_auth import (
 from app.operator_agent import OperatorAgentRuntime
 from app.operator_tools import (
     CAMPAIGN_DRAFT,
+    CAMPAIGN_METRIC,
+    CAMPAIGN_PUBLISH,
     CAMPAIGN_READ,
+    CAMPAIGN_REVIEW,
     CampaignDraftInput,
     OperatorKnowledgeSearchInput,
     build_operator_tools,
@@ -150,6 +153,23 @@ class OperatorChatResponse(BaseModel):
     elapsed_ms: float
 
 
+class CampaignWorkflowActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    version: int = Field(ge=0)
+    comment: str | None = Field(default=None, max_length=500)
+
+
+class CampaignEffectMetricRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    metric_name: str = Field(min_length=1, max_length=64)
+    metric_value: float
+    sample_size: int = Field(ge=1)
+    measured_at: AwareDatetime
+    source_ref: str | None = Field(default=None, max_length=255)
+
+
 def default_runtime_factory() -> AgentRuntime:
     load_dotenv()
     return AgentRuntime(Settings.from_env())
@@ -178,6 +198,7 @@ def default_operator_agent_runtime_factory(
     return OperatorAgentRuntime(
         settings=runtime.settings,
         data_provider=data_provider,
+        business_client=runtime.client,
         knowledge_search=runtime.operator_knowledge_search,
     )
 
@@ -629,11 +650,150 @@ def create_app(
                 "operator_knowledge_search",
                 None,
             ),
+            business_client=(
+                request.app.state.runtime.client
+                if hasattr(
+                    request.app.state.runtime.client,
+                    "create_campaign_draft",
+                )
+                else None
+            ),
         )
         draft_tool = next(item for item in tools if item.name == "draft_campaign_plan")
         with capture_tool_trace(request_id):
             result = draft_tool.invoke(payload.model_dump())
         return JSONResponse(content=result, headers={"X-Request-ID": request_id})
+
+    @application.get("/v1/operator/campaign/drafts")
+    def list_campaign_drafts(
+        request: Request,
+        limit: int = 50,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_READ)
+        return operator_business_response(
+            request_id,
+            lambda: request.app.state.runtime.client.list_campaign_drafts(limit),
+        )
+
+    @application.post("/v1/operator/campaign/drafts/{draft_id}/submit")
+    def submit_campaign_draft(
+        draft_id: int,
+        payload: CampaignWorkflowActionRequest,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_DRAFT)
+        return campaign_draft_action_response(
+            request, request_id, operator, draft_id, "submit", payload
+        )
+
+    @application.post("/v1/operator/campaign/drafts/{draft_id}/approve")
+    def approve_campaign_draft(
+        draft_id: int,
+        payload: CampaignWorkflowActionRequest,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_REVIEW)
+        return campaign_draft_action_response(
+            request, request_id, operator, draft_id, "approve", payload
+        )
+
+    @application.post("/v1/operator/campaign/drafts/{draft_id}/reject")
+    def reject_campaign_draft(
+        draft_id: int,
+        payload: CampaignWorkflowActionRequest,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_REVIEW)
+        return campaign_draft_action_response(
+            request, request_id, operator, draft_id, "reject", payload
+        )
+
+    @application.post("/v1/operator/campaign/drafts/{draft_id}/publish")
+    def publish_campaign_draft(
+        draft_id: int,
+        payload: CampaignWorkflowActionRequest,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_PUBLISH)
+        return campaign_draft_action_response(
+            request, request_id, operator, draft_id, "publish", payload
+        )
+
+    @application.get("/v1/operator/campaign/activities")
+    def list_campaign_activities(
+        request: Request,
+        limit: int = 50,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_READ)
+        return operator_business_response(
+            request_id,
+            lambda: request.app.state.runtime.client.list_campaign_activities(limit),
+        )
+
+    @application.post("/v1/operator/campaign/activities/{activity_id}/metrics")
+    def record_campaign_metric(
+        activity_id: int,
+        payload: CampaignEffectMetricRequest,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_METRIC)
+        return operator_business_response(
+            request_id,
+            lambda: request.app.state.runtime.client.record_campaign_metric(
+                activity_id,
+                {
+                    "operatorId": operator.operator_id,
+                    "metricName": payload.metric_name,
+                    "metricValue": payload.metric_value,
+                    "sampleSize": payload.sample_size,
+                    "measuredAt": payload.measured_at.isoformat(),
+                    "sourceRef": payload.source_ref,
+                },
+            ),
+        )
+
+    @application.get("/v1/operator/campaign/activities/{activity_id}/metrics")
+    def list_campaign_metrics(
+        activity_id: int,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_READ)
+        return operator_business_response(
+            request_id,
+            lambda: request.app.state.runtime.client.list_campaign_metrics(activity_id),
+        )
 
     @application.post(
         "/v1/operator/knowledge/search",
@@ -719,6 +879,53 @@ def require_operator_permission(
     missing = [permission for permission in required if permission not in operator.permissions]
     if missing:
         raise OperatorPermissionError(f"运营身份缺少权限：{', '.join(missing)}")
+
+
+def campaign_draft_action_response(
+    request: Request,
+    request_id: str,
+    operator: AuthenticatedOperator,
+    draft_id: int,
+    action: str,
+    payload: CampaignWorkflowActionRequest,
+) -> JSONResponse:
+    # Operator identity comes from the token, never from browser-controlled JSON.
+    return operator_business_response(
+        request_id,
+        lambda: request.app.state.runtime.client.act_on_campaign_draft(
+            draft_id,
+            action,
+            {
+                "operatorId": operator.operator_id,
+                "version": payload.version,
+                "comment": payload.comment,
+            },
+        ),
+    )
+
+
+def operator_business_response(
+    request_id: str,
+    operation: Callable[[], Any],
+) -> JSONResponse:
+    try:
+        result = operation()
+    except BusinessApiError as exc:
+        return JSONResponse(
+            status_code=503 if exc.retryable else 409,
+            content={
+                "success": False,
+                "code": exc.code,
+                "data": None,
+                "message": exc.message,
+                "retryable": exc.retryable,
+            },
+            headers={"X-Request-ID": request_id},
+        )
+    return JSONResponse(
+        content=result.model_dump(mode="json"),
+        headers={"X-Request-ID": request_id},
+    )
 
 
 def get_operator_agent_runtime(request: Request) -> OperatorAgentRuntime:

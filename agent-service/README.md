@@ -8,7 +8,7 @@
 - 使用 5 个基础查询 Tool、2 个只读组合 Skill、1 个受控兑换 Skill 和 1 个长期记忆 Skill。
 - `plan_points_for_award` 使用确定性代码计算积分缺口和任务组合。
 - `recommend_awards` 使用确定性代码过滤并排序当前真正可兑换的奖品。
-- 启动时发现并校验 `skills/*/SKILL.md`，Tool 描述、Skill 版本和哈希来自声明文件。
+- 启动时发现并校验 `skills/*/SKILL.md`，Tool 描述和 Skill 版本来自声明文件。
 - 提供 FastAPI HTTP 接口，支持请求校验、请求 ID、错误脱敏和有界 Agent 缓存。
 - 使用空闲 TTL 回收会话，并在每次模型调用前按完整轮次和估算 token 裁剪可见上下文；裁剪指标与模型实际 token 写入日志。
 - 使用签名 JWT 验证用户身份，查询、会话和兑换不接受浏览器自行指定用户 ID。
@@ -23,7 +23,7 @@
 
 ## 2. 环境准备
 
-要求 Python 3.11。先启动 MySQL、Redis 和 Java 服务，默认地址分别为 `127.0.0.1:3306`、`127.0.0.1:6379` 和 `http://127.0.0.1:8088`。首次升级执行 `sql/migrate_agent_long_term_memory.sql` 创建长期记忆表；启用运营草案前执行 `sql/migrations/20260822_add_campaign_metric_history.sql` 创建历史活动指标表。
+要求 Python 3.11。先启动 MySQL、Redis 和 Java 服务，默认地址分别为 `127.0.0.1:3306`、`127.0.0.1:6379` 和 `http://127.0.0.1:8088`。首次升级执行 `sql/migrate_agent_long_term_memory.sql` 创建长期记忆表；启用运营功能前依次执行 `sql/migrations/20260822_add_campaign_metric_history.sql` 和 `sql/migrations/20260824_add_campaign_workflow.sql`。
 
 ```powershell
 cd D:\工作\incentive-事务消息\agent-service
@@ -80,7 +80,7 @@ GROWTH_MEMORY_MYSQL_PASSWORD=本地MySQL密码
 GROWTH_MEMORY_MYSQL_TABLE=agent_long_term_memory
 OPERATOR_ACCESS_TOKEN=独立于普通用户令牌的运营访问令牌
 OPERATOR_ID=local-operator
-OPERATOR_PERMISSIONS=campaign:read,campaign:draft
+OPERATOR_PERMISSIONS=campaign:read,campaign:draft,campaign:review,campaign:publish,campaign:metric
 ```
 
 运营接口不挂载到普通用户 Agent。配置完成后，可使用以下命令验证只读快照：
@@ -92,7 +92,7 @@ Invoke-RestMethod `
   -Headers $headers
 ```
 
-启动服务后可访问 `http://127.0.0.1:8090/operator` 进入独立运营工作台。页面使用 `OPERATOR_ACCESS_TOKEN` 登录；对话接口为 `POST /v1/operator/chat`，身份校验接口为 `GET /v1/operator/me`。运营 Agent 只读取快照、查询知识并生成待人工审阅草案，不具备发布能力。
+启动服务后可访问 `http://127.0.0.1:8090/operator` 进入独立运营工作台。页面使用 `OPERATOR_ACCESS_TOKEN` 登录；对话接口为 `POST /v1/operator/chat`，身份校验接口为 `GET /v1/operator/me`。运营 Agent 负责读取快照、查询知识和生成草案；提交审核、批准、拒绝、发布和效果回写由工作台调用确定性服务完成。模型本身不具备跳过审核直接发布的能力。
 
 ## 3. 先验证业务 Skill
 
@@ -103,7 +103,7 @@ Invoke-RestMethod `
 .\.venv\Scripts\python.exe -m app.main --user-id 10 --recommend-awards 3
 ```
 
-Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Tool 元数据提供给模型。调用 `plan_points_for_award` 时，运行时激活完整 Skill 定义并记录版本与 SHA-256；积分计算仍由 `app/skills/points_plan.py` 的确定性代码完成，不让模型按说明文字自行计算。
+Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Tool 元数据提供给模型。调用 `plan_points_for_award` 时，运行时激活完整 Skill 定义并记录版本；积分计算仍由 `app/skills/points_plan.py` 的确定性代码完成，不让模型按说明文字自行计算。
 
 ## 4. 运行 Agent
 
@@ -259,7 +259,7 @@ $outputPrice = [double](Read-Host "每百万输出 Token 的美元单价")
 agent-service/logs/agent-service.log
 ```
 
-日志会记录 HTTP 请求 ID、用户 ID、请求总耗时，每次 Java 业务接口的路径、HTTP 状态、业务码、重试次数和耗时，以及组合 Skill 的名称、版本、定义哈希和总耗时。确认凭证不写入普通日志或 Tool 轨迹。
+日志会记录 HTTP 请求 ID、用户 ID、请求总耗时，每次 Java 业务接口的路径、HTTP 状态、业务码、重试次数和耗时，以及组合 Skill 的名称、版本和总耗时。确认凭证不写入普通日志或 Tool 轨迹。
 
 每次 Agent 调用还会输出一条 `agent_tool_trace` 结构化日志，以 `request_id` 关联本次实际执行的 Tool/Skill，记录参数、完成状态、业务结果码和耗时。轨迹不记录 API Key、用户问题正文和完整业务响应。
 

@@ -14,6 +14,7 @@ import com.budou.incentive.dto.agent.CampaignPlanningSnapshotView;
 import com.budou.incentive.dto.agent.CampaignSegmentSnapshotView;
 import com.budou.incentive.dto.agent.CampaignTaskSnapshotView;
 import com.budou.incentive.dto.agent.HistoricalCampaignMetricView;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -35,6 +36,7 @@ public class AgentOperatorQueryService {
     private final CampaignMetricHistoryMapper campaignMetricHistoryMapper;
     private final Supplier<Date> nowProvider;
 
+    @Autowired
     public AgentOperatorQueryService(UserCurrencyMapper userCurrencyMapper,
                                      TaskConfigMapper taskConfigMapper,
                                      AwardConfigMapper awardConfigMapper,

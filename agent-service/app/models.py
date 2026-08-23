@@ -354,7 +354,10 @@ class CampaignPlanningSnapshot(BaseModel):
     segment: CampaignSegmentSnapshot
     tasks: list[CampaignTaskSnapshot] = Field(default_factory=list)
     awards: list[CampaignAwardSnapshot] = Field(default_factory=list)
-    historical_metrics: list[HistoricalCampaignMetric] = Field(default_factory=list)
+    historical_metrics: list[HistoricalCampaignMetric] = Field(
+        default_factory=list,
+        alias="historicalMetrics",
+    )
 
 
 class SuggestedCampaignTask(BaseModel):

@@ -76,6 +76,65 @@ export interface OperatorChatResponse {
   elapsed_ms: number;
 }
 
+export type CampaignDraftStatus =
+  | "DRAFT"
+  | "PENDING_REVIEW"
+  | "APPROVED"
+  | "REJECTED"
+  | "PUBLISHED";
+
+export interface CampaignDraftRecord {
+  id: number;
+  draftKey: string;
+  version: number;
+  operatorId: string;
+  objective: string;
+  targetSegmentKey: string;
+  targetSegment: string;
+  budgetAmountCents: number;
+  pointsIssuanceCap: number;
+  startAt: string;
+  endAt: string;
+  planJson: string;
+  status: CampaignDraftStatus;
+  reviewerId?: string | null;
+  reviewComment?: string | null;
+  reviewedAt?: string | null;
+  publishedBy?: string | null;
+  publishedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CampaignActivityRecord {
+  id: number;
+  draftId: number;
+  objective: string;
+  targetSegmentKey: string;
+  budgetAmountCents: number;
+  pointsIssuanceCap: number;
+  startAt: string;
+  endAt: string;
+  planJson: string;
+  status: string;
+  publishedBy: string;
+  publishedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CampaignEffectMetricRecord {
+  id: number;
+  activityId: number;
+  metricName: string;
+  metricValue: number;
+  sampleSize?: number | null;
+  measuredAt: string;
+  sourceRef?: string | null;
+  recordedBy: string;
+  createdAt: string;
+}
+
 export interface PendingExchange {
   status: "AWAITING_CONFIRMATION";
   awardId: number;

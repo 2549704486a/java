@@ -18,6 +18,10 @@
 - `migrate_agent_exchange_idempotency.sql`
   - 为已有数据库新增 Agent 兑换请求级幂等表
   - 只新增表，不修改现有业务数据，可重复执行
+- `migrations/20260824_add_campaign_workflow.sql`
+  - 新增运营活动草案、审核审计、已发布活动和活动效果表
+  - 支撑运营 Agent 的草案持久化、人工审核、确定性发布和效果回流
+  - 使用 `CREATE TABLE IF NOT EXISTS`，可在已有环境重复执行
 
 ## 执行顺序
 
@@ -25,18 +29,20 @@
 
 1. 创建并确认 MySQL 实例已开启 binlog
 2. 执行 `init_budou.sql`
-3. 部署应用、Redis、RocketMQ、Canal
-4. 启动应用后预热缓存
-5. 先做接口冒烟，再做正式压测
+3. 执行 `migrations/20260824_add_campaign_workflow.sql`
+4. 部署应用、Redis、RocketMQ、Canal
+5. 启动应用后预热缓存
+6. 先做接口冒烟，再做正式压测
 
 ### 复用当前本地库或迁移后的旧库
 
 1. 先备份数据库
 2. 执行 `repair_current_budou.sql`
 3. 执行 `migrate_agent_exchange_idempotency.sql`
-4. 清理 Redis 中与库存、积分、兑换状态相关的旧缓存
-5. 重启应用并重新预热缓存
-6. 再进行业务验证
+4. 执行 `migrations/20260824_add_campaign_workflow.sql`
+5. 清理 Redis 中与库存、积分、兑换状态相关的旧缓存
+6. 重启应用并重新预热缓存
+7. 再进行业务验证
 
 ### 切换为本地业务演示数据
 

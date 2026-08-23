@@ -12,6 +12,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 
 from app.agent import ensure_knowledge_citations, extract_message_text
+from app.api_client import BusinessApiClient
 from app.campaign_data import CampaignDataProvider
 from app.config import Settings
 from app.knowledge_search import KnowledgeSearchService
@@ -48,6 +49,7 @@ def build_operator_agent(
     settings: Settings,
     data_provider: CampaignDataProvider,
     operator: AuthenticatedOperator,
+    business_client: BusinessApiClient,
     knowledge_search: KnowledgeSearchService | None = None,
     checkpointer: Any | None = None,
 ):
@@ -65,6 +67,7 @@ def build_operator_agent(
             data_provider=data_provider,
             operator=operator,
             knowledge_search=knowledge_search,
+            business_client=business_client,
         ),
         system_prompt=build_operator_system_prompt(knowledge_search is not None),
         checkpointer=checkpointer,
@@ -113,11 +116,13 @@ class OperatorAgentRuntime:
         self,
         settings: Settings,
         data_provider: CampaignDataProvider,
+        business_client: BusinessApiClient,
         knowledge_search: KnowledgeSearchService | None = None,
         checkpointer: Any | None = None,
     ) -> None:
         self._settings = settings
         self._data_provider = data_provider
+        self._business_client = business_client
         self._knowledge_search = knowledge_search
         self._checkpointer = checkpointer or InMemorySaver()
         self._agents: dict[str, Any] = {}
@@ -159,6 +164,7 @@ class OperatorAgentRuntime:
                     self._settings,
                     self._data_provider,
                     operator,
+                    self._business_client,
                     self._knowledge_search,
                     self._checkpointer,
                 )

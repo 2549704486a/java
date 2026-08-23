@@ -50,7 +50,13 @@ class Settings:
     operator_access_token: str | None = None
     operator_id: str = "local-operator"
     operator_permissions: frozenset[str] = frozenset(
-        {"campaign:read", "campaign:draft"}
+        {
+            "campaign:read",
+            "campaign:draft",
+            "campaign:review",
+            "campaign:publish",
+            "campaign:metric",
+        }
     )
     exchange_confirmation_ttl_seconds: int = 120
     exchange_confirmation_capacity: int = 10_000
@@ -141,7 +147,7 @@ class Settings:
                 item.strip()
                 for item in os.getenv(
                     "OPERATOR_PERMISSIONS",
-                    "campaign:read,campaign:draft",
+                    "campaign:read,campaign:draft,campaign:review,campaign:publish,campaign:metric",
                 ).split(",")
                 if item.strip()
             ),

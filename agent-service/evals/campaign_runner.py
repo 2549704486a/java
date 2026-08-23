@@ -43,7 +43,9 @@ def load_suite(path: Path = DEFAULT_CASES_PATH) -> dict[str, Any]:
         if parent:
             if parent not in expanded:
                 raise ValueError(f"快照 {name} 引用了尚未定义的父快照 {parent}")
-            merged = expanded[parent].model_dump(mode="json", by_alias=True)
+            # Fixture inheritance uses Python field names so a child snapshot can
+            # reliably override fields even when the HTTP model has Java aliases.
+            merged = expanded[parent].model_dump(mode="json")
             merged.update(source)
             source = merged
         expanded[name] = CampaignPlanningSnapshot.model_validate(source)

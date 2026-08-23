@@ -302,6 +302,7 @@ class HttpCampaignDataProviderTest(unittest.TestCase):
 
         self.assertEqual(SEGMENT_KEY, result.segment.segment_key)
         self.assertEqual(20, result.awards[0].inventory)
+        self.assertEqual(0.2, result.historical_metrics[0].value)
         http_client.close()
 
 

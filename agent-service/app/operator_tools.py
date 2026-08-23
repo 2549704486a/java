@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import uuid
 from datetime import datetime
 from typing import Literal
 
@@ -7,6 +9,7 @@ from langchain.tools import tool
 from pydantic import AwareDatetime, BaseModel, Field
 
 from app.campaign_data import CampaignDataProvider, CampaignDataUnavailable
+from app.api_client import BusinessApiClient, BusinessApiError
 from app.knowledge_search import KnowledgeSearchError, KnowledgeSearchService
 from app.models import CampaignBrief
 from app.operator_auth import AuthenticatedOperator, OperatorPermissionError
@@ -17,6 +20,9 @@ from app.trace import execute_traced
 
 CAMPAIGN_READ = "campaign:read"
 CAMPAIGN_DRAFT = "campaign:draft"
+CAMPAIGN_REVIEW = "campaign:review"
+CAMPAIGN_PUBLISH = "campaign:publish"
+CAMPAIGN_METRIC = "campaign:metric"
 OPERATOR_KNOWLEDGE_SCOPES = {
     "campaign_policy": ("campaign_policy", "rule_change_notice"),
     "award_rules": ("award_guide",),
@@ -70,6 +76,7 @@ def build_operator_tools(
     skill_registry: SkillRegistry | None = None,
     planning_skill: CampaignPlanningSkill | None = None,
     knowledge_search: KnowledgeSearchService | None = None,
+    business_client: BusinessApiClient | None = None,
 ):
     """构建独立运营 Tool；普通用户 Agent 不会调用此函数。"""
 
@@ -203,7 +210,34 @@ def build_operator_tools(
                 max_tasks=max_tasks,
                 max_awards=max_awards,
             )
-            return skill.create_draft(brief, snapshot).model_dump(mode="json")
+            plan = skill.create_draft(brief, snapshot)
+            plan_data = plan.model_dump(mode="json")
+            if business_client is None or plan.status != "DRAFT_READY":
+                return plan_data
+
+            # The LLM proposes the brief; persistence identity and ownership are
+            # bound by trusted application code rather than model arguments.
+            try:
+                return business_client.create_campaign_draft(
+                    {
+                        "draftKey": uuid.uuid4().hex,
+                        "operatorId": operator.operator_id,
+                        "objective": objective,
+                        "targetSegmentKey": target_segment_key,
+                        "targetSegment": snapshot.segment.description,
+                        "budgetAmountCents": budget_amount_cents,
+                        "pointsIssuanceCap": points_issuance_cap,
+                        "startAt": start_at.isoformat(),
+                        "endAt": end_at.isoformat(),
+                        "planJson": json.dumps(
+                            plan_data,
+                            ensure_ascii=False,
+                            separators=(",", ":"),
+                        ),
+                    }
+                ).model_dump(mode="json")
+            except BusinessApiError as exc:
+                return exc.as_envelope().model_dump(mode="json")
 
         return execute_traced("draft_campaign_plan", arguments, execute)
 

@@ -91,6 +91,45 @@ class BusinessApiClient:
             f"/agent/operator/query/campaign-planning/snapshots/{segment_key}"
         )
 
+    def create_campaign_draft(self, payload: dict) -> ToolEnvelope:
+        return self._post("/agent/operator/campaigns/drafts", payload)
+
+    def list_campaign_drafts(self, limit: int = 50) -> ToolEnvelope:
+        return self._get(
+            "/agent/operator/campaigns/drafts",
+            params={"limit": str(limit)},
+        )
+
+    def act_on_campaign_draft(
+        self,
+        draft_id: int,
+        action: str,
+        payload: dict,
+    ) -> ToolEnvelope:
+        if action not in {"submit", "approve", "reject", "publish"}:
+            raise ValueError(f"unsupported campaign draft action: {action}")
+        return self._post(
+            f"/agent/operator/campaigns/drafts/{draft_id}/{action}",
+            payload,
+        )
+
+    def list_campaign_activities(self, limit: int = 50) -> ToolEnvelope:
+        return self._get(
+            "/agent/operator/campaigns/activities",
+            params={"limit": str(limit)},
+        )
+
+    def record_campaign_metric(self, activity_id: int, payload: dict) -> ToolEnvelope:
+        return self._post(
+            f"/agent/operator/campaigns/activities/{activity_id}/metrics",
+            payload,
+        )
+
+    def list_campaign_metrics(self, activity_id: int) -> ToolEnvelope:
+        return self._get(
+            f"/agent/operator/campaigns/activities/{activity_id}/metrics"
+        )
+
     def submit_exchange(
         self,
         *,
@@ -142,6 +181,55 @@ class BusinessApiClient:
         logger.info(
             "business_api_write request_id=%s path=%s http_status=%s code=%s elapsed_ms=%.2f",
             request_id,
+            path,
+            response.status_code,
+            envelope.code,
+            (time.perf_counter() - started) * 1000,
+        )
+        return envelope
+
+    def _post(self, path: str, payload: dict) -> ToolEnvelope:
+        """Execute a state-changing request once; the caller handles unknown outcomes."""
+        request_id = current_correlation_id()
+        headers = {"X-Request-ID": request_id} if request_id else None
+        started = time.perf_counter()
+        try:
+            response = self._client.post(
+                path,
+                json=payload,
+                headers=headers,
+                timeout=self._timeout_seconds,
+            )
+        except (httpx.TimeoutException, httpx.TransportError) as exc:
+            logger.warning(
+                "business_api_write_unknown request_id=%s path=%s error=%s elapsed_ms=%.2f",
+                request_id or "-",
+                path,
+                exc.__class__.__name__,
+                (time.perf_counter() - started) * 1000,
+            )
+            raise BusinessApiError(
+                "BUSINESS_WRITE_UNKNOWN",
+                "无法确定写请求是否已经生效，请刷新事实状态后再操作",
+                False,
+            ) from exc
+        if response.is_error:
+            raise BusinessApiError(
+                "BUSINESS_API_HTTP_ERROR",
+                f"业务写入失败：HTTP {response.status_code}",
+                False,
+            )
+        try:
+            envelope = ToolEnvelope.model_validate(response.json())
+        except (ValueError, TypeError) as exc:
+            raise BusinessApiError(
+                "INVALID_BUSINESS_RESPONSE",
+                "业务服务返回了无法识别的数据",
+                False,
+            ) from exc
+        logger.info(
+            "business_api_write request_id=%s path=%s http_status=%s code=%s elapsed_ms=%.2f",
+            request_id or "-",
             path,
             response.status_code,
             envelope.code,
