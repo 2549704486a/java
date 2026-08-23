@@ -18,6 +18,7 @@ import {
 import { ApiError, fetchCurrentUser, fetchDashboard, fetchHealth } from "./api";
 import AwardCard from "./components/AwardCard";
 import ChatPanel from "./components/ChatPanel";
+import ExchangeHistory from "./components/ExchangeHistory";
 import type { AwardOption, DashboardResponse } from "./types";
 
 type Filter = "all" | "ready" | "planning";
@@ -45,6 +46,7 @@ export default function App() {
   const [filter, setFilter] = useState<Filter>("all");
   const [serviceOnline, setServiceOnline] = useState<boolean | null>(null);
   const [chatDraft, setChatDraft] = useState("");
+  const [ordersRefreshKey, setOrdersRefreshKey] = useState(0);
 
   async function loadDashboard(token: string, silent = false) {
     if (silent) setRefreshing(true);
@@ -186,6 +188,7 @@ export default function App() {
 
         <nav aria-label="主导航">
           <a className="is-active" href="#awards">奖品中心</a>
+          <a href="#orders">我的兑换</a>
           <a href="#advisor">兑换顾问</a>
         </nav>
 
@@ -251,6 +254,8 @@ export default function App() {
           </div>
           <span className="note-tag">SAFE BY DESIGN</span>
         </section>
+
+        <ExchangeHistory accessToken={accessToken} refreshKey={ordersRefreshKey} />
 
         <div className="content-layout">
           <section className="awards-section" id="awards">
@@ -329,6 +334,7 @@ export default function App() {
             userId={userId}
             externalDraft={chatDraft}
             onExternalDraftConsumed={() => setChatDraft("")}
+            onResponse={() => setOrdersRefreshKey((value) => value + 1)}
           />
         </div>
       </main>

@@ -584,6 +584,78 @@ main {
   letter-spacing: 0.17em;
 }
 
+.order-section {
+  margin-bottom: 48px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.order-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.order-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(248, 244, 233, 0.9);
+}
+
+.order-card.is-processing { border-color: rgba(240, 201, 104, 0.75); }
+.order-card.is-success { border-color: rgba(88, 164, 105, 0.55); }
+.order-card.is-failed { border-color: rgba(201, 78, 32, 0.45); }
+
+.order-status {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--paper-deep);
+  color: var(--green);
+}
+
+.order-card > div:nth-child(2),
+.order-result {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.order-card span,
+.order-card small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.order-card > div:nth-child(2) > strong {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-result {
+  text-align: right;
+}
+
+.order-result strong { font-size: 11px; }
+.order-result span { max-width: 92px; }
+.order-empty,
+.order-error { margin-top: 20px; color: var(--muted); font-size: 12px; }
+.order-empty { display: flex; align-items: center; gap: 8px; }
+.order-error { color: var(--orange-dark); }
+
 .content-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 410px;
@@ -1241,6 +1313,7 @@ footer {
 }
 
 @media (max-width: 1180px) {
+  .order-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .content-layout {
     grid-template-columns: minmax(0, 1fr) 360px;
   }
@@ -1367,6 +1440,9 @@ footer {
     grid-template-columns: auto 1fr;
     align-items: start;
   }
+
+  .order-section { padding: 20px 16px; }
+  .order-list { grid-template-columns: 1fr; }
 
   .note-tag {
     display: none;

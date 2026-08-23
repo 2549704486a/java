@@ -18,6 +18,7 @@ interface ChatPanelProps {
   userId: number;
   externalDraft: string;
   onExternalDraftConsumed: () => void;
+  onResponse?: () => void;
 }
 
 const starterPrompts = [
@@ -38,7 +39,8 @@ export default function ChatPanel({
   accessToken,
   userId,
   externalDraft,
-  onExternalDraftConsumed
+  onExternalDraftConsumed,
+  onResponse
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessage()]);
   const [draft, setDraft] = useState("");
@@ -89,6 +91,7 @@ export default function ChatPanel({
           elapsedMs: response.elapsed_ms
         }
       ]);
+      onResponse?.();
     } catch (error) {
       const messageText =
         error instanceof ApiError

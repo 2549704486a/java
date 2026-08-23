@@ -32,6 +32,24 @@ export interface DashboardResponse {
   awards: AwardOption[];
 }
 
+export type ExchangeStatus = "PROCESSING" | "SUCCESS" | "FAILED";
+
+export interface ExchangeRecord {
+  orderId: number;
+  awardId: number;
+  awardName: string;
+  status: ExchangeStatus;
+  statusMessage: string;
+  createTime: string;
+  updateTime: string;
+}
+
+export interface OrdersResponse {
+  request_id: string;
+  user_id: number;
+  records: ExchangeRecord[];
+}
+
 export interface CurrentUserResponse {
   user_id: number;
 }

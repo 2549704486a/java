@@ -68,6 +68,25 @@ class FakeBusinessClient:
             message="奖品列表查询成功",
         )
 
+    def list_exchange_records(self, user_id: int) -> ToolEnvelope:
+        self.calls.append(("orders", user_id))
+        return ToolEnvelope(
+            success=True,
+            code="EXCHANGE_RECORDS_FOUND",
+            data=[
+                {
+                    "orderId": 101,
+                    "awardId": 6,
+                    "awardName": "城市随行保温杯",
+                    "status": "PROCESSING",
+                    "statusMessage": "兑换正在处理中",
+                    "createTime": "2026-08-24T10:00:00",
+                    "updateTime": "2026-08-24T10:00:01",
+                }
+            ],
+            message="兑换记录查询成功",
+        )
+
 
 class FakeRuntime:
     def __init__(
@@ -158,6 +177,22 @@ class AgentWebTest(unittest.TestCase):
             [("points", 10), ("awards", 10)],
             runtime.client.calls,
         )
+
+    def test_orders_use_authenticated_user_and_return_persisted_status(self):
+        runtime = FakeRuntime()
+        app = create_test_app(runtime)
+
+        with TestClient(app) as client:
+            response = client.get(
+                "/v1/orders",
+                headers=auth_headers(user_id=11, request_id="orders-001"),
+            )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("orders-001", response.headers["X-Request-ID"])
+        self.assertEqual(11, response.json()["user_id"])
+        self.assertEqual("PROCESSING", response.json()["records"][0]["status"])
+        self.assertEqual([("orders", 11)], runtime.client.calls)
 
     def test_health_and_chat_contract(self):
         runtime = FakeRuntime()

@@ -1,4 +1,9 @@
-import type { ChatResponse, CurrentUserResponse, DashboardResponse } from "./types";
+import type {
+  ChatResponse,
+  CurrentUserResponse,
+  DashboardResponse,
+  OrdersResponse
+} from "./types";
 
 interface ApiErrorBody {
   code?: string;
@@ -57,6 +62,17 @@ export async function fetchDashboard(
     signal
   });
   return readJson<DashboardResponse>(response);
+}
+
+export async function fetchOrders(
+  accessToken: string,
+  signal?: AbortSignal
+): Promise<OrdersResponse> {
+  const response = await fetch("/v1/orders", {
+    headers: authenticatedHeaders(accessToken),
+    signal
+  });
+  return readJson<OrdersResponse>(response);
 }
 
 export async function sendChat(

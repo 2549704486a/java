@@ -25,6 +25,7 @@ from app.config import Settings
 from app.campaign_data import CampaignDataProvider, HttpCampaignDataProvider
 from app.models import (
     AwardOptionData,
+    ExchangeRecordData,
     PendingExchangeData,
     UserPointsData,
 )
@@ -100,6 +101,12 @@ class DashboardResponse(BaseModel):
     user_id: int
     points: int
     awards: list[AwardOptionData]
+
+
+class OrdersResponse(BaseModel):
+    request_id: str
+    user_id: int
+    records: list[ExchangeRecordData]
 
 
 class DashboardErrorResponse(BaseModel):
@@ -383,6 +390,68 @@ def create_app(
             user_id=user_id,
             points=points.points,
             awards=awards,
+        )
+        return JSONResponse(
+            content=response.model_dump(mode="json", by_alias=True),
+            headers={"X-Request-ID": request_id},
+        )
+
+    @application.get(
+        "/v1/orders",
+        response_model=OrdersResponse,
+        responses={
+            401: {"model": AuthenticationErrorResponse},
+            502: {"model": DashboardErrorResponse},
+            503: {"model": DashboardErrorResponse},
+        },
+    )
+    def orders(
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        """读取当前登录用户的真实兑换记录，不接受客户端指定 user_id。"""
+        user_id = authenticate_request(request, authorization).user_id
+        request_id = normalize_request_id(x_request_id)
+        try:
+            with capture_tool_trace(request_id):
+                envelope = request.app.state.runtime.client.list_exchange_records(user_id)
+            if not envelope.success:
+                status_code = 404 if envelope.code == "USER_NOT_FOUND" else 502
+                return dashboard_error(
+                    request_id,
+                    envelope.code,
+                    envelope.message,
+                    status_code,
+                )
+            records = [
+                ExchangeRecordData.model_validate(item)
+                for item in (envelope.data or [])
+            ]
+        except BusinessApiError as exc:
+            return dashboard_error(
+                request_id,
+                exc.code,
+                "兑换记录服务暂时不可用，请稍后重试",
+                503 if exc.retryable else 502,
+            )
+        except (TypeError, ValueError):
+            logger.exception(
+                "orders_invalid_response request_id=%s user_id=%s",
+                request_id,
+                user_id,
+            )
+            return dashboard_error(
+                request_id,
+                "INVALID_BUSINESS_RESPONSE",
+                "兑换记录数据格式异常",
+                502,
+            )
+
+        response = OrdersResponse(
+            request_id=request_id,
+            user_id=user_id,
+            records=records,
         )
         return JSONResponse(
             content=response.model_dump(mode="json", by_alias=True),
