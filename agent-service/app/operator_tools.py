@@ -26,7 +26,7 @@ CAMPAIGN_METRIC = "campaign:metric"
 OPERATOR_KNOWLEDGE_SCOPES = {
     "campaign_policy": ("campaign_policy", "rule_change_notice"),
     "award_rules": ("award_guide",),
-    "operations": ("incident_manual",),
+    "operations": ("incident_manual", "delivery_guide"),
     "review_cases": ("campaign_review",),
 }
 

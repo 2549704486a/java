@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "catalog_version": "2026.08.22.3",
+  "catalog_version": "2026.08.24.1",
   "documents": [
     {
       "id": "agent-service-guide",
@@ -37,6 +37,10 @@
     {
       "id": "campaign-rule-change-20260822",
       "path": "documents/campaign-rule-change-20260822.md"
+    },
+    {
+      "id": "campaign-delivery-guide",
+      "path": "documents/campaign-delivery-guide.md"
     }
   ]
 }

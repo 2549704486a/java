@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import unittest
 
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from app.agent import ensure_knowledge_citations, run_agent
 
@@ -93,6 +93,27 @@ class RunAgentTest(unittest.TestCase):
         answer = ensure_knowledge_citations(messages, messages[-1].content)
 
         self.assertIn(citation, answer)
+
+    def test_does_not_reuse_previous_turn_citation(self):
+        stale_citation = "[活动预算口径变更通知 / 适用问题]"
+        historical_payload = {
+            "data": {"matches": [{"citation": stale_citation}]}
+        }
+        messages = [
+            HumanMessage(content="活动预算口径是什么？"),
+            ToolMessage(
+                content=json.dumps(historical_payload, ensure_ascii=False),
+                tool_call_id="call-old",
+                name="search_business_knowledge",
+            ),
+            AIMessage(content=f"现金预算使用人民币。{stale_citation}"),
+            HumanMessage(content="怎么触达用户？"),
+            AIMessage(content=f"可以使用站内信。\n\n检索来源：{stale_citation}"),
+        ]
+
+        answer = ensure_knowledge_citations(messages, messages[-1].content)
+
+        self.assertEqual("可以使用站内信。", answer)
 
 
 if __name__ == "__main__":

@@ -60,7 +60,7 @@ def collect_knowledge_citations(
     messages,
     tool_names: frozenset[str] = frozenset({"search_business_knowledge"}),
 ) -> list[str]:
-    """只从本轮知识检索 Tool 的真实返回值中提取用户可读引用。"""
+    """从给定消息范围内的知识检索 Tool 返回值提取用户可读引用。"""
     citations: list[str] = []
     for message in messages:
         if (
@@ -80,17 +80,42 @@ def collect_knowledge_citations(
     return citations
 
 
+def latest_conversation_turn(messages) -> list:
+    """截取最后一条用户消息开始的当前轮，避免历史 Tool 结果污染引用。"""
+
+    for index in range(len(messages) - 1, -1, -1):
+        if isinstance(messages[index], HumanMessage):
+            return list(messages[index:])
+    # 单元测试或无状态调用可能只返回 ToolMessage 和 AIMessage。
+    return list(messages)
+
+
 def ensure_knowledge_citations(
     messages,
     response: str,
     tool_names: frozenset[str] = frozenset({"search_business_knowledge"}),
 ) -> str:
     """规范化真实 Tool 引用，并在模型完全漏引时补充最相关来源。"""
-    citations = collect_knowledge_citations(messages, tool_names)
-    if not citations:
-        return response
+    current_turn_messages = latest_conversation_turn(messages)
+    citations = collect_knowledge_citations(current_turn_messages, tool_names)
+    historical_citations = collect_knowledge_citations(messages, tool_names)
+    stale_citations = [
+        citation for citation in historical_citations if citation not in citations
+    ]
 
     normalized = response
+    for citation in stale_citations:
+        normalized = normalized.replace(citation, "")
+    if stale_citations:
+        normalized_lines = [
+            line
+            for line in normalized.splitlines()
+            if line.strip() not in {"检索来源：", "检索来源:"}
+        ]
+        normalized = "\n".join(normalized_lines).rstrip()
+    if not citations:
+        return normalized
+
     for citation in citations:
         first = normalized.find(citation)
         if first < 0:

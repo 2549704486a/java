@@ -94,6 +94,8 @@ Invoke-RestMethod `
 
 启动服务后可访问 `http://127.0.0.1:8090/operator` 进入独立运营工作台。页面使用 `OPERATOR_ACCESS_TOKEN` 登录；对话接口为 `POST /v1/operator/chat`，身份校验接口为 `GET /v1/operator/me`。运营 Agent 负责读取快照、查询知识和生成草案；提交审核、批准、拒绝、发布和效果回写由工作台调用确定性服务完成。模型本身不具备跳过审核直接发布的能力。
 
+运营对话会先输出 `KNOWLEDGE_QUERY`、`PLAN_REQUEST` 或 `ACTION_REQUEST` 三类结构化意图，再按意图收敛 Prompt 与 Tool。日志中的 `operator_intent_decision` 可用于排查路由，`operator_agent_tool_trace` 用于还原本轮 Tool 调用；知识引用只允许来自当前对话轮次的真实检索结果。
+
 ## 3. 先验证业务 Skill
 
 这一步不调用大模型，只验证 Java 接口和确定性积分计算：

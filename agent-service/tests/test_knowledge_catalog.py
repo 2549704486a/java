@@ -15,7 +15,7 @@ class KnowledgeCatalogTest(unittest.TestCase):
     def test_current_catalog_is_valid_and_versioned(self):
         snapshot = KnowledgeCatalog().load()
 
-        self.assertEqual("2026.08.22.3", snapshot.version)
+        self.assertEqual("2026.08.24.1", snapshot.version)
         self.assertEqual(
             {
                 "agent-service-guide",
@@ -27,6 +27,7 @@ class KnowledgeCatalogTest(unittest.TestCase):
                 "campaign-review-demo-202608",
                 "campaign-exception-handbook",
                 "campaign-rule-change-20260822",
+                "campaign-delivery-guide",
             },
             {document.metadata.knowledge_id for document in snapshot.documents},
         )
