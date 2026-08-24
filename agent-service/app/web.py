@@ -23,7 +23,7 @@ from app.auth import (
     authenticator_from_settings,
 )
 from app.config import Settings
-from app.campaign_data import CampaignDataProvider, HttpCampaignDataProvider
+from app.operator.campaign_data import CampaignDataProvider, HttpCampaignDataProvider
 from app.models import (
     AwardOptionData,
     ExchangeRecordData,
@@ -31,14 +31,14 @@ from app.models import (
     UserPointsData,
 )
 from app.runtime import AgentRuntime
-from app.operator_auth import (
+from app.operator.auth import (
     AuthenticatedOperator,
     OperatorAuthenticator,
     OperatorPermissionError,
     operator_authenticator_from_settings,
 )
-from app.operator_agent import OperatorAgentRuntime
-from app.operator_tools import (
+from app.operator.agent import OperatorAgentRuntime
+from app.operator.tools import (
     CAMPAIGN_DRAFT,
     CAMPAIGN_METRIC,
     CAMPAIGN_PUBLISH,

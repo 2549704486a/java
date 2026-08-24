@@ -6,7 +6,7 @@ import uuid
 from datetime import date
 
 from app.config import Settings
-from app.redis_growth_memory_store import RedisGrowthMemoryStore
+from app.memory.redis_store import RedisGrowthMemoryStore
 from app.runtime import build_growth_memory_store
 
 

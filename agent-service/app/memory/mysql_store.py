@@ -10,7 +10,7 @@ from typing import Iterator
 import pymysql
 from pymysql.cursors import DictCursor
 
-from app.growth_memory_store import (
+from app.memory.store import (
     ForgetScope,
     GrowthMemoryStoreBackend,
     MemoryChangeResult,

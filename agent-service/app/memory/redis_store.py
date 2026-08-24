@@ -5,7 +5,7 @@ import uuid
 
 import redis
 
-from app.growth_memory_store import (
+from app.memory.store import (
     ForgetScope,
     GrowthMemoryStoreBackend,
     MemoryType,

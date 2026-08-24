@@ -17,9 +17,9 @@ from langchain_openai import ChatOpenAI
 
 from app.api_client import BusinessApiClient
 from app.config import Settings
-from app.confirmation_store import ConfirmationStore
+from app.exchange.confirmation_store import ConfirmationStore
 from app.execution_context import bind_execution_context
-from app.growth_memory_store import GrowthMemoryStore
+from app.memory.store import GrowthMemoryStore
 from app.prompt import SYSTEM_PROMPT
 from app.skills.registry import SkillRegistry
 from app.tools import build_tools

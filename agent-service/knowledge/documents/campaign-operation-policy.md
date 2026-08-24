@@ -12,7 +12,7 @@ effective_from: 2026-08-22
 policy_key: campaign_operation_governance
 source_refs:
   - agent-service/app/skills/campaign_planning.py
-  - agent-service/app/operator_tools.py
+  - agent-service/app/operator/tools.py
   - agent-service/skills/campaign-planning/SKILL.md
   - docs/agent-design/37_运营活动草案最小闭环.md
   - docs/agent-design/46_运营活动审核发布与效果回流.md

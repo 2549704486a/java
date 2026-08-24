@@ -4,7 +4,7 @@ import unittest
 from datetime import date
 
 from app.execution_context import bind_execution_context
-from app.growth_memory_store import GrowthMemoryStore
+from app.memory.store import GrowthMemoryStore
 from app.models import ToolEnvelope
 from app.skills.growth_memory import GrowthMemorySkill
 from app.tools import build_tools

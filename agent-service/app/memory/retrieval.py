@@ -4,7 +4,7 @@ import re
 import unicodedata
 from collections.abc import Iterable
 
-from app.growth_memory_store import MemoryType
+from app.memory.store import MemoryType
 from app.models import MemoryItem
 
 

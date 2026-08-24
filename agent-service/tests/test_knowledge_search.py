@@ -5,14 +5,14 @@ import unittest
 
 from langchain_core.documents import Document
 
-from app.knowledge_search import (
+from app.knowledge.search import (
     KnowledgeSearchError,
     KnowledgeSearchService,
     normalized_euclidean_relevance,
     validate_index_freshness,
 )
-from app.knowledge_catalog import KnowledgeCatalog
-from app.query_normalization import normalize_business_query
+from app.knowledge.catalog import KnowledgeCatalog
+from app.knowledge.normalization import normalize_business_query
 from app.tools import build_tools
 from app.trace import capture_tool_trace
 from evals.fixtures import FixtureBusinessApiClient

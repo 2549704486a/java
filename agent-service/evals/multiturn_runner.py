@@ -13,7 +13,7 @@ from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
 
 from app.config import Settings
-from app.confirmation_store import ConfirmationStore
+from app.exchange.confirmation_store import ConfirmationStore
 from app.execution_context import bind_execution_context
 from app.prompt import SYSTEM_PROMPT
 from app.skills.registry import SkillRegistry

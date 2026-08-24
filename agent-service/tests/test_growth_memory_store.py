@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from datetime import date, datetime, timezone
 
-from app.growth_memory_store import GrowthMemoryStore
+from app.memory.store import GrowthMemoryStore
 
 
 class GrowthMemoryStoreTest(unittest.TestCase):

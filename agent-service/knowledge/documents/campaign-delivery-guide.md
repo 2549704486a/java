@@ -11,7 +11,7 @@ authority_level: system_contract
 effective_from: 2026-08-24
 source_refs:
   - docs/agent-design/46_运营活动审核发布与效果回流.md
-  - agent-service/app/operator_agent.py
+  - agent-service/app/operator/agent.py
 ---
 
 # 活动执行与用户触达说明

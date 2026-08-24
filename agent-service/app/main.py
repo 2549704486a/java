@@ -12,7 +12,7 @@ from app.agent import build_agent, run_agent
 from app.api_client import BusinessApiClient
 from app.config import Settings
 from app.logging_config import configure_logging
-from app.knowledge_search import open_knowledge_search
+from app.knowledge.search import open_knowledge_search
 from app.skills.award_recommendation import AwardRecommendationSkill
 from app.skills.points_plan import PointsPlanningSkill
 from app.skills.registry import SkillRegistry

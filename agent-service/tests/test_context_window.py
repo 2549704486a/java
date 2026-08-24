@@ -5,7 +5,7 @@ import unittest
 from langchain.agents.middleware import ModelRequest, ModelResponse
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 
-from app.confirmation_store import ConfirmationStore
+from app.exchange.confirmation_store import ConfirmationStore
 from app.context_window import (
     ContextWindowPolicy,
     apply_context_window,

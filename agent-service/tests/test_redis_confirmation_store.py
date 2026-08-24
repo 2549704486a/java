@@ -6,9 +6,9 @@ import time
 import unittest
 import uuid
 
-from app.confirmation_store import ConfirmationStatus
+from app.exchange.confirmation_store import ConfirmationStatus
 from app.config import Settings
-from app.redis_confirmation_store import RedisConfirmationStore
+from app.exchange.redis_store import RedisConfirmationStore
 from app.runtime import build_confirmation_store
 
 

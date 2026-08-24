@@ -247,14 +247,14 @@ $outputPrice = [double](Read-Host "每百万输出 Token 的美元单价")
 当前已完成知识源治理、文档切分和本地向量索引构建，还没有把 RAG 检索接入 Agent。新增或修改 `knowledge/documents/` 后，先审核动态事实边界并同步文档版本与目录版本，再执行目录校验和切分检查：
 
 ```powershell
-.\.venv\Scripts\python.exe -m app.knowledge_catalog
-.\.venv\Scripts\python.exe -m app.knowledge_index inspect-chunks
+.\.venv\Scripts\python.exe -m app.knowledge.catalog
+.\.venv\Scripts\python.exe -m app.knowledge.index inspect-chunks
 ```
 
 配置 `RAG_EMBEDDING_API_KEY`、`RAG_EMBEDDING_BASE_URL` 和 `RAG_EMBEDDING_MODEL` 后，可以重建本地持久化索引：
 
 ```powershell
-.\.venv\Scripts\python.exe -m app.knowledge_index build
+.\.venv\Scripts\python.exe -m app.knowledge.index build
 ```
 
 建库成功后再设置 `RAG_ENABLED=true` 并重启 Agent。Runtime 会校验索引非空，然后按需注册只读 `search_business_knowledge` Tool；低相关查询返回无答案，不会让模型猜测规则。聊天兼容接口不一定提供 Embedding，请以服务商实际模型能力为准。

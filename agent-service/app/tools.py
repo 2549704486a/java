@@ -10,10 +10,10 @@ from pydantic import BaseModel, Field
 from langchain.tools import tool
 
 from app.api_client import BusinessApiClient, BusinessApiError
-from app.confirmation_store import ConfirmationStore, ConfirmationStoreBackend
+from app.exchange.confirmation_store import ConfirmationStore, ConfirmationStoreBackend
 from app.execution_context import current_thread_id
-from app.growth_memory_store import GrowthMemoryStore, GrowthMemoryStoreBackend
-from app.knowledge_search import KnowledgeSearchError, KnowledgeSearchService
+from app.memory.store import GrowthMemoryStore, GrowthMemoryStoreBackend
+from app.knowledge.search import KnowledgeSearchError, KnowledgeSearchService
 from app.skills.award_recommendation import AwardRecommendationSkill
 from app.skills.controlled_exchange import ControlledExchangeSkill
 from app.skills.growth_memory import GrowthMemorySkill

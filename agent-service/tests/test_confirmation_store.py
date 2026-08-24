@@ -4,7 +4,7 @@ import threading
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from app.confirmation_store import ConfirmationStatus, ConfirmationStore
+from app.exchange.confirmation_store import ConfirmationStatus, ConfirmationStore
 
 
 class ConfirmationStoreTest(unittest.TestCase):

@@ -3,8 +3,8 @@ from __future__ import annotations
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from app.campaign_data import StaticCampaignDataProvider
-from app.knowledge_search import KnowledgeSearchResult
+from app.operator.campaign_data import StaticCampaignDataProvider
+from app.knowledge.search import KnowledgeSearchResult
 from app.models import (
     CampaignAwardSnapshot,
     CampaignBrief,
@@ -13,12 +13,12 @@ from app.models import (
     CampaignTaskSnapshot,
     HistoricalCampaignMetric,
 )
-from app.operator_tools import (
+from app.operator.tools import (
     CAMPAIGN_DRAFT,
     CAMPAIGN_READ,
     build_operator_tools,
 )
-from app.operator_auth import AuthenticatedOperator, OperatorPermissionError
+from app.operator.auth import AuthenticatedOperator, OperatorPermissionError
 from app.skills.campaign_planning import CampaignPlanningSkill
 
 

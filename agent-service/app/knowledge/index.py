@@ -18,10 +18,10 @@ from langchain_text_splitters import (
 )
 
 from app.config import Settings
-from app.knowledge_catalog import KnowledgeCatalog, KnowledgeCatalogSnapshot
+from app.knowledge.catalog import KnowledgeCatalog, KnowledgeCatalogSnapshot
 
 
-AGENT_SERVICE_ROOT = Path(__file__).resolve().parents[1]
+AGENT_SERVICE_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SEPARATORS = ("\n\n", "\n", "。", "；", "，", " ", "")
 
 

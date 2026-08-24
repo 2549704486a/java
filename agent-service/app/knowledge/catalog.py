@@ -13,7 +13,8 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 
-DEFAULT_KNOWLEDGE_DIR = Path(__file__).resolve().parents[1] / "knowledge"
+# 业务知识是部署资源，不放在 Python 包内；从 app/knowledge 回到 agent-service 根目录。
+DEFAULT_KNOWLEDGE_DIR = Path(__file__).resolve().parents[2] / "knowledge"
 REQUIRED_SECTIONS = ("适用问题", "规则说明", "实时信息边界", "来源")
 
 

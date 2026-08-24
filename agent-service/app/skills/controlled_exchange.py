@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import ValidationError
 
 from app.api_client import BusinessApiClient, BusinessApiError
-from app.confirmation_store import ConfirmationStatus, ConfirmationStoreBackend
+from app.exchange.confirmation_store import ConfirmationStatus, ConfirmationStoreBackend
 from app.models import (
     AwardData,
     EligibilityData,

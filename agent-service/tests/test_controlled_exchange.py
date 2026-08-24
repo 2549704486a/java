@@ -4,7 +4,7 @@ import threading
 import unittest
 
 from app.api_client import BusinessApiError
-from app.confirmation_store import ConfirmationStatus, ConfirmationStore
+from app.exchange.confirmation_store import ConfirmationStatus, ConfirmationStore
 from app.models import ToolEnvelope
 from app.skills.controlled_exchange import (
     ControlledExchangeSkill,

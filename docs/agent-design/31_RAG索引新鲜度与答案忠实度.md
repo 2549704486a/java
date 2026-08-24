@@ -112,7 +112,7 @@ RAG 开启时，服务读取正式集合的全部 Chunk 元数据，并与当前
 任一条件不满足都会关闭已打开的 Chroma 连接并拒绝 Agent Runtime 启动，提示重新执行：
 
 ```powershell
-python -m app.knowledge_index build
+python -m app.knowledge.index build
 ```
 
 门禁复用已有版本信息，没有增加另一套版本标识。

@@ -4,7 +4,7 @@ import unittest
 from datetime import date
 
 from app.execution_context import bind_execution_context
-from app.growth_memory_store import GrowthMemoryStore
+from app.memory.store import GrowthMemoryStore
 from app.models import ToolEnvelope
 from app.skills.points_plan import PointsPlanningSkill
 from app.skills.saved_goal_plan import SavedGoalPlanningSkill

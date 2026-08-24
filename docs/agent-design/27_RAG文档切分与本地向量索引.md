@@ -4,7 +4,7 @@
 
 ## 1. 当前实现
 
-入口位于 `agent-service/app/knowledge_index.py`，处理链路为：
+入口位于 `agent-service/app/knowledge/index.py`，处理链路为：
 
 ```text
 manifest.json
@@ -71,13 +71,13 @@ RAG_COLLECTION_NAME=incentive-business-rules
 
 ```powershell
 cd D:\工作\incentive-事务消息\agent-service
-.\.venv\Scripts\python.exe -m app.knowledge_index inspect-chunks
+.\.venv\Scripts\python.exe -m app.knowledge.index inspect-chunks
 ```
 
 配置 Embedding 服务后构建持久化索引：
 
 ```powershell
-.\.venv\Scripts\python.exe -m app.knowledge_index build
+.\.venv\Scripts\python.exe -m app.knowledge.index build
 ```
 
 本阶段没有配置真实 Embedding Key，因此没有把某个外部模型的索引结果当作交付物。测试使用确定性本地向量替身验证切分、建库、重复构建和检索流程；另用磁盘目录验证 Chroma 能够持久化工作。

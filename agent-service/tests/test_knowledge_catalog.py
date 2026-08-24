@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from app.knowledge_catalog import KnowledgeCatalog, KnowledgeCatalogError
+from app.knowledge.catalog import KnowledgeCatalog, KnowledgeCatalogError
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]

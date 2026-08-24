@@ -17,14 +17,14 @@
 
 ```powershell
 cd D:\工作\incentive-事务消息\agent-service
-.\.venv\Scripts\python.exe -m app.knowledge_catalog
-.\.venv\Scripts\python.exe -m app.knowledge_index inspect-chunks
+.\.venv\Scripts\python.exe -m app.knowledge.catalog
+.\.venv\Scripts\python.exe -m app.knowledge.index inspect-chunks
 ```
 
 只有校验通过的 `active` 文档才会进入切分与索引流程。配置 Embedding 服务后可执行：
 
 ```powershell
-.\.venv\Scripts\python.exe -m app.knowledge_index build
+.\.venv\Scripts\python.exe -m app.knowledge.index build
 ```
 
 索引默认写入 `knowledge/index/`。该目录是可重新生成的派生产物，不提交到 Git。

@@ -11,13 +11,13 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 
 from app.config import Settings
-from app.knowledge_catalog import KnowledgeCatalog, KnowledgeCatalogSnapshot
-from app.knowledge_index import (
+from app.knowledge.catalog import KnowledgeCatalog, KnowledgeCatalogSnapshot
+from app.knowledge.index import (
     build_openai_embeddings,
     close_vector_store,
     resolve_index_dir,
 )
-from app.query_normalization import normalize_business_query
+from app.knowledge.normalization import normalize_business_query
 
 
 def normalized_euclidean_relevance(distance: float) -> float:
@@ -403,11 +403,11 @@ def validate_index_freshness(
     metadatas = payload.get("metadatas") or []
     if not ids or not metadatas:
         raise KnowledgeSearchError(
-            "RAG 索引集合为空，请先执行 python -m app.knowledge_index build"
+            "RAG 索引集合为空，请先执行 python -m app.knowledge.index build"
         )
     if len(ids) != len(metadatas):
         raise KnowledgeSearchError(
-            "RAG 索引版本元数据不完整，请重新执行 python -m app.knowledge_index build"
+            "RAG 索引版本元数据不完整，请重新执行 python -m app.knowledge.index build"
         )
 
     actual_catalog_versions: set[str] = set()
@@ -415,14 +415,14 @@ def validate_index_freshness(
     for metadata in metadatas:
         if not isinstance(metadata, dict):
             raise KnowledgeSearchError(
-                "RAG 索引缺少版本元数据，请重新执行 python -m app.knowledge_index build"
+                "RAG 索引缺少版本元数据，请重新执行 python -m app.knowledge.index build"
             )
         catalog_version = str(metadata.get("catalog_version", "")).strip()
         knowledge_id = str(metadata.get("knowledge_id", "")).strip()
         knowledge_version = str(metadata.get("knowledge_version", "")).strip()
         if not catalog_version or not knowledge_id or not knowledge_version:
             raise KnowledgeSearchError(
-                "RAG 索引缺少版本元数据，请重新执行 python -m app.knowledge_index build"
+                "RAG 索引缺少版本元数据，请重新执行 python -m app.knowledge.index build"
             )
         actual_catalog_versions.add(catalog_version)
         actual_document_versions.setdefault(knowledge_id, set()).add(
@@ -444,7 +444,7 @@ def validate_index_freshness(
     if not index_is_fresh:
         raise KnowledgeSearchError(
             "RAG 索引版本与受控知识目录不一致，请重新执行 "
-            "python -m app.knowledge_index build"
+            "python -m app.knowledge.index build"
         )
 
 
@@ -457,7 +457,7 @@ def open_knowledge_search(
     index_dir = resolve_index_dir(settings.rag_index_dir)
     if not index_dir.is_dir():
         raise KnowledgeSearchError(
-            "RAG 索引目录不存在，请先执行 python -m app.knowledge_index build"
+            "RAG 索引目录不存在，请先执行 python -m app.knowledge.index build"
         )
 
     vector_store = Chroma(

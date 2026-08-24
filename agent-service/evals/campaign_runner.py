@@ -8,10 +8,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from app.campaign_data import StaticCampaignDataProvider
+from app.operator.campaign_data import StaticCampaignDataProvider
 from app.models import CampaignBrief, CampaignPlanDraft, CampaignPlanningSnapshot
-from app.operator_auth import AuthenticatedOperator
-from app.operator_tools import CAMPAIGN_DRAFT, CAMPAIGN_READ, build_operator_tools
+from app.operator.auth import AuthenticatedOperator
+from app.operator.tools import CAMPAIGN_DRAFT, CAMPAIGN_READ, build_operator_tools
 from app.skills.campaign_planning import CampaignPlanningSkill
 
 

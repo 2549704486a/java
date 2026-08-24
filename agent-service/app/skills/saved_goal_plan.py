@@ -8,8 +8,8 @@ from datetime import date
 from pydantic import ValidationError
 
 from app.api_client import BusinessApiClient, BusinessApiError
-from app.growth_memory_store import GrowthMemoryStoreBackend
-from app.memory_retrieval import select_memories
+from app.memory.store import GrowthMemoryStoreBackend
+from app.memory.retrieval import select_memories
 from app.models import (
     AwardOptionData,
     MemoryItem,

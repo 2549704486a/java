@@ -7,7 +7,7 @@ from langgraph.graph import START, MessagesState, StateGraph
 
 from app.agent import append_agent_turn
 from app.config import Settings
-from app.confirmation_store import ConfirmationStatus, ConfirmationStore
+from app.exchange.confirmation_store import ConfirmationStatus, ConfirmationStore
 from app.models import ToolEnvelope
 from app.runtime import AgentRuntime
 

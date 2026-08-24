@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 
 from app.auth import JwtAuthenticator
-from app.campaign_data import StaticCampaignDataProvider
+from app.operator.campaign_data import StaticCampaignDataProvider
 from app.models import (
     CampaignAwardSnapshot,
     CampaignPlanningSnapshot,
@@ -15,8 +15,8 @@ from app.models import (
     HistoricalCampaignMetric,
     ToolEnvelope,
 )
-from app.operator_auth import AuthenticatedOperator, OperatorAuthenticator
-from app.operator_tools import (
+from app.operator.auth import AuthenticatedOperator, OperatorAuthenticator
+from app.operator.tools import (
     CAMPAIGN_DRAFT,
     CAMPAIGN_METRIC,
     CAMPAIGN_PUBLISH,

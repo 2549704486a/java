@@ -8,8 +8,8 @@ from fastapi.testclient import TestClient
 
 from app.api_client import BusinessApiClient
 from app.auth import JwtAuthenticator
-from app.campaign_data import HttpCampaignDataProvider, StaticCampaignDataProvider
-from app.knowledge_search import KnowledgeSearchResult
+from app.operator.campaign_data import HttpCampaignDataProvider, StaticCampaignDataProvider
+from app.knowledge.search import KnowledgeSearchResult
 from app.models import (
     CampaignAwardSnapshot,
     CampaignPlanningSnapshot,
@@ -17,8 +17,8 @@ from app.models import (
     CampaignTaskSnapshot,
     HistoricalCampaignMetric,
 )
-from app.operator_auth import OperatorAuthenticator
-from app.operator_tools import CAMPAIGN_DRAFT, CAMPAIGN_READ
+from app.operator.auth import OperatorAuthenticator
+from app.operator.tools import CAMPAIGN_DRAFT, CAMPAIGN_READ
 from app.web import create_app
 
 

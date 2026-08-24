@@ -8,7 +8,7 @@ from langchain.agents.middleware import ModelRequest, ModelResponse, wrap_model_
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.messages.utils import count_tokens_approximately
 
-from app.confirmation_store import ConfirmationStoreBackend
+from app.exchange.confirmation_store import ConfirmationStoreBackend
 from app.execution_context import current_thread_id
 
 

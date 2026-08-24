@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from app.confirmation_store import ConfirmationStore
+from app.exchange.confirmation_store import ConfirmationStore
 from app.execution_context import bind_execution_context
 from app.models import ToolEnvelope
 from app.tools import build_tools

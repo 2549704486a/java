@@ -10,8 +10,8 @@ from langchain_chroma import Chroma
 from langchain_core.embeddings import Embeddings
 
 from app.config import Settings
-from app.knowledge_catalog import KnowledgeCatalog
-from app.knowledge_index import (
+from app.knowledge.catalog import KnowledgeCatalog
+from app.knowledge.index import (
     KnowledgeChunker,
     KnowledgeIndexBuilder,
     KnowledgeIndexError,
@@ -75,7 +75,7 @@ class KnowledgeIndexTest(unittest.TestCase):
         with self.assertRaisesRegex(KnowledgeIndexError, "chunk_overlap"):
             KnowledgeChunker(chunk_size=100, chunk_overlap=100)
 
-    @patch("app.knowledge_index.OpenAIEmbeddings")
+    @patch("app.knowledge.index.OpenAIEmbeddings")
     def test_embedding_client_uses_configured_batch_size(self, embeddings_class):
         settings = Settings(
             rag_embedding_api_key="test-key",

@@ -25,8 +25,8 @@
 
 | 位置 | 作用 |
 | --- | --- |
-| `app/confirmation_store.py` | 定义统一存储契约，并提供供单元测试使用的内存实现 |
-| `app/redis_confirmation_store.py` | 使用 Redis 和 Lua 保存共享凭证并完成跨实例原子状态迁移 |
+| `app/exchange/confirmation_store.py` | 定义统一存储契约，并提供供单元测试使用的内存实现 |
+| `app/exchange/redis_store.py` | 使用 Redis 和 Lua 保存共享凭证并完成跨实例原子状态迁移 |
 | `app/skills/controlled_exchange.py` | 编排准备、确认和取消；用保守短语白名单识别明确动作 |
 | `app/runtime.py` | 有待确认记录时确定性路由确认或取消，不让模型猜测高风险授权 |
 | `app/tools.py` | 向模型暴露 prepare/cancel，移除 prepare 结果中的一次性凭证 |

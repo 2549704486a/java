@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 import redis
 
-from app.confirmation_store import (
+from app.exchange.confirmation_store import (
     ClaimResult,
     ConfirmationRecord,
     ConfirmationStatus,

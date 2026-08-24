@@ -13,7 +13,7 @@ policy_key: campaign_budget_semantics
 supersedes: [campaign-budget-policy-legacy]
 source_refs:
   - agent-service/app/models.py
-  - agent-service/app/operator_tools.py
+  - agent-service/app/operator/tools.py
   - agent-service/app/skills/campaign_planning.py
   - sql/migrations/20260822_add_award_unit_cost.sql
   - docs/agent-design/37_运营活动草案最小闭环.md

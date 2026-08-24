@@ -8,11 +8,11 @@ from typing import Literal
 from langchain.tools import tool
 from pydantic import AwareDatetime, BaseModel, Field
 
-from app.campaign_data import CampaignDataProvider, CampaignDataUnavailable
+from app.operator.campaign_data import CampaignDataProvider, CampaignDataUnavailable
 from app.api_client import BusinessApiClient, BusinessApiError
-from app.knowledge_search import KnowledgeSearchError, KnowledgeSearchService
+from app.knowledge.search import KnowledgeSearchError, KnowledgeSearchService
 from app.models import CampaignBrief
-from app.operator_auth import AuthenticatedOperator, OperatorPermissionError
+from app.operator.auth import AuthenticatedOperator, OperatorPermissionError
 from app.skills.campaign_planning import CampaignPlanningSkill
 from app.skills.registry import SkillRegistry
 from app.trace import execute_traced

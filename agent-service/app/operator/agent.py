@@ -13,15 +13,15 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from app.agent import ensure_knowledge_citations, extract_message_text
 from app.api_client import BusinessApiClient
-from app.campaign_data import CampaignDataProvider
+from app.operator.campaign_data import CampaignDataProvider
 from app.config import Settings
-from app.knowledge_search import KnowledgeSearchService
-from app.operator_auth import AuthenticatedOperator
-from app.operator_intent import (
+from app.knowledge.search import KnowledgeSearchService
+from app.operator.auth import AuthenticatedOperator
+from app.operator.intent import (
     OperatorIntent,
     OperatorIntentRouter,
 )
-from app.operator_tools import build_operator_tools
+from app.operator.tools import build_operator_tools
 from app.trace import capture_tool_trace
 
 

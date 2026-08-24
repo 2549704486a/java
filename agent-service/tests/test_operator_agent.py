@@ -6,12 +6,12 @@ from types import SimpleNamespace
 
 from langchain_core.messages import AIMessage, ToolMessage
 
-from app.operator_agent import (
+from app.operator.agent import (
     build_operator_system_prompt,
     run_operator_agent,
     select_operator_tools,
 )
-from app.operator_intent import (
+from app.operator.intent import (
     OperatorIntent,
     OperatorIntentRouter,
     fallback_operator_intent,

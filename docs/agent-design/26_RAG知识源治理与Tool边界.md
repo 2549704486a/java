@@ -60,7 +60,7 @@
 
 ```powershell
 cd D:\工作\incentive-事务消息\agent-service
-.\.venv\Scripts\python.exe -m app.knowledge_catalog
+.\.venv\Scripts\python.exe -m app.knowledge.catalog
 ```
 
 当前自动化测试覆盖正常目录、目录穿越、重复 ID、来源文件缺失和必需章节缺失。校验通过只证明“知识原料满足治理契约”，不代表检索质量已经合格。

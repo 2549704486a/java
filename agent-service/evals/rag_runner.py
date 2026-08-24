@@ -15,9 +15,9 @@ from langchain.agents import create_agent
 
 from app.agent import ensure_knowledge_citations
 from app.config import Settings
-from app.confirmation_store import ConfirmationStore
+from app.exchange.confirmation_store import ConfirmationStore
 from app.execution_context import bind_execution_context
-from app.knowledge_search import KnowledgeSearchResult, open_knowledge_search
+from app.knowledge.search import KnowledgeSearchResult, open_knowledge_search
 from app.prompt import build_system_prompt
 from app.skills.registry import SkillRegistry
 from app.tools import build_tools

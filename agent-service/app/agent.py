@@ -8,12 +8,12 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 
 from app.api_client import BusinessApiClient
-from app.confirmation_store import ConfirmationStoreBackend
+from app.exchange.confirmation_store import ConfirmationStoreBackend
 from app.config import Settings
 from app.context_window import ContextWindowPolicy, build_context_window_middleware
 from app.execution_context import bind_execution_context
-from app.growth_memory_store import GrowthMemoryStoreBackend
-from app.knowledge_search import KnowledgeSearchService
+from app.memory.store import GrowthMemoryStoreBackend
+from app.knowledge.search import KnowledgeSearchService
 from app.prompt import build_system_prompt
 from app.skills.registry import SkillRegistry
 from app.tools import build_tools

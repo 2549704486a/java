@@ -13,14 +13,14 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from app.agent import append_agent_turn, build_agent, run_agent
 from app.api_client import BusinessApiClient
-from app.confirmation_store import ConfirmationStore, ConfirmationStoreBackend
-from app.growth_memory_store import GrowthMemoryStore, GrowthMemoryStoreBackend
+from app.exchange.confirmation_store import ConfirmationStore, ConfirmationStoreBackend
+from app.memory.store import GrowthMemoryStore, GrowthMemoryStoreBackend
 from app.config import Settings
-from app.knowledge_search import KnowledgeSearchService, open_knowledge_search
+from app.knowledge.search import KnowledgeSearchService, open_knowledge_search
 from app.models import PendingExchangeData, ToolEnvelope
-from app.mysql_growth_memory_store import MysqlGrowthMemoryStore
-from app.redis_confirmation_store import RedisConfirmationStore
-from app.redis_growth_memory_store import RedisGrowthMemoryStore
+from app.memory.mysql_store import MysqlGrowthMemoryStore
+from app.exchange.redis_store import RedisConfirmationStore
+from app.memory.redis_store import RedisGrowthMemoryStore
 from app.skills.controlled_exchange import (
     ControlledExchangeSkill,
     explicit_exchange_action,

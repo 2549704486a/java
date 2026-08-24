@@ -10,8 +10,8 @@ business_type: incident_manual
 authority_level: operations_manual
 effective_from: 2026-08-22
 source_refs:
-  - agent-service/app/campaign_data.py
-  - agent-service/app/operator_tools.py
+  - agent-service/app/operator/campaign_data.py
+  - agent-service/app/operator/tools.py
   - agent-service/app/skills/campaign_planning.py
 ---
 
