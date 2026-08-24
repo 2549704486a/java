@@ -11,7 +11,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator
 
@@ -841,8 +841,15 @@ def create_app(
             result = knowledge_tool.invoke(payload.model_dump())
         return JSONResponse(content=result, headers={"X-Request-ID": request_id})
 
-    # API 路由必须先注册；根路径静态挂载放在最后，避免吞掉 /v1 和 /docs。
+    # React 的客户端路由需要显式回退到同一份 index.html；StaticFiles
+    # 的 html 模式只处理真实目录，不会自动处理 /operator 深链接。
     if FRONTEND_DIST.is_dir():
+        @application.get("/operator", include_in_schema=False)
+        @application.get("/operator/", include_in_schema=False)
+        def operator_page() -> FileResponse:
+            return FileResponse(FRONTEND_DIST / "index.html")
+
+        # API 路由必须先注册；根路径静态挂载放在最后，避免吞掉 /v1 和 /docs。
         application.mount(
             "/",
             StaticFiles(directory=FRONTEND_DIST, html=True),

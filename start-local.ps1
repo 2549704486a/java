@@ -6,7 +6,8 @@ param(
     [switch]$SkipDashboard,
     [switch]$SkipApp,
     [switch]$SkipAgent,
-    [switch]$SkipWeb
+    [switch]$SkipWeb,
+    [switch]$RestartAgent
 )
 
 $ErrorActionPreference = 'Stop'
@@ -385,6 +386,33 @@ function Start-Agent {
     Wait-TcpPort -Name 'Agent HTTP service' -Port $AgentPort -TimeoutSeconds 45 | Out-Null
 }
 
+function Stop-AgentForRestart {
+    if (-not $RestartAgent -or $SkipAgent) {
+        return
+    }
+
+    $connection = Get-NetTCPConnection -LocalPort $AgentPort -State Listen -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($null -eq $connection) {
+        return
+    }
+
+    $process = Get-CimInstance Win32_Process -Filter "ProcessId=$($connection.OwningProcess)"
+    if ($null -eq $process -or $process.CommandLine -notmatch 'app\.server') {
+        throw "Port $AgentPort is not owned by this project's Agent service."
+    }
+
+    Write-Step "Restarting Agent HTTP service (stopping pid=$($process.ProcessId))"
+    Stop-Process -Id $process.ProcessId -Force
+    $deadline = (Get-Date).AddSeconds(10)
+    while ((Get-Date) -lt $deadline -and (Test-TcpPort $AgentPort)) {
+        Start-Sleep -Milliseconds 250
+    }
+    if (Test-TcpPort $AgentPort) {
+        throw "Agent HTTP service did not release port $AgentPort."
+    }
+}
+
 function Show-Status {
     $services = @(
         [pscustomobject]@{ Name = 'MySQL'; Port = 3306; Required = $true },
@@ -427,6 +455,7 @@ try {
     Start-Dashboard
     Start-App
     Build-Web
+    Stop-AgentForRestart
     Start-Agent
     Write-Step 'Local environment startup completed'
     Show-Status

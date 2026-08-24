@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -130,6 +133,23 @@ class FakeRuntime:
         return self.pending
 
 class AgentWebTest(unittest.TestCase):
+    def test_operator_deep_link_returns_spa_entry(self):
+        runtime = FakeRuntime()
+        with TemporaryDirectory() as temp_dir:
+            frontend_dist = Path(temp_dir)
+            frontend_dist.joinpath("index.html").write_text(
+                "<html><body>operator-spa</body></html>",
+                encoding="utf-8",
+            )
+            with patch("app.web.FRONTEND_DIST", frontend_dist):
+                app = create_test_app(runtime)
+                with TestClient(app) as client:
+                    response = client.get("/operator")
+
+        self.assertEqual(200, response.status_code)
+        self.assertIn("operator-spa", response.text)
+        self.assertIn("text/html", response.headers["content-type"])
+
     def test_chat_returns_safe_pending_exchange_without_confirmation_token(self):
         runtime = FakeRuntime(
             pending=PendingExchangeData(

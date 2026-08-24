@@ -137,6 +137,14 @@ Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Too
 .\start-local.ps1
 ```
 
+修改 Agent 或前端代码后，可以只重启 Agent，其他基础服务保持运行：
+
+```powershell
+.\start-local.ps1 -RestartAgent -SkipDashboard
+```
+
+脚本只会停止命令行为 `app.server` 的 `8090` 端口进程；如果端口属于其他程序会拒绝操作，避免误杀无关 Python 进程。
+
 如果这次不需要 Agent，可以添加 `-SkipAgent`。脚本会自动安装并构建 `web-ui`，默认监听 `127.0.0.1:8090`：
 
 - 奖品中心与 Agent 对话：`http://127.0.0.1:8090/`
