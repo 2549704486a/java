@@ -15,6 +15,16 @@ DROP TABLE IF EXISTS `user_task`;
 DROP TABLE IF EXISTS `award_inventory_split`;
 DROP TABLE IF EXISTS `add_currency_record`;
 DROP TABLE IF EXISTS `inventory_log`;
+DROP TABLE IF EXISTS `campaign_event`;
+DROP TABLE IF EXISTS `user_notification`;
+DROP TABLE IF EXISTS `campaign_delivery_task`;
+DROP TABLE IF EXISTS `campaign_target_user`;
+DROP TABLE IF EXISTS `campaign_execution`;
+DROP TABLE IF EXISTS `user_activity_summary`;
+DROP TABLE IF EXISTS `campaign_effect_metric`;
+DROP TABLE IF EXISTS `campaign_activity`;
+DROP TABLE IF EXISTS `campaign_plan_audit`;
+DROP TABLE IF EXISTS `campaign_plan_draft`;
 DROP TABLE IF EXISTS `campaign_metric_history`;
 DROP TABLE IF EXISTS `agent_long_term_memory`;
 DROP TABLE IF EXISTS `agent_exchange_request`;
@@ -156,6 +166,186 @@ CREATE TABLE `campaign_metric_history` (
   CONSTRAINT `chk_campaign_metric_value` CHECK ((`metric_value` >= 0) AND (`metric_value` <= 1)),
   CONSTRAINT `chk_campaign_metric_sample_size` CHECK (`sample_size` > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='运营活动历史指标';
+
+CREATE TABLE `campaign_plan_draft` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `draft_key` varchar(64) NOT NULL,
+  `version` int NOT NULL DEFAULT 1,
+  `operator_id` varchar(64) NOT NULL,
+  `objective` varchar(200) NOT NULL,
+  `target_segment_key` varchar(64) NOT NULL,
+  `target_segment` varchar(200) NOT NULL,
+  `budget_amount_cents` bigint NOT NULL,
+  `points_issuance_cap` bigint NOT NULL,
+  `start_at` datetime(3) NOT NULL,
+  `end_at` datetime(3) NOT NULL,
+  `plan_json` longtext NOT NULL,
+  `status` varchar(32) NOT NULL,
+  `reviewer_id` varchar(64) DEFAULT NULL,
+  `review_comment` varchar(500) DEFAULT NULL,
+  `reviewed_at` datetime(3) DEFAULT NULL,
+  `published_by` varchar(64) DEFAULT NULL,
+  `published_at` datetime(3) DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL,
+  `updated_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_campaign_plan_draft_key` (`draft_key`),
+  KEY `idx_campaign_plan_draft_status_updated` (`status`, `updated_at`),
+  KEY `idx_campaign_plan_draft_operator` (`operator_id`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='运营活动草案';
+
+CREATE TABLE `campaign_plan_audit` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `draft_id` bigint NOT NULL,
+  `action` varchar(32) NOT NULL,
+  `from_status` varchar(32) DEFAULT NULL,
+  `to_status` varchar(32) NOT NULL,
+  `operator_id` varchar(64) NOT NULL,
+  `comment` varchar(500) DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_campaign_plan_audit_draft` (`draft_id`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='运营活动审核审计';
+
+CREATE TABLE `campaign_activity` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `draft_id` bigint NOT NULL,
+  `objective` varchar(200) NOT NULL,
+  `target_segment_key` varchar(64) NOT NULL,
+  `budget_amount_cents` bigint NOT NULL,
+  `points_issuance_cap` bigint NOT NULL,
+  `start_at` datetime(3) NOT NULL,
+  `end_at` datetime(3) NOT NULL,
+  `plan_json` longtext NOT NULL,
+  `status` varchar(32) NOT NULL,
+  `published_by` varchar(64) NOT NULL,
+  `published_at` datetime(3) NOT NULL,
+  `created_at` datetime(3) NOT NULL,
+  `updated_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_campaign_activity_draft` (`draft_id`),
+  KEY `idx_campaign_activity_status_time` (`status`, `start_at`, `end_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='已发布运营活动';
+
+CREATE TABLE `campaign_effect_metric` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `activity_id` bigint NOT NULL,
+  `metric_name` varchar(64) NOT NULL,
+  `metric_value` decimal(18,6) NOT NULL,
+  `sample_size` int NOT NULL,
+  `measured_at` datetime(3) NOT NULL,
+  `source_ref` varchar(255) NOT NULL,
+  `recorded_by` varchar(64) NOT NULL,
+  `created_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_campaign_effect_activity_time` (`activity_id`, `measured_at`),
+  KEY `idx_campaign_effect_name_time` (`metric_name`, `measured_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='运营活动效果指标';
+
+CREATE TABLE `user_activity_summary` (
+  `user_id` bigint NOT NULL,
+  `last_login_at` datetime(3) DEFAULT NULL,
+  `last_active_at` datetime(3) DEFAULT NULL,
+  `source` varchar(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT 'REAL/FIXTURE',
+  `created_at` datetime(3) NOT NULL,
+  `updated_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`user_id`),
+  KEY `idx_user_activity_last_active` (`last_active_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户最近活跃摘要';
+
+CREATE TABLE `campaign_execution` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `activity_id` bigint NOT NULL,
+  `status` varchar(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `treatment_ratio_bps` int NOT NULL DEFAULT 9000,
+  `total_users` int NOT NULL DEFAULT 0,
+  `treatment_users` int NOT NULL DEFAULT 0,
+  `control_users` int NOT NULL DEFAULT 0,
+  `sent_users` int NOT NULL DEFAULT 0,
+  `failed_users` int NOT NULL DEFAULT 0,
+  `version` int NOT NULL DEFAULT 1,
+  `started_at` datetime(3) DEFAULT NULL,
+  `completed_at` datetime(3) DEFAULT NULL,
+  `last_error` varchar(500) DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL,
+  `updated_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_campaign_execution_activity` (`activity_id`),
+  KEY `idx_campaign_execution_status_updated` (`status`, `updated_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='活动执行实例';
+
+CREATE TABLE `campaign_target_user` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `execution_id` bigint NOT NULL,
+  `activity_id` bigint NOT NULL,
+  `user_id` bigint NOT NULL,
+  `experiment_group` varchar(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `delivery_channel` varchar(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `points_snapshot` bigint NOT NULL,
+  `last_active_at_snapshot` datetime(3) DEFAULT NULL,
+  `data_source` varchar(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `assigned_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_campaign_target_activity_user` (`activity_id`, `user_id`),
+  KEY `idx_campaign_target_execution_group` (`execution_id`, `experiment_group`),
+  KEY `idx_campaign_target_user_time` (`user_id`, `assigned_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='活动目标用户与实验分组快照';
+
+CREATE TABLE `campaign_delivery_task` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `execution_id` bigint NOT NULL,
+  `activity_id` bigint NOT NULL,
+  `target_user_id` bigint NOT NULL,
+  `user_id` bigint NOT NULL,
+  `channel` varchar(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `status` varchar(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `attempt_count` int NOT NULL DEFAULT 0,
+  `max_attempts` int NOT NULL DEFAULT 3,
+  `next_attempt_at` datetime(3) NOT NULL,
+  `claimed_at` datetime(3) DEFAULT NULL,
+  `sent_at` datetime(3) DEFAULT NULL,
+  `last_error` varchar(500) DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL,
+  `updated_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_campaign_delivery_activity_user_channel` (`activity_id`, `user_id`, `channel`),
+  KEY `idx_campaign_delivery_dispatch` (`status`, `next_attempt_at`, `id`),
+  KEY `idx_campaign_delivery_execution` (`execution_id`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='活动可靠投放任务';
+
+CREATE TABLE `user_notification` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `delivery_task_id` bigint NOT NULL,
+  `activity_id` bigint NOT NULL,
+  `user_id` bigint NOT NULL,
+  `title` varchar(120) NOT NULL,
+  `content` varchar(1000) NOT NULL,
+  `status` varchar(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `read_at` datetime(3) DEFAULT NULL,
+  `clicked_at` datetime(3) DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL,
+  `updated_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_notification_delivery_task` (`delivery_task_id`),
+  KEY `idx_user_notification_user_status_time` (`user_id`, `status`, `created_at`),
+  KEY `idx_user_notification_activity_user` (`activity_id`, `user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户站内消息';
+
+CREATE TABLE `campaign_event` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `event_key` varchar(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `activity_id` bigint NOT NULL,
+  `user_id` bigint NOT NULL,
+  `event_type` varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `source` varchar(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `occurred_at` datetime(3) NOT NULL,
+  `metadata_json` json DEFAULT NULL,
+  `created_at` datetime(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_campaign_event_key` (`event_key`),
+  KEY `idx_campaign_event_activity_type_time` (`activity_id`, `event_type`, `occurred_at`),
+  KEY `idx_campaign_event_user_time` (`user_id`, `occurred_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='活动行为事件';
 
 CREATE TABLE `award_inventory_split` (
   `splitId` bigint NOT NULL,

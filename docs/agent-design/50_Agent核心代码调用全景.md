@@ -2,7 +2,116 @@
 
 > 这张图用于回顾当前项目中 Agent 请求从哪里进入、模型如何选择 Tool、Skill 如何访问业务数据，以及短期记忆、长期记忆、RAG、受控兑换和智能运营分别落在哪一层。图中只保留当前真实存在的代码，不包含已经回滚的 MCP，也不包含尚未实现的多 Agent 调度器。
 
-## 1. 核心调用图
+## 1. 分块调用图
+
+Typora 会把每张 Mermaid 图整体压缩到正文宽度。节点太多时，即使逻辑正确也会难以阅读，因此这里先按调用链拆成五张图；最后仍保留完整总图，用于核对模块之间是否遗漏连线。
+
+### 1.1 三条入口总览
+
+```mermaid
+flowchart TB
+    USERUI["用户页面"] --> WEB["app/web.py"]
+    OPUI["运营工作台"] --> WEB
+    SERVER["app/server.py"] --> WEB
+
+    WEB --> USERFLOW["兑换助手对话"]
+    WEB --> OPFLOW["智能运营对话"]
+    WEB --> WORKFLOW["工作台确定性操作"]
+
+    USERFLOW --> CLIENT["app/api_client.py"]
+    OPFLOW --> CLIENT
+    WORKFLOW --> CLIENT
+    CLIENT --> JAVA["Java 业务系统"]
+```
+
+### 1.2 兑换助手 Agent 主链
+
+```mermaid
+flowchart TB
+    CHAT["POST /v1/chat"] --> AUTH["app/auth.py 用户鉴权"]
+    AUTH --> RUNTIME["app/runtime.py AgentRuntime"]
+
+    RUNTIME -->|普通对话| AGENT["app/agent.py"]
+    RUNTIME -->|明确确认或取消| DIRECT["确定性兑换路由"]
+
+    PROMPT["app/prompt.py"] --> AGENT
+    CONTEXT["app/context_window.py"] --> AGENT
+    CHECKPOINT["InMemorySaver 短期记忆"] --> AGENT
+    MODEL["ChatOpenAI"] --> AGENT
+
+    AGENT --> TOOLS["app/tools.py"]
+    DIRECT --> EXCHANGE["ControlledExchangeSkill"]
+    TOOLS --> EXCHANGE
+    TOOLS --> OTHER["查询 规划 推荐 记忆 RAG"]
+```
+
+### 1.3 用户 Tool 与数据去向
+
+```mermaid
+flowchart TB
+    TOOLS["app/tools.py"] --> QUERY["积分 任务 奖品 资格 订单"]
+    TOOLS --> PLAN["积分规划 目标规划 奖品推荐"]
+    TOOLS --> EXCHANGE["准备兑换与取消兑换"]
+    TOOLS --> MEMORY["长期记忆读写"]
+    TOOLS --> RAG["业务知识检索"]
+
+    QUERY --> CLIENT["BusinessApiClient"]
+    PLAN --> SKILLS["app/skills 业务编排"]
+    SKILLS --> CLIENT
+
+    EXCHANGE --> CONTROLLED["ControlledExchangeSkill"]
+    CONTROLLED --> CONFIRM["app/exchange 确认凭证"]
+    CONTROLLED --> CLIENT
+
+    MEMORY --> MEMORYSKILL["GrowthMemorySkill"]
+    MEMORYSKILL --> STORE["app/memory"]
+
+    RAG --> SEARCH["app/knowledge/search.py"]
+    SEARCH --> VECTOR["Chroma 向量索引"]
+```
+
+### 1.4 智能运营 Agent 与工作台
+
+```mermaid
+flowchart TB
+    CHAT["POST /v1/operator/chat"] --> AUTH["app/operator/auth.py"]
+    AUTH --> RUNTIME["OperatorAgentRuntime"]
+    RUNTIME --> INTENT["OperatorIntentRouter"]
+    INTENT --> AGENT["app/operator/agent.py"]
+    AGENT --> TOOLS["app/operator/tools.py"]
+
+    TOOLS --> SNAPSHOT["活动规划快照"]
+    TOOLS --> KNOWLEDGE["运营知识检索"]
+    TOOLS --> DRAFT["CampaignPlanningSkill"]
+
+    WORKBENCH["运营工作台接口"] --> RULES["权限 状态机 版本校验"]
+
+    SNAPSHOT --> CLIENT["BusinessApiClient"]
+    DRAFT --> CLIENT
+    RULES --> CLIENT
+    KNOWLEDGE --> SEARCH["KnowledgeSearchService"]
+```
+
+### 1.5 Python 到 Java 的落地链路
+
+```mermaid
+flowchart TB
+    CLIENT["app/api_client.py"] --> QUERY["AgentQueryController"]
+    CLIENT --> COMMAND["AgentCommandController"]
+    CLIENT --> OPQUERY["AgentOperatorQueryController"]
+    CLIENT --> CAMPAIGN["CampaignWorkflowController"]
+
+    QUERY --> DATA["MySQL 与 Redis"]
+    OPQUERY --> DATA
+    CAMPAIGN --> DATA
+    COMMAND --> OLD["旧事务消息兑换链路"]
+    OLD --> MQ["RocketMQ 消费者"]
+    MQ --> DATA
+```
+
+### 1.6 完整关系总览
+
+下面这张图信息最全，但不适合逐字阅读。需要检查跨模块关系时再看它；日常回顾以前五张图为主。
 
 ```mermaid
 flowchart TB

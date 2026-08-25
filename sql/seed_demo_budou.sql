@@ -8,6 +8,16 @@ START TRANSACTION;
 -- Step 1: 按依赖关系从业务流水向配置表清理，避免违反外键约束。
 DELETE FROM `inventory_log`;
 DELETE FROM `add_currency_record`;
+DELETE FROM `campaign_event`;
+DELETE FROM `user_notification`;
+DELETE FROM `campaign_delivery_task`;
+DELETE FROM `campaign_target_user`;
+DELETE FROM `campaign_execution`;
+DELETE FROM `campaign_effect_metric`;
+DELETE FROM `campaign_activity`;
+DELETE FROM `campaign_plan_audit`;
+DELETE FROM `campaign_plan_draft`;
+DELETE FROM `user_activity_summary`;
 DELETE FROM `campaign_metric_history`;
 DELETE FROM `agent_exchange_request`;
 DELETE FROM `idempotent_table`;
@@ -97,6 +107,26 @@ INSERT INTO `user_currency` (`userId`, `currency`, `createTime`, `updateTime`) V
 
 INSERT INTO `user_task` (`userId`, `completedTasks`)
 SELECT userId, 0 FROM `user_currency`;
+
+-- 最近活跃时间是客群计算的事实。该批数据仅用于本地演示，真实访问发生后会更新为 REAL。
+INSERT INTO `user_activity_summary`
+(`user_id`, `last_login_at`, `last_active_at`, `source`, `created_at`, `updated_at`)
+SELECT
+  `userId`,
+  CASE
+    WHEN `userId` <= 10 THEN DATE_SUB(NOW(), INTERVAL `userId` DAY)
+    WHEN `userId` <= 15 THEN DATE_SUB(NOW(), INTERVAL (10 + `userId`) DAY)
+    ELSE DATE_SUB(NOW(), INTERVAL (25 + `userId`) DAY)
+  END,
+  CASE
+    WHEN `userId` <= 10 THEN DATE_SUB(NOW(), INTERVAL `userId` DAY)
+    WHEN `userId` <= 15 THEN DATE_SUB(NOW(), INTERVAL (10 + `userId`) DAY)
+    ELSE DATE_SUB(NOW(), INTERVAL (25 + `userId`) DAY)
+  END,
+  'FIXTURE',
+  NOW(),
+  NOW()
+FROM `user_currency`;
 
 -- Step 5: 补充相互对应的任务、积分流水和兑换历史，形成可解释的用户故事。
 INSERT INTO `finish_task_record` (`userId`, `taskId`, `finishTime`, `status`) VALUES

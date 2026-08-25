@@ -23,7 +23,7 @@
 
 ## 2. 环境准备
 
-要求 Python 3.11。先启动 MySQL、Redis 和 Java 服务，默认地址分别为 `127.0.0.1:3306`、`127.0.0.1:6379` 和 `http://127.0.0.1:8088`。首次升级执行 `sql/migrate_agent_long_term_memory.sql` 创建长期记忆表；启用运营功能前依次执行 `sql/migrations/20260822_add_campaign_metric_history.sql` 和 `sql/migrations/20260824_add_campaign_workflow.sql`。
+要求 Python 3.11。先启动 MySQL、Redis 和 Java 服务，默认地址分别为 `127.0.0.1:3306`、`127.0.0.1:6379` 和 `http://127.0.0.1:8088`。首次升级执行 `sql/migrate_agent_long_term_memory.sql` 创建长期记忆表；启用运营功能前依次执行 `sql/migrations/20260822_add_campaign_metric_history.sql`、`sql/migrations/20260824_add_campaign_workflow.sql` 和 `sql/migrations/20260825_add_campaign_execution.sql`。
 
 ```powershell
 cd D:\工作\incentive-事务消息\agent-service
