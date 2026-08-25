@@ -34,6 +34,10 @@ class ToolTraceTest(unittest.TestCase):
             {key: value for key, value in session.as_dicts()[0].items() if key != "elapsed_ms"},
         )
         self.assertNotIn("data", session.as_dicts()[0])
+        self.assertEqual(
+            {"userId": 10, "points": 1680},
+            session.result_evidence()[0].result["data"],
+        )
 
     def test_records_exception_and_reraises_it(self):
         def fail():

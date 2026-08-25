@@ -27,12 +27,23 @@ class ToolExecutionTrace:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class ToolResultEvidence:
+    """仅在当前请求内使用的 Tool 结果，不写入普通轨迹日志。"""
+
+    sequence: int
+    tool_name: str
+    arguments: dict[str, Any]
+    result: Any
+
+
 class ToolTraceSession:
     """保存一次 Agent 请求中的 Tool 执行摘要。"""
 
     def __init__(self, correlation_id: str) -> None:
         self.correlation_id = correlation_id
         self._events: list[ToolExecutionTrace] = []
+        self._results: list[ToolResultEvidence] = []
         self._lock = threading.Lock()
 
     def record(
@@ -45,11 +56,13 @@ class ToolTraceSession:
         result_code: str | None,
         elapsed_ms: float,
         error_type: str | None = None,
+        result: Any = None,
     ) -> None:
         with self._lock:
+            sequence = len(self._events) + 1
             self._events.append(
                 ToolExecutionTrace(
-                    sequence=len(self._events) + 1,
+                    sequence=sequence,
                     tool_name=tool_name,
                     arguments=dict(arguments),
                     completed=completed,
@@ -59,6 +72,15 @@ class ToolTraceSession:
                     error_type=error_type,
                 )
             )
+            if completed:
+                self._results.append(
+                    ToolResultEvidence(
+                        sequence=sequence,
+                        tool_name=tool_name,
+                        arguments=dict(arguments),
+                        result=result,
+                    )
+                )
 
     def snapshot(self) -> list[ToolExecutionTrace]:
         with self._lock:
@@ -66,6 +88,10 @@ class ToolTraceSession:
 
     def as_dicts(self) -> list[dict[str, Any]]:
         return [event.as_dict() for event in self.snapshot()]
+
+    def result_evidence(self) -> list[ToolResultEvidence]:
+        with self._lock:
+            return list(self._results)
 
 
 _ACTIVE_TRACE: ContextVar[ToolTraceSession | None] = ContextVar(
@@ -124,6 +150,7 @@ def execute_traced(
             business_success=business_success,
             result_code=result_code,
             elapsed_ms=(time.perf_counter() - started) * 1000,
+            result=result,
         )
     return result
 
