@@ -35,7 +35,10 @@ class CampaignSnapshotInput(BaseModel):
     target_segment_key: str = Field(
         min_length=1,
         max_length=64,
-        description="服务端支持的固定客群标识，例如 POINTS_AT_LEAST_500",
+        description=(
+            "服务端支持的固定客群标识：ALL_USERS、POINTS_AT_LEAST_500、"
+            "ACTIVE_LAST_7_DAYS 或 INACTIVE_30_DAYS"
+        ),
     )
 
 

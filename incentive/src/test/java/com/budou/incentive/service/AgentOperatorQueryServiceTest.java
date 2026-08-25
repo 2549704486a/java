@@ -4,7 +4,6 @@ import com.budou.incentive.dao.mapper.AwardConfigMapper;
 import com.budou.incentive.dao.mapper.AwardInventorySplitMapper;
 import com.budou.incentive.dao.mapper.CampaignMetricHistoryMapper;
 import com.budou.incentive.dao.mapper.TaskConfigMapper;
-import com.budou.incentive.dao.mapper.UserCurrencyMapper;
 import com.budou.incentive.dao.model.AwardConfig;
 import com.budou.incentive.dao.model.CampaignMetricHistory;
 import com.budou.incentive.dao.model.TaskConfig;
@@ -34,7 +33,7 @@ class AgentOperatorQueryServiceTest {
     private static final Date NOW = Date.from(Instant.parse("2026-08-22T04:00:00Z"));
 
     @Mock
-    private UserCurrencyMapper userCurrencyMapper;
+    private CampaignAudienceService audienceService;
     @Mock
     private TaskConfigMapper taskConfigMapper;
     @Mock
@@ -49,7 +48,7 @@ class AgentOperatorQueryServiceTest {
     @BeforeEach
     void setUp() {
         service = new AgentOperatorQueryService(
-                userCurrencyMapper,
+                audienceService,
                 taskConfigMapper,
                 awardConfigMapper,
                 awardInventorySplitMapper,
@@ -60,7 +59,13 @@ class AgentOperatorQueryServiceTest {
 
     @Test
     void shouldBuildAllUsersSnapshotFromDatabaseFacts() {
-        when(userCurrencyMapper.countAllUsers()).thenReturn(20L);
+        when(audienceService.getSegmentSnapshot(AgentOperatorQueryService.ALL_USERS, NOW))
+                .thenReturn(new com.budou.incentive.dto.agent.CampaignSegmentSnapshotView(
+                        AgentOperatorQueryService.ALL_USERS,
+                        "全部积分用户",
+                        20L,
+                        NOW
+                ));
         when(taskConfigMapper.selectAllTasks()).thenReturn(List.of(activeTask()));
         when(awardConfigMapper.selectAllAwards()).thenReturn(List.of(splitAward()));
         when(awardInventorySplitMapper.selectTotalInventory(6L)).thenReturn(19L);
@@ -91,7 +96,15 @@ class AgentOperatorQueryServiceTest {
 
     @Test
     void shouldUseFixedPointsThresholdForSupportedSegment() {
-        when(userCurrencyMapper.countUsersWithMinimumPoints(500)).thenReturn(16L);
+        when(audienceService.getSegmentSnapshot(
+                AgentOperatorQueryService.POINTS_AT_LEAST_500,
+                NOW
+        )).thenReturn(new com.budou.incentive.dto.agent.CampaignSegmentSnapshotView(
+                AgentOperatorQueryService.POINTS_AT_LEAST_500,
+                "当前积分不少于 500 的用户",
+                16L,
+                NOW
+        ));
         when(taskConfigMapper.selectAllTasks()).thenReturn(List.of());
         when(awardConfigMapper.selectAllAwards()).thenReturn(List.of());
         when(campaignMetricHistoryMapper.selectLatest(
@@ -110,6 +123,8 @@ class AgentOperatorQueryServiceTest {
 
     @Test
     void shouldRejectUnverifiableNaturalLanguageSegment() {
+        when(audienceService.getSegmentSnapshot("最近30天未登录用户", NOW)).thenReturn(null);
+
         AgentToolResponse<CampaignPlanningSnapshotView> response = service.getPlanningSnapshot(
                 "最近30天未登录用户"
         );

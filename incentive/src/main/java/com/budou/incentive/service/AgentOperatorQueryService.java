@@ -4,7 +4,6 @@ import com.budou.incentive.dao.mapper.AwardConfigMapper;
 import com.budou.incentive.dao.mapper.AwardInventorySplitMapper;
 import com.budou.incentive.dao.mapper.CampaignMetricHistoryMapper;
 import com.budou.incentive.dao.mapper.TaskConfigMapper;
-import com.budou.incentive.dao.mapper.UserCurrencyMapper;
 import com.budou.incentive.dao.model.AwardConfig;
 import com.budou.incentive.dao.model.CampaignMetricHistory;
 import com.budou.incentive.dao.model.TaskConfig;
@@ -25,11 +24,13 @@ import java.util.function.Supplier;
 @Service
 public class AgentOperatorQueryService {
 
-    public static final String ALL_USERS = "ALL_USERS";
-    public static final String POINTS_AT_LEAST_500 = "POINTS_AT_LEAST_500";
+    public static final String ALL_USERS = CampaignAudienceService.ALL_USERS;
+    public static final String POINTS_AT_LEAST_500 = CampaignAudienceService.POINTS_AT_LEAST_500;
+    public static final String ACTIVE_LAST_7_DAYS = CampaignAudienceService.ACTIVE_LAST_7_DAYS;
+    public static final String INACTIVE_30_DAYS = CampaignAudienceService.INACTIVE_30_DAYS;
     private static final String PARTICIPATION_RATE = "participation_rate";
 
-    private final UserCurrencyMapper userCurrencyMapper;
+    private final CampaignAudienceService audienceService;
     private final TaskConfigMapper taskConfigMapper;
     private final AwardConfigMapper awardConfigMapper;
     private final AwardInventorySplitMapper awardInventorySplitMapper;
@@ -37,22 +38,22 @@ public class AgentOperatorQueryService {
     private final Supplier<Date> nowProvider;
 
     @Autowired
-    public AgentOperatorQueryService(UserCurrencyMapper userCurrencyMapper,
+    public AgentOperatorQueryService(CampaignAudienceService audienceService,
                                      TaskConfigMapper taskConfigMapper,
                                      AwardConfigMapper awardConfigMapper,
                                      AwardInventorySplitMapper awardInventorySplitMapper,
                                      CampaignMetricHistoryMapper campaignMetricHistoryMapper) {
-        this(userCurrencyMapper, taskConfigMapper, awardConfigMapper,
+        this(audienceService, taskConfigMapper, awardConfigMapper,
                 awardInventorySplitMapper, campaignMetricHistoryMapper, Date::new);
     }
 
-    AgentOperatorQueryService(UserCurrencyMapper userCurrencyMapper,
+    AgentOperatorQueryService(CampaignAudienceService audienceService,
                               TaskConfigMapper taskConfigMapper,
                               AwardConfigMapper awardConfigMapper,
                               AwardInventorySplitMapper awardInventorySplitMapper,
                               CampaignMetricHistoryMapper campaignMetricHistoryMapper,
                               Supplier<Date> nowProvider) {
-        this.userCurrencyMapper = userCurrencyMapper;
+        this.audienceService = audienceService;
         this.taskConfigMapper = taskConfigMapper;
         this.awardConfigMapper = awardConfigMapper;
         this.awardInventorySplitMapper = awardInventorySplitMapper;
@@ -62,11 +63,12 @@ public class AgentOperatorQueryService {
 
     public AgentToolResponse<CampaignPlanningSnapshotView> getPlanningSnapshot(String segmentKey) {
         Date now = nowProvider.get();
-        CampaignSegmentSnapshotView segment = resolveSegment(segmentKey, now);
+        CampaignSegmentSnapshotView segment = audienceService.getSegmentSnapshot(segmentKey, now);
         if (segment == null) {
             return AgentToolResponse.fail(
                     "UNSUPPORTED_CAMPAIGN_SEGMENT",
-                    "不支持的客群标识，仅支持 ALL_USERS 和 POINTS_AT_LEAST_500",
+                    "不支持的客群标识，仅支持 ALL_USERS、POINTS_AT_LEAST_500、" +
+                            "ACTIVE_LAST_7_DAYS 和 INACTIVE_30_DAYS",
                     false
             );
         }
@@ -105,26 +107,6 @@ public class AgentOperatorQueryService {
                 snapshot,
                 "运营活动规划快照读取成功"
         );
-    }
-
-    private CampaignSegmentSnapshotView resolveSegment(String segmentKey, Date now) {
-        if (ALL_USERS.equals(segmentKey)) {
-            return new CampaignSegmentSnapshotView(
-                    ALL_USERS,
-                    "全部积分用户",
-                    userCurrencyMapper.countAllUsers(),
-                    now
-            );
-        }
-        if (POINTS_AT_LEAST_500.equals(segmentKey)) {
-            return new CampaignSegmentSnapshotView(
-                    POINTS_AT_LEAST_500,
-                    "当前积分不少于 500 的用户",
-                    userCurrencyMapper.countUsersWithMinimumPoints(500),
-                    now
-            );
-        }
-        return null;
     }
 
     private CampaignTaskSnapshotView toTaskSnapshot(TaskConfig task, Date now) {
