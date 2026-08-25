@@ -8,6 +8,8 @@ import type {
   CampaignEffectMetricRecord,
   OperatorChatResponse,
   OrdersResponse,
+  NotificationActionResponse,
+  NotificationsResponse,
   ToolEnvelope
 } from "./types";
 
@@ -88,6 +90,29 @@ export async function fetchOrders(
     signal
   });
   return readJson<OrdersResponse>(response);
+}
+
+export async function fetchNotifications(
+  accessToken: string,
+  signal?: AbortSignal
+): Promise<NotificationsResponse> {
+  const response = await fetch("/v1/notifications", {
+    headers: authenticatedHeaders(accessToken),
+    signal
+  });
+  return readJson<NotificationsResponse>(response);
+}
+
+export async function updateNotification(
+  accessToken: string,
+  notificationId: number,
+  action: "read" | "click"
+): Promise<NotificationActionResponse> {
+  const response = await fetch(`/v1/notifications/${notificationId}/${action}`, {
+    method: "POST",
+    headers: authenticatedHeaders(accessToken)
+  });
+  return readJson<NotificationActionResponse>(response);
 }
 
 export async function sendChat(

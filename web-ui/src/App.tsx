@@ -19,6 +19,7 @@ import { ApiError, fetchCurrentUser, fetchDashboard, fetchHealth } from "./api";
 import AwardCard from "./components/AwardCard";
 import ChatPanel from "./components/ChatPanel";
 import ExchangeHistory from "./components/ExchangeHistory";
+import NotificationCenter from "./components/NotificationCenter";
 import type { AwardOption, DashboardResponse } from "./types";
 
 type Filter = "all" | "ready" | "planning";
@@ -188,6 +189,7 @@ export default function App() {
 
         <nav aria-label="主导航">
           <a className="is-active" href="#awards">奖品中心</a>
+          <a href="#notifications">活动消息</a>
           <a href="#orders">我的兑换</a>
           <a href="#advisor">兑换顾问</a>
         </nav>
@@ -254,6 +256,8 @@ export default function App() {
           </div>
           <span className="note-tag">SAFE BY DESIGN</span>
         </section>
+
+        <NotificationCenter accessToken={accessToken} />
 
         <ExchangeHistory accessToken={accessToken} refreshKey={ordersRefreshKey} />
 

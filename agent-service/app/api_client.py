@@ -86,6 +86,32 @@ class BusinessApiClient:
         params = {"awardId": str(award_id)} if award_id is not None else None
         return self._get(f"/agent/query/users/{user_id}/exchanges", params=params)
 
+    def list_notifications(self, user_id: int, limit: int = 50) -> ToolEnvelope:
+        return self._get(
+            f"/agent/query/users/{user_id}/notifications",
+            params={"limit": str(limit)},
+        )
+
+    def mark_notification_read(
+        self,
+        user_id: int,
+        notification_id: int,
+    ) -> ToolEnvelope:
+        return self._post(
+            f"/agent/query/users/{user_id}/notifications/{notification_id}/read",
+            {},
+        )
+
+    def mark_notification_clicked(
+        self,
+        user_id: int,
+        notification_id: int,
+    ) -> ToolEnvelope:
+        return self._post(
+            f"/agent/query/users/{user_id}/notifications/{notification_id}/click",
+            {},
+        )
+
     def get_campaign_planning_snapshot(self, segment_key: str) -> ToolEnvelope:
         return self._get(
             f"/agent/operator/query/campaign-planning/snapshots/{segment_key}"

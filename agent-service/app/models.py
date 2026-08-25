@@ -96,6 +96,19 @@ class ExchangeRecordData(BaseModel):
     update_time: datetime = Field(alias="updateTime")
 
 
+class UserNotificationData(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: int = Field(gt=0)
+    activity_id: int = Field(gt=0, alias="activityId")
+    title: str = Field(min_length=1)
+    content: str = Field(min_length=1)
+    status: Literal["UNREAD", "READ", "CLICKED"]
+    read_at: datetime | None = Field(default=None, alias="readAt")
+    clicked_at: datetime | None = Field(default=None, alias="clickedAt")
+    created_at: datetime = Field(alias="createdAt")
+
+
 class RecommendedAward(BaseModel):
     award_id: int
     name: str

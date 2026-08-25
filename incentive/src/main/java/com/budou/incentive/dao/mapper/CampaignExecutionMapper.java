@@ -51,4 +51,8 @@ public interface CampaignExecutionMapper {
             "completed_at = #{completedAt}, updated_at = #{completedAt}, version = version + 1 " +
             "where id = #{id} and status = 'PENDING'")
     int markEmptyCompleted(@Param("id") Long id, @Param("completedAt") Date completedAt);
+
+    @Update("update campaign_execution set sent_users = sent_users + 1, " +
+            "updated_at = #{updatedAt}, version = version + 1 where id = #{id}")
+    int incrementSentUsers(@Param("id") Long id, @Param("updatedAt") Date updatedAt);
 }

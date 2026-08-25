@@ -115,6 +115,41 @@ class BusinessApiClientTest(unittest.TestCase):
         self.assertIn("awardId=6", observed_url)
         http_client.close()
 
+    def test_notification_calls_use_user_scoped_paths(self):
+        observed: list[tuple[str, str]] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            observed.append((request.method, request.url.path))
+            return httpx.Response(
+                200,
+                json={
+                    "success": True,
+                    "code": "NOTIFICATION_OK",
+                    "data": [],
+                    "message": "操作成功",
+                    "retryable": False,
+                },
+            )
+
+        http_client = httpx.Client(
+            base_url="http://test", transport=httpx.MockTransport(handler)
+        )
+        client = BusinessApiClient("http://test", client=http_client)
+
+        client.list_notifications(10)
+        client.mark_notification_read(10, 201)
+        client.mark_notification_clicked(10, 201)
+
+        self.assertEqual(
+            [
+                ("GET", "/agent/query/users/10/notifications"),
+                ("POST", "/agent/query/users/10/notifications/201/read"),
+                ("POST", "/agent/query/users/10/notifications/201/click"),
+            ],
+            observed,
+        )
+        http_client.close()
+
     def test_post_exchange_never_retries_unknown_server_error(self):
         calls = 0
 

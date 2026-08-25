@@ -7,9 +7,12 @@ import com.budou.incentive.dto.agent.ExchangeEligibilityView;
 import com.budou.incentive.dto.agent.ExchangeRecordView;
 import com.budou.incentive.dto.agent.TaskOptionView;
 import com.budou.incentive.dto.agent.UserPointsView;
+import com.budou.incentive.dto.agent.UserNotificationView;
 import com.budou.incentive.service.AgentQueryService;
+import com.budou.incentive.service.UserNotificationService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,9 +24,12 @@ import java.util.List;
 public class AgentQueryController {
 
     private final AgentQueryService agentQueryService;
+    private final UserNotificationService notificationService;
 
-    public AgentQueryController(AgentQueryService agentQueryService) {
+    public AgentQueryController(AgentQueryService agentQueryService,
+                                UserNotificationService notificationService) {
         this.agentQueryService = agentQueryService;
+        this.notificationService = notificationService;
     }
 
     @GetMapping("users/{userId}/points")
@@ -60,5 +66,26 @@ public class AgentQueryController {
             @PathVariable Long userId,
             @RequestParam(required = false) Long awardId) {
         return agentQueryService.listExchangeRecords(userId, awardId);
+    }
+
+    @GetMapping("users/{userId}/notifications")
+    public AgentToolResponse<List<UserNotificationView>> listNotifications(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "50") int limit) {
+        return notificationService.list(userId, limit);
+    }
+
+    @PostMapping("users/{userId}/notifications/{notificationId}/read")
+    public AgentToolResponse<UserNotificationView> markNotificationRead(
+            @PathVariable Long userId,
+            @PathVariable Long notificationId) {
+        return notificationService.markRead(userId, notificationId);
+    }
+
+    @PostMapping("users/{userId}/notifications/{notificationId}/click")
+    public AgentToolResponse<UserNotificationView> markNotificationClicked(
+            @PathVariable Long userId,
+            @PathVariable Long notificationId) {
+        return notificationService.markClicked(userId, notificationId);
     }
 }

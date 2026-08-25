@@ -28,6 +28,7 @@ from app.models import (
     AwardOptionData,
     ExchangeRecordData,
     PendingExchangeData,
+    UserNotificationData,
     UserPointsData,
 )
 from app.runtime import AgentRuntime
@@ -116,6 +117,18 @@ class OrdersResponse(BaseModel):
     request_id: str
     user_id: int
     records: list[ExchangeRecordData]
+
+
+class NotificationsResponse(BaseModel):
+    request_id: str
+    user_id: int
+    notifications: list[UserNotificationData]
+
+
+class NotificationActionResponse(BaseModel):
+    request_id: str
+    user_id: int
+    notification: UserNotificationData
 
 
 class DashboardErrorResponse(BaseModel):
@@ -512,6 +525,96 @@ def create_app(
             request_id=request_id,
             user_id=user_id,
             records=records,
+        )
+        return JSONResponse(
+            content=response.model_dump(mode="json", by_alias=True),
+            headers={"X-Request-ID": request_id},
+        )
+
+    @application.get(
+        "/v1/notifications",
+        response_model=NotificationsResponse,
+        responses={401: {"model": AuthenticationErrorResponse}},
+    )
+    def notifications(
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        user_id = authenticate_request(request, authorization).user_id
+        request_id = normalize_request_id(x_request_id)
+        try:
+            envelope = request.app.state.runtime.client.list_notifications(user_id)
+            if not envelope.success:
+                return dashboard_error(request_id, envelope.code, envelope.message, 502)
+            items = [
+                UserNotificationData.model_validate(item)
+                for item in (envelope.data or [])
+            ]
+        except BusinessApiError as exc:
+            return dashboard_error(
+                request_id,
+                exc.code,
+                "站内消息服务暂时不可用，请稍后重试",
+                503 if exc.retryable else 502,
+            )
+        response = NotificationsResponse(
+            request_id=request_id,
+            user_id=user_id,
+            notifications=items,
+        )
+        return JSONResponse(
+            content=response.model_dump(mode="json", by_alias=True),
+            headers={"X-Request-ID": request_id},
+        )
+
+    @application.post(
+        "/v1/notifications/{notification_id}/{action}",
+        response_model=NotificationActionResponse,
+        responses={401: {"model": AuthenticationErrorResponse}},
+    )
+    def change_notification_status(
+        notification_id: int,
+        action: str,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        user_id = authenticate_request(request, authorization).user_id
+        request_id = normalize_request_id(x_request_id)
+        if action not in {"read", "click"}:
+            return dashboard_error(
+                request_id,
+                "INVALID_NOTIFICATION_ACTION",
+                "不支持的站内消息操作",
+                400,
+            )
+        try:
+            if action == "read":
+                envelope = request.app.state.runtime.client.mark_notification_read(
+                    user_id,
+                    notification_id,
+                )
+            else:
+                envelope = request.app.state.runtime.client.mark_notification_clicked(
+                    user_id,
+                    notification_id,
+                )
+            if not envelope.success:
+                status = 404 if envelope.code == "NOTIFICATION_NOT_FOUND" else 502
+                return dashboard_error(request_id, envelope.code, envelope.message, status)
+            item = UserNotificationData.model_validate(envelope.data)
+        except BusinessApiError as exc:
+            return dashboard_error(
+                request_id,
+                exc.code,
+                "站内消息状态暂时无法更新，请稍后重试",
+                503 if exc.retryable else 502,
+            )
+        response = NotificationActionResponse(
+            request_id=request_id,
+            user_id=user_id,
+            notification=item,
         )
         return JSONResponse(
             content=response.model_dump(mode="json", by_alias=True),

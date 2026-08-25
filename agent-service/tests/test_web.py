@@ -34,7 +34,7 @@ def create_test_app(runtime: "FakeRuntime"):
 
 class FakeBusinessClient:
     def __init__(self) -> None:
-        self.calls: list[tuple[str, int]] = []
+        self.calls: list[tuple[object, ...]] = []
 
     def get_user_points(self, user_id: int) -> ToolEnvelope:
         self.calls.append(("points", user_id))
@@ -88,6 +88,54 @@ class FakeBusinessClient:
                 }
             ],
             message="兑换记录查询成功",
+        )
+
+    def list_notifications(self, user_id: int) -> ToolEnvelope:
+        self.calls.append(("notifications", user_id))
+        return ToolEnvelope(
+            success=True,
+            code="NOTIFICATIONS_FOUND",
+            data=[
+                {
+                    "id": 201,
+                    "activityId": 31,
+                    "title": "积分加速活动",
+                    "content": "完成签到任务可获得额外积分。",
+                    "status": "UNREAD",
+                    "readAt": None,
+                    "clickedAt": None,
+                    "createdAt": "2026-08-25T10:00:00",
+                }
+            ],
+            message="站内消息查询成功",
+        )
+
+    def mark_notification_read(self, user_id: int, notification_id: int) -> ToolEnvelope:
+        self.calls.append(("notification_read", user_id, notification_id))
+        return self._notification_action(notification_id, "READ")
+
+    def mark_notification_clicked(self, user_id: int, notification_id: int) -> ToolEnvelope:
+        self.calls.append(("notification_click", user_id, notification_id))
+        return self._notification_action(notification_id, "CLICKED")
+
+    @staticmethod
+    def _notification_action(notification_id: int, status: str) -> ToolEnvelope:
+        return ToolEnvelope(
+            success=True,
+            code="NOTIFICATION_UPDATED",
+            data={
+                "id": notification_id,
+                "activityId": 31,
+                "title": "积分加速活动",
+                "content": "完成签到任务可获得额外积分。",
+                "status": status,
+                "readAt": "2026-08-25T10:05:00",
+                "clickedAt": (
+                    "2026-08-25T10:06:00" if status == "CLICKED" else None
+                ),
+                "createdAt": "2026-08-25T10:00:00",
+            },
+            message="站内消息状态更新成功",
         )
 
 
@@ -213,6 +261,48 @@ class AgentWebTest(unittest.TestCase):
         self.assertEqual(11, response.json()["user_id"])
         self.assertEqual("PROCESSING", response.json()["records"][0]["status"])
         self.assertEqual([("orders", 11)], runtime.client.calls)
+
+    def test_notifications_use_authenticated_user(self):
+        runtime = FakeRuntime()
+        app = create_test_app(runtime)
+
+        with TestClient(app) as client:
+            response = client.get(
+                "/v1/notifications",
+                headers=auth_headers(user_id=12, request_id="notifications-001"),
+            )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("notifications-001", response.headers["X-Request-ID"])
+        self.assertEqual(12, response.json()["user_id"])
+        self.assertEqual("UNREAD", response.json()["notifications"][0]["status"])
+        self.assertEqual([("notifications", 12)], runtime.client.calls)
+
+    def test_notification_action_is_bound_to_authenticated_user(self):
+        runtime = FakeRuntime()
+        app = create_test_app(runtime)
+
+        with TestClient(app) as client:
+            read_response = client.post(
+                "/v1/notifications/201/read",
+                headers=auth_headers(user_id=13),
+            )
+            click_response = client.post(
+                "/v1/notifications/201/click",
+                headers=auth_headers(user_id=13),
+            )
+
+        self.assertEqual(200, read_response.status_code)
+        self.assertEqual("READ", read_response.json()["notification"]["status"])
+        self.assertEqual(200, click_response.status_code)
+        self.assertEqual("CLICKED", click_response.json()["notification"]["status"])
+        self.assertEqual(
+            [
+                ("notification_read", 13, 201),
+                ("notification_click", 13, 201),
+            ],
+            runtime.client.calls,
+        )
 
     def test_health_and_chat_contract(self):
         runtime = FakeRuntime()

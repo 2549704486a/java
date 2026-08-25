@@ -50,6 +50,31 @@ export interface OrdersResponse {
   records: ExchangeRecord[];
 }
 
+export type NotificationStatus = "UNREAD" | "READ" | "CLICKED";
+
+export interface UserNotification {
+  id: number;
+  activityId: number;
+  title: string;
+  content: string;
+  status: NotificationStatus;
+  readAt?: string | null;
+  clickedAt?: string | null;
+  createdAt: string;
+}
+
+export interface NotificationsResponse {
+  request_id: string;
+  user_id: number;
+  notifications: UserNotification[];
+}
+
+export interface NotificationActionResponse {
+  request_id: string;
+  user_id: number;
+  notification: UserNotification;
+}
+
 export interface CurrentUserResponse {
   user_id: number;
 }
