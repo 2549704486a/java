@@ -898,6 +898,21 @@ def create_app(
             lambda: request.app.state.runtime.client.list_campaign_metrics(activity_id),
         )
 
+    @application.get("/v1/operator/campaign/activities/{activity_id}/funnel")
+    def get_campaign_funnel(
+        activity_id: int,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_READ)
+        return operator_business_response(
+            request_id,
+            lambda: request.app.state.runtime.client.get_campaign_funnel(activity_id),
+        )
+
     @application.post(
         "/v1/operator/knowledge/search",
         responses={

@@ -20,13 +20,14 @@ import {
   actOnCampaignDraft,
   fetchCampaignActivities,
   fetchCampaignDrafts,
+  fetchCampaignFunnel,
   fetchCurrentOperator,
-  recordCampaignMetric,
   sendOperatorChat
 } from "../api";
 import type {
   CampaignActivityRecord,
   CampaignDraftRecord,
+  CampaignFunnelRecord,
   ChatMessage,
   CurrentOperatorResponse
 } from "../types";
@@ -71,6 +72,10 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
 export default function OperatorApp() {
   const [accessToken, setAccessToken] = useState(initialToken);
   const [tokenDraft, setTokenDraft] = useState(initialToken);
@@ -85,9 +90,7 @@ export default function OperatorApp() {
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const [workflowError, setWorkflowError] = useState<string | null>(null);
   const [metricActivityId, setMetricActivityId] = useState<number | null>(null);
-  const [metricName, setMetricName] = useState("participation_rate");
-  const [metricValue, setMetricValue] = useState("");
-  const [metricSampleSize, setMetricSampleSize] = useState("");
+  const [campaignFunnel, setCampaignFunnel] = useState<CampaignFunnelRecord | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: messageId(),
@@ -152,6 +155,7 @@ export default function OperatorApp() {
     setSessionId(null);
     setCampaignDrafts([]);
     setActivities([]);
+    setCampaignFunnel(null);
   }
 
   async function refreshWorkflow() {
@@ -167,8 +171,19 @@ export default function OperatorApp() {
         throw new Error(draftEnvelope.message || activityEnvelope.message);
       }
       setCampaignDrafts(draftEnvelope.data ?? []);
-      setActivities(activityEnvelope.data ?? []);
-      setMetricActivityId((current) => current ?? activityEnvelope.data?.[0]?.id ?? null);
+      const nextActivities = activityEnvelope.data ?? [];
+      setActivities(nextActivities);
+      const selectedActivityId =
+        metricActivityId && nextActivities.some((item) => item.id === metricActivityId)
+          ? metricActivityId
+          : nextActivities[0]?.id ?? null;
+      setMetricActivityId(selectedActivityId);
+      if (selectedActivityId) {
+        const funnelEnvelope = await fetchCampaignFunnel(accessToken, selectedActivityId);
+        setCampaignFunnel(funnelEnvelope.success ? funnelEnvelope.data : null);
+      } else {
+        setCampaignFunnel(null);
+      }
     } catch (error) {
       setWorkflowError(error instanceof Error ? error.message : "无法刷新活动工作流");
     } finally {
@@ -203,26 +218,15 @@ export default function OperatorApp() {
     }
   }
 
-  async function submitMetric(event: FormEvent) {
-    event.preventDefault();
-    if (!metricActivityId || !metricName.trim() || !metricValue.trim()) return;
-    setWorkflowLoading(true);
+  async function selectFunnelActivity(activityId: number) {
+    setMetricActivityId(activityId);
     setWorkflowError(null);
     try {
-      const result = await recordCampaignMetric(accessToken, metricActivityId, {
-        metric_name: metricName.trim(),
-        metric_value: Number(metricValue),
-        sample_size: Number(metricSampleSize),
-        measured_at: new Date().toISOString(),
-        source_ref: "operator-workbench"
-      });
-      if (!result.success) throw new Error(result.message);
-      setMetricValue("");
-      setMetricSampleSize("");
-      await refreshWorkflow();
+      const result = await fetchCampaignFunnel(accessToken, activityId);
+      setCampaignFunnel(result.success ? result.data : null);
     } catch (error) {
-      setWorkflowError(error instanceof Error ? error.message : "效果指标录入失败");
-      setWorkflowLoading(false);
+      setCampaignFunnel(null);
+      setWorkflowError(error instanceof Error ? error.message : "无法读取活动效果漏斗");
     }
   }
 
@@ -447,32 +451,66 @@ export default function OperatorApp() {
 
             <div className="operator-flow-column operator-metric-column">
               <div className="operator-flow-title">
-                <span>03</span><div><strong>效果回流</strong><small>写回下一轮规划事实</small></div>
+                <span>03</span><div><strong>实验效果漏斗</strong><small>系统自动聚合行为事实</small></div>
               </div>
-              <form className="operator-metric-form" onSubmit={submitMetric}>
-                <Activity size={23} />
-                <label>活动
-                  <select value={metricActivityId ?? ""} onChange={(event) => setMetricActivityId(Number(event.target.value))}>
-                    <option value="" disabled>选择已发布活动</option>
-                    {activities.map((item) => <option key={item.id} value={item.id}>#{item.id} {item.objective}</option>)}
-                  </select>
-                </label>
-                <label>指标
-                  <select value={metricName} onChange={(event) => setMetricName(event.target.value)}>
-                    <option value="participation_rate">参与率</option>
-                    <option value="conversion_rate">兑换转化率</option>
-                    <option value="completion_rate">任务完成率</option>
-                  </select>
-                </label>
-                <label>指标值
-                  <input type="number" step="0.0001" value={metricValue} onChange={(event) => setMetricValue(event.target.value)} placeholder="例如 0.325" />
-                </label>
-                <label>样本量
-                  <input type="number" min="1" value={metricSampleSize} onChange={(event) => setMetricSampleSize(event.target.value)} placeholder="例如 1200" />
-                </label>
-                <button type="submit" disabled={workflowLoading || !metricActivityId || !metricValue || !metricSampleSize}>记录效果</button>
-                <p>该数据同时进入活动效果表与规划历史快照，后续 Agent 生成方案时可直接引用。</p>
-              </form>
+              <div className="operator-funnel-panel">
+                <div className="operator-funnel-heading">
+                  <Activity size={23} />
+                  <label>观察活动
+                    <select
+                      value={metricActivityId ?? ""}
+                      onChange={(event) => void selectFunnelActivity(Number(event.target.value))}
+                    >
+                      <option value="" disabled>选择已发布活动</option>
+                      {activities.map((item) => (
+                        <option key={item.id} value={item.id}>#{item.id} {item.objective}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {!campaignFunnel && (
+                  <p className="operator-funnel-empty">活动尚未开始执行，暂时没有可计算的漏斗。</p>
+                )}
+                {campaignFunnel && (
+                  <>
+                    <div className="operator-funnel-meta">
+                      <span className={`source-${campaignFunnel.dataSource.toLowerCase()}`}>
+                        {campaignFunnel.dataSource === "REAL" ? "真实数据" :
+                          campaignFunnel.dataSource === "MIXED" ? "混合数据" : "演示数据"}
+                      </span>
+                      <small>{formatDate(campaignFunnel.measuredAt)} 更新</small>
+                    </div>
+                    <div className="operator-funnel-groups">
+                      {[campaignFunnel.treatment, campaignFunnel.control].map((group) => (
+                        <article key={group.experimentGroup}>
+                          <header>
+                            <strong>{group.experimentGroup === "TREATMENT" ? "实验组" : "对照组"}</strong>
+                            <span>{group.targetedUsers} 人</span>
+                          </header>
+                          {group.experimentGroup === "TREATMENT" && (
+                            <dl>
+                              <div><dt>送达</dt><dd>{group.deliveredUsers} · {formatPercent(group.deliveryRate)}</dd></div>
+                              <div><dt>阅读</dt><dd>{group.viewedUsers} · {formatPercent(group.viewRate)}</dd></div>
+                              <div><dt>点击</dt><dd>{group.clickedUsers} · {formatPercent(group.clickRate)}</dd></div>
+                            </dl>
+                          )}
+                          <dl>
+                            <div><dt>完成任务</dt><dd>{group.taskCompletedUsers} · {formatPercent(group.taskCompletionRate)}</dd></div>
+                            <div><dt>成功兑换</dt><dd>{group.exchangedUsers} · {formatPercent(group.exchangeRate)}</dd></div>
+                          </dl>
+                        </article>
+                      ))}
+                    </div>
+                    <div className="operator-lift-grid">
+                      <div><span>任务完成 Lift</span><strong>{formatPercent(campaignFunnel.taskCompletionLift)}</strong></div>
+                      <div><span>兑换 Lift</span><strong>{formatPercent(campaignFunnel.exchangeLift)}</strong></div>
+                    </div>
+                    <p className="operator-funnel-note">
+                      Lift = 实验组转化率 - 对照组转化率。演示数据仅用于验证闭环，不代表真实运营收益。
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </section>

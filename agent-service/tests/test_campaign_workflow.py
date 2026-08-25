@@ -148,6 +148,20 @@ class FakeWorkflowClient:
             retryable=False,
         )
 
+    def get_campaign_funnel(self, activity_id: int) -> ToolEnvelope:
+        return ToolEnvelope(
+            success=True,
+            code="CAMPAIGN_FUNNEL_FOUND",
+            data={
+                "activityId": activity_id,
+                "dataSource": "SIMULATED",
+                "taskCompletionLift": 0.12,
+                "exchangeLift": 0.03,
+            },
+            message="ok",
+            retryable=False,
+        )
+
 
 class FakeRuntime:
     def __init__(self, client: FakeWorkflowClient) -> None:
@@ -234,6 +248,10 @@ class CampaignWorkflowTest(unittest.TestCase):
                     "source_ref": "campaign-report-9",
                 },
             )
+            funnel = http.get(
+                "/v1/operator/campaign/activities/9/funnel",
+                headers=headers,
+            )
 
         self.assertEqual(200, submitted.status_code)
         self.assertEqual((7, "submit"), workflow_client.action_calls[0][:2])
@@ -244,6 +262,9 @@ class CampaignWorkflowTest(unittest.TestCase):
         self.assertEqual(
             "reviewer-01", workflow_client.metric_calls[0][1]["operatorId"]
         )
+        self.assertEqual(200, funnel.status_code)
+        self.assertEqual("CAMPAIGN_FUNNEL_FOUND", funnel.json()["code"])
+        self.assertEqual(9, funnel.json()["data"]["activityId"])
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ import type {
   CampaignActivityRecord,
   CampaignDraftRecord,
   CampaignEffectMetricRecord,
+  CampaignFunnelRecord,
   OperatorChatResponse,
   OrdersResponse,
   NotificationActionResponse,
@@ -215,6 +216,17 @@ export async function recordCampaignMetric(
     }
   );
   return readJson<ToolEnvelope<CampaignEffectMetricRecord>>(response);
+}
+
+export async function fetchCampaignFunnel(
+  accessToken: string,
+  activityId: number
+): Promise<ToolEnvelope<CampaignFunnelRecord>> {
+  const response = await fetch(
+    `/v1/operator/campaign/activities/${activityId}/funnel`,
+    { headers: authenticatedHeaders(accessToken) }
+  );
+  return readJson<ToolEnvelope<CampaignFunnelRecord>>(response);
 }
 
 export async function fetchHealth(): Promise<boolean> {

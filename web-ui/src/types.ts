@@ -160,6 +160,32 @@ export interface CampaignEffectMetricRecord {
   createdAt: string;
 }
 
+export interface CampaignGroupFunnelRecord {
+  experimentGroup: "TREATMENT" | "CONTROL";
+  targetedUsers: number;
+  deliveredUsers: number;
+  viewedUsers: number;
+  clickedUsers: number;
+  taskCompletedUsers: number;
+  exchangedUsers: number;
+  deliveryRate: number;
+  viewRate: number;
+  clickRate: number;
+  taskCompletionRate: number;
+  exchangeRate: number;
+}
+
+export interface CampaignFunnelRecord {
+  activityId: number;
+  executionId: number;
+  dataSource: "REAL" | "SIMULATED" | "MIXED";
+  treatment: CampaignGroupFunnelRecord;
+  control: CampaignGroupFunnelRecord;
+  taskCompletionLift: number;
+  exchangeLift: number;
+  measuredAt: string;
+}
+
 export interface PendingExchange {
   status: "AWAITING_CONFIRMATION";
   awardId: number;

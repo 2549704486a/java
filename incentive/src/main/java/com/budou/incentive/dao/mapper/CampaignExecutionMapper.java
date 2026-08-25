@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.Date;
+import java.util.List;
 
 @Mapper
 public interface CampaignExecutionMapper {
@@ -34,6 +35,10 @@ public interface CampaignExecutionMapper {
     @Select("select " + SELECT_COLUMNS +
             " from campaign_execution where activity_id = #{activityId}")
     CampaignExecution selectByActivityId(@Param("activityId") Long activityId);
+
+    @Select("select activity_id from campaign_execution " +
+            "order by updated_at desc, id desc limit #{limit}")
+    List<Long> selectRecentActivityIds(@Param("limit") int limit);
 
     @Update("update campaign_execution set status = 'RUNNING', total_users = #{totalUsers}, " +
             "treatment_users = #{treatmentUsers}, control_users = #{controlUsers}, " +

@@ -24,6 +24,16 @@ public interface CampaignEffectMetricMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(CampaignEffectMetric metric);
 
+    @Insert("insert into campaign_effect_metric(" +
+            "activity_id, metric_name, metric_value, sample_size, measured_at, source_ref, " +
+            "recorded_by, created_at) values(" +
+            "#{activityId}, #{metricName}, #{metricValue}, #{sampleSize}, #{measuredAt}, " +
+            "#{sourceRef}, #{recordedBy}, #{createdAt}) " +
+            "on duplicate key update metric_value = values(metric_value), " +
+            "sample_size = values(sample_size), measured_at = values(measured_at), " +
+            "recorded_by = values(recorded_by)")
+    int upsert(CampaignEffectMetric metric);
+
     @Select("select " + SELECT_COLUMNS +
             " from campaign_effect_metric where activity_id = #{activityId} " +
             "order by measured_at desc, id desc")

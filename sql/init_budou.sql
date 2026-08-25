@@ -238,6 +238,7 @@ CREATE TABLE `campaign_effect_metric` (
   `recorded_by` varchar(64) NOT NULL,
   `created_at` datetime(3) NOT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_campaign_effect_identity` (`activity_id`, `metric_name`, `source_ref`),
   KEY `idx_campaign_effect_activity_time` (`activity_id`, `measured_at`),
   KEY `idx_campaign_effect_name_time` (`metric_name`, `measured_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='运营活动效果指标';

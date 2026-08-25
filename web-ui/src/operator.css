@@ -440,8 +440,7 @@
 }
 
 .operator-workflow-heading button,
-.operator-card-actions button,
-.operator-metric-form button {
+.operator-card-actions button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -456,8 +455,7 @@
 }
 
 .operator-workflow-heading button:disabled,
-.operator-card-actions button:disabled,
-.operator-metric-form button:disabled {
+.operator-card-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
@@ -622,7 +620,7 @@
   line-height: 1.6;
 }
 
-.operator-metric-form {
+.operator-funnel-panel {
   display: grid;
   gap: 12px;
   padding: 18px;
@@ -631,15 +629,21 @@
   background: var(--op-green);
 }
 
-.operator-metric-form label {
+.operator-funnel-heading {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.operator-funnel-heading label {
   display: grid;
+  flex: 1;
   gap: 5px;
   color: rgba(255, 255, 255, 0.7);
   font-size: 11px;
 }
 
-.operator-metric-form input,
-.operator-metric-form select {
+.operator-funnel-heading select {
   width: 100%;
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.22);
@@ -648,20 +652,100 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
-.operator-metric-form option {
+.operator-funnel-heading option {
   color: #17201d;
 }
 
-.operator-metric-form button {
-  color: var(--op-green);
+.operator-funnel-meta,
+.operator-funnel-groups article header,
+.operator-funnel-groups dl > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.operator-funnel-meta span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #173f34;
+  background: #f6c55b;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.operator-funnel-meta small {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.operator-funnel-groups {
+  display: grid;
+  gap: 9px;
+}
+
+.operator-funnel-groups article {
+  padding: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.operator-funnel-groups article header span,
+.operator-funnel-groups dt {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.operator-funnel-groups dl {
+  display: grid;
+  gap: 5px;
+  margin: 9px 0 0;
+  font-size: 10px;
+}
+
+.operator-funnel-groups dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.operator-lift-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.operator-lift-grid > div {
+  padding: 10px;
+  border-radius: 9px;
+  color: #173f34;
   background: #f6c55b;
 }
 
-.operator-metric-form p {
+.operator-lift-grid span,
+.operator-lift-grid strong {
+  display: block;
+}
+
+.operator-lift-grid span {
+  font-size: 9px;
+}
+
+.operator-lift-grid strong {
+  margin-top: 3px;
+  font-size: 18px;
+}
+
+.operator-funnel-empty,
+.operator-funnel-note {
   margin: 0;
   color: rgba(255, 255, 255, 0.58);
   font-size: 10px;
   line-height: 1.6;
+}
+
+.operator-funnel-empty {
+  padding: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.24);
+  border-radius: 9px;
 }
 
 @keyframes operator-message-in {

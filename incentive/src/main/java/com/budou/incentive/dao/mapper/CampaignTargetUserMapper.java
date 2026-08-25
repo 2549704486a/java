@@ -34,4 +34,8 @@ public interface CampaignTargetUserMapper {
     @Select("select " + SELECT_COLUMNS +
             " from campaign_target_user where execution_id = #{executionId} order by user_id")
     List<CampaignTargetUser> selectByExecutionId(@Param("executionId") Long executionId);
+
+    @Select("select count(*) from campaign_target_user " +
+            "where activity_id = #{activityId} and data_source <> 'REAL'")
+    int countNonRealByActivityId(@Param("activityId") Long activityId);
 }

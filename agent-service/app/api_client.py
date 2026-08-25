@@ -156,6 +156,11 @@ class BusinessApiClient:
             f"/agent/operator/campaigns/activities/{activity_id}/metrics"
         )
 
+    def get_campaign_funnel(self, activity_id: int) -> ToolEnvelope:
+        return self._get(
+            f"/agent/operator/campaigns/activities/{activity_id}/funnel"
+        )
+
     def submit_exchange(
         self,
         *,

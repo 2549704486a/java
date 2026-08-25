@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS `campaign_effect_metric` (
   `recorded_by` VARCHAR(64) NOT NULL,
   `created_at` DATETIME(3) NOT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_campaign_effect_identity` (`activity_id`, `metric_name`, `source_ref`),
   KEY `idx_campaign_effect_activity_time` (`activity_id`, `measured_at`),
   KEY `idx_campaign_effect_name_time` (`metric_name`, `measured_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
