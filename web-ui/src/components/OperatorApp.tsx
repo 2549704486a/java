@@ -101,7 +101,8 @@ export default function OperatorApp() {
       content: "我是智能运营助手。可以读取实时活动快照、查询运营制度，并生成一份待人工审阅的活动草案。"
     }
   ]);
-  const conversationEndRef = useRef<HTMLDivElement>(null);
+  const messagesViewportRef = useRef<HTMLDivElement>(null);
+  const latestMessageRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!accessToken) {
@@ -136,7 +137,23 @@ export default function OperatorApp() {
   }, [operator]);
 
   useEffect(() => {
-    conversationEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+
+    // Keep auto-scroll inside the conversation instead of moving the browser page.
+    const latestMessage = messages[messages.length - 1];
+    const latestElement = latestMessageRef.current;
+    if (latestMessage?.role === "assistant" && latestElement) {
+      const topWithinViewport =
+        latestElement.getBoundingClientRect().top -
+        viewport.getBoundingClientRect().top;
+      viewport.scrollTo({
+        top: Math.max(0, viewport.scrollTop + topWithinViewport - 12),
+        behavior: "smooth"
+      });
+      return;
+    }
+    viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
   }, [messages, sending]);
 
   function signIn(event: FormEvent) {
@@ -356,9 +373,13 @@ export default function OperatorApp() {
             <div><Bot size={20} /><span><strong>运营策划 Agent</strong><small>独立会话 · Tool 结果可追踪</small></span></div>
             <span className="operator-live"><i /> READY</span>
           </header>
-          <div className="operator-messages">
-            {messages.map((message) => (
-              <article key={message.id} className={`operator-message is-${message.role}`}>
+          <div className="operator-messages" ref={messagesViewportRef}>
+            {messages.map((message, index) => (
+              <article
+                key={message.id}
+                ref={index === messages.length - 1 ? latestMessageRef : undefined}
+                className={`operator-message is-${message.role}`}
+              >
                 <span>{message.role === "assistant" ? "AI" : "YOU"}</span>
                 <div>
                   <p>{message.content}</p>
@@ -371,7 +392,6 @@ export default function OperatorApp() {
                 <span>AI</span><div><LoaderCircle className="spin" size={18} /> 正在读取事实并组织方案…</div>
               </article>
             )}
-            <div ref={conversationEndRef} />
           </div>
           <div className="operator-quick-actions">
             {quickPrompts.map((item) => (
