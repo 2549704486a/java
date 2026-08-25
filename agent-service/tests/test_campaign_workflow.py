@@ -89,6 +89,7 @@ class FakeWorkflowClient:
         self.action_calls: list[tuple[int, str, dict]] = []
         self.metric_calls: list[tuple[int, dict]] = []
         self.simulation_calls: list[tuple[int, str]] = []
+        self.activity_list_calls: list[int] = []
 
     def create_campaign_draft(self, payload: dict) -> ToolEnvelope:
         self.created_payload = payload
@@ -122,10 +123,24 @@ class FakeWorkflowClient:
         )
 
     def list_campaign_activities(self, limit: int = 50) -> ToolEnvelope:
+        self.activity_list_calls.append(limit)
         return ToolEnvelope(
             success=True,
             code="CAMPAIGN_ACTIVITIES_FOUND",
-            data=[],
+            data=[
+                {
+                    "id": 9,
+                    "objective": "提高任务参与率",
+                    "targetSegmentKey": "POINTS_AT_LEAST_500",
+                    "budgetAmountCents": 100000,
+                    "pointsIssuanceCap": 5000,
+                    "startAt": NOW.isoformat(),
+                    "endAt": (NOW + timedelta(days=7)).isoformat(),
+                    "status": "ACTIVE",
+                    "publishedAt": NOW.isoformat(),
+                    "planJson": "must-not-enter-agent-context",
+                }
+            ],
             message="ok",
             retryable=False,
         )
@@ -202,6 +217,29 @@ class FakeRuntime:
 
 
 class CampaignWorkflowTest(unittest.TestCase):
+    def test_agent_discovers_recent_activities_without_user_provided_id(self):
+        client = FakeWorkflowClient()
+        provider = StaticCampaignDataProvider(
+            {"POINTS_AT_LEAST_500": planning_snapshot()}
+        )
+        operator = AuthenticatedOperator("operator-01", PERMISSIONS)
+        activity_tool = next(
+            item
+            for item in build_operator_tools(
+                provider,
+                operator,
+                business_client=client,
+            )
+            if item.name == "list_campaign_activities"
+        )
+
+        result = activity_tool.invoke({"limit": 3})
+
+        self.assertEqual("CAMPAIGN_ACTIVITIES_FOUND", result["code"])
+        self.assertEqual([3], client.activity_list_calls)
+        self.assertEqual(9, result["data"][0]["id"])
+        self.assertNotIn("planJson", result["data"][0])
+
     def test_agent_draft_tool_persists_generated_plan(self):
         client = FakeWorkflowClient()
         provider = StaticCampaignDataProvider(

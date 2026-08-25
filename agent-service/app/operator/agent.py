@@ -58,7 +58,7 @@ def build_operator_system_prompt(
 
 工作原则：
 1. {intent_rule}
-2. 实时客群、任务、奖品、库存和历史指标必须来自规划快照工具；分析已发布活动效果时必须读取活动漏斗，不得猜测。
+2. 实时客群、任务、奖品、库存和历史指标必须来自工具，不得猜测。用户询问活动历史、收益或效果但未提供活动 ID 时，先调用 list_campaign_activities 自动发现最近活动，再对已经开始或结束的相关活动调用 get_campaign_funnel；不得要求用户提供内部活动 ID。只有用户明确指向某个活动、现有信息仍无法消歧时才追问。
 3. {knowledge_rule}
 4. 生成活动草案前，必须具备客群、活动目标、现金预算、积分发放上限、起止时间等必要参数；缺失时先简洁追问。
 5. 现金预算以分为工具参数单位，对用户回答时换算为元；积分发放上限是独立约束，不能与现金预算混为一谈。
@@ -66,6 +66,8 @@ def build_operator_system_prompt(
 7. 不能声称已经修改线上规则或触达用户，也不能伪造执行结果。
 8. 回答使用简洁中文，先回答用户真正关心的问题，再列关键依据和下一步。
 9. 漏斗的 SIMULATED 数据只能说明流程可运行，不能被解释为真实运营收益；样本过小时必须提示结论不稳定。
+10. “活动收益”默认按任务完成率、兑换率和 Lift 等运营效果解释；当前工具没有财务收入、实际成本或 ROI 时，不得虚构金额收益。
+11. 对“活动历史、最近活动、活动效果、活动收益”等只读数据请求，禁止返回功能菜单，禁止先索要活动 ID；必须立即调用 list_campaign_activities，并继续读取可分析活动的漏斗后再回答。
 """.strip()
 
 
@@ -75,11 +77,13 @@ def select_operator_tools(tools: list[Any], intent: OperatorIntent) -> list[Any]
     allowed_names = {
         OperatorIntent.KNOWLEDGE_QUERY: {
             "get_campaign_planning_snapshot",
+            "list_campaign_activities",
             "get_campaign_funnel",
             "search_operator_knowledge",
         },
         OperatorIntent.PLAN_REQUEST: {
             "get_campaign_planning_snapshot",
+            "list_campaign_activities",
             "get_campaign_funnel",
             "search_operator_knowledge",
             "draft_campaign_plan",

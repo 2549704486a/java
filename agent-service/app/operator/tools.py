@@ -77,6 +77,15 @@ class CampaignFunnelInput(BaseModel):
     activity_id: int = Field(gt=0, description="需要分析的已发布活动 ID")
 
 
+class CampaignActivityListInput(BaseModel):
+    limit: int = Field(
+        default=5,
+        ge=1,
+        le=10,
+        description="按发布时间倒序返回的活动数量",
+    )
+
+
 def build_operator_tools(
     data_provider: CampaignDataProvider,
     operator: AuthenticatedOperator,
@@ -122,6 +131,49 @@ def build_operator_tools(
     available_tools = [get_campaign_planning_snapshot]
 
     if business_client is not None:
+
+        @tool(args_schema=CampaignActivityListInput)
+        def list_campaign_activities(limit: int = 5) -> dict:
+            """列出最近活动并自动发现活动 ID；查询活动历史或效果时应先调用。"""
+
+            arguments = {
+                "operator_id": operator.operator_id,
+                "limit": limit,
+            }
+
+            def execute() -> dict:
+                try:
+                    envelope = business_client.list_campaign_activities(limit)
+                except BusinessApiError as exc:
+                    return exc.as_envelope().model_dump(mode="json")
+
+                result = envelope.model_dump(mode="json")
+                activities = result.get("data")
+                if result.get("success") and isinstance(activities, list):
+                    # The full plan JSON is unnecessary for history discovery and wastes context.
+                    result["data"] = [
+                        {
+                            key: activity.get(key)
+                            for key in (
+                                "id",
+                                "objective",
+                                "targetSegmentKey",
+                                "budgetAmountCents",
+                                "pointsIssuanceCap",
+                                "startAt",
+                                "endAt",
+                                "status",
+                                "publishedAt",
+                            )
+                        }
+                        for activity in activities
+                        if isinstance(activity, dict)
+                    ]
+                return result
+
+            return execute_traced("list_campaign_activities", arguments, execute)
+
+        available_tools.append(list_campaign_activities)
 
         @tool(args_schema=CampaignFunnelInput)
         def get_campaign_funnel(activity_id: int) -> dict:

@@ -61,10 +61,16 @@ class OperatorAgentTest(unittest.TestCase):
         self.assertIn("直接回答用户询问", prompt)
         self.assertIn("不得把能力边界声明当作答案", prompt)
         self.assertIn("发布活动记录不等于", prompt)
+        self.assertIn("list_campaign_activities", prompt)
+        self.assertIn("不得要求用户提供内部活动 ID", prompt)
+        self.assertIn("不得虚构金额收益", prompt)
+        self.assertIn("禁止返回功能菜单", prompt)
+        self.assertIn("必须立即调用 list_campaign_activities", prompt)
 
     def test_intent_selects_only_required_tools(self):
         tools = [
             SimpleNamespace(name="get_campaign_planning_snapshot"),
+            SimpleNamespace(name="list_campaign_activities"),
             SimpleNamespace(name="get_campaign_funnel"),
             SimpleNamespace(name="search_operator_knowledge"),
             SimpleNamespace(name="draft_campaign_plan"),
@@ -79,6 +85,7 @@ class OperatorAgentTest(unittest.TestCase):
         self.assertEqual(
             {
                 "get_campaign_planning_snapshot",
+                "list_campaign_activities",
                 "get_campaign_funnel",
                 "search_operator_knowledge",
             },
