@@ -88,6 +88,7 @@ class FakeWorkflowClient:
         self.created_payload: dict | None = None
         self.action_calls: list[tuple[int, str, dict]] = []
         self.metric_calls: list[tuple[int, dict]] = []
+        self.simulation_calls: list[tuple[int, str]] = []
 
     def create_campaign_draft(self, payload: dict) -> ToolEnvelope:
         self.created_payload = payload
@@ -162,6 +163,31 @@ class FakeWorkflowClient:
             retryable=False,
         )
 
+    def simulate_campaign(
+        self,
+        activity_id: int,
+        scenario_key: str = "DEMO_BASELINE_V1",
+    ) -> ToolEnvelope:
+        self.simulation_calls.append((activity_id, scenario_key))
+        return ToolEnvelope(
+            success=True,
+            code="CAMPAIGN_SIMULATION_APPLIED",
+            data={
+                "activityId": activity_id,
+                "scenarioKey": scenario_key,
+                "insertedEvents": 13,
+                "dataSource": "SIMULATED",
+                "funnel": {
+                    "activityId": activity_id,
+                    "dataSource": "SIMULATED",
+                    "taskCompletionLift": 0.55,
+                    "exchangeLift": 0.25,
+                },
+            },
+            message="ok",
+            retryable=False,
+        )
+
 
 class FakeRuntime:
     def __init__(self, client: FakeWorkflowClient) -> None:
@@ -209,6 +235,19 @@ class CampaignWorkflowTest(unittest.TestCase):
         self.assertEqual("operator-01", client.created_payload["operatorId"])
         self.assertIn("DRAFT_READY", client.created_payload["planJson"])
 
+        funnel_tool = next(
+            item
+            for item in build_operator_tools(
+                provider,
+                operator,
+                business_client=client,
+            )
+            if item.name == "get_campaign_funnel"
+        )
+        funnel = funnel_tool.invoke({"activity_id": 9})
+        self.assertEqual("CAMPAIGN_FUNNEL_FOUND", funnel["code"])
+        self.assertEqual(9, funnel["data"]["activityId"])
+
     def test_http_workflow_binds_operator_identity(self):
         workflow_client = FakeWorkflowClient()
         runtime = FakeRuntime(workflow_client)
@@ -252,6 +291,11 @@ class CampaignWorkflowTest(unittest.TestCase):
                 "/v1/operator/campaign/activities/9/funnel",
                 headers=headers,
             )
+            simulation = http.post(
+                "/v1/operator/campaign/activities/9/simulate",
+                headers=headers,
+                json={"scenario_key": "DEMO_BASELINE_V1"},
+            )
 
         self.assertEqual(200, submitted.status_code)
         self.assertEqual((7, "submit"), workflow_client.action_calls[0][:2])
@@ -265,6 +309,42 @@ class CampaignWorkflowTest(unittest.TestCase):
         self.assertEqual(200, funnel.status_code)
         self.assertEqual("CAMPAIGN_FUNNEL_FOUND", funnel.json()["code"])
         self.assertEqual(9, funnel.json()["data"]["activityId"])
+        self.assertEqual(200, simulation.status_code)
+        self.assertEqual("CAMPAIGN_SIMULATION_APPLIED", simulation.json()["code"])
+        self.assertEqual([(9, "DEMO_BASELINE_V1")], workflow_client.simulation_calls)
+
+    def test_simulation_requires_metric_permission(self):
+        workflow_client = FakeWorkflowClient()
+        runtime = FakeRuntime(workflow_client)
+        provider = StaticCampaignDataProvider(
+            {"POINTS_AT_LEAST_500": planning_snapshot()}
+        )
+        authenticator = JwtAuthenticator(
+            "workflow-user-secret-that-is-longer-than-32-characters",
+            "test-agent",
+            "test-web",
+        )
+        application = create_app(
+            lambda: runtime,
+            lambda: authenticator,
+            lambda: OperatorAuthenticator(
+                "operator-token",
+                "reader-01",
+                frozenset({CAMPAIGN_READ}),
+            ),
+            lambda ignored_runtime: provider,
+            lambda ignored_runtime, ignored_provider: None,
+        )
+
+        with TestClient(application) as http:
+            response = http.post(
+                "/v1/operator/campaign/activities/9/simulate",
+                headers={"Authorization": "Bearer operator-token"},
+                json={"scenario_key": "DEMO_BASELINE_V1"},
+            )
+
+        self.assertEqual(403, response.status_code)
+        self.assertEqual([], workflow_client.simulation_calls)
 
 
 if __name__ == "__main__":

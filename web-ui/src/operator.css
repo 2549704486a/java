@@ -678,6 +678,36 @@
   color: rgba(255, 255, 255, 0.58);
 }
 
+.operator-simulation-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.operator-simulation-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9px;
+  color: #173f34;
+  background: #f7efe0;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.operator-simulation-actions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.operator-simulation-actions span {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 9px;
+}
+
 .operator-funnel-groups {
   display: grid;
   gap: 9px;

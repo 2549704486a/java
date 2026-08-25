@@ -186,6 +186,14 @@ export interface CampaignFunnelRecord {
   measuredAt: string;
 }
 
+export interface CampaignSimulationRecord {
+  activityId: number;
+  scenarioKey: "DEMO_BASELINE_V1";
+  insertedEvents: number;
+  dataSource: "SIMULATED";
+  funnel: CampaignFunnelRecord;
+}
+
 export interface PendingExchange {
   status: "AWAITING_CONFIRMATION";
   awardId: number;

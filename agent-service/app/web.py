@@ -183,6 +183,16 @@ class CampaignEffectMetricRequest(BaseModel):
     source_ref: str | None = Field(default=None, max_length=255)
 
 
+class CampaignSimulationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    scenario_key: str = Field(
+        default="DEMO_BASELINE_V1",
+        min_length=1,
+        max_length=64,
+    )
+
+
 def default_runtime_factory() -> AgentRuntime:
     load_dotenv()
     return AgentRuntime(Settings.from_env())
@@ -911,6 +921,25 @@ def create_app(
         return operator_business_response(
             request_id,
             lambda: request.app.state.runtime.client.get_campaign_funnel(activity_id),
+        )
+
+    @application.post("/v1/operator/campaign/activities/{activity_id}/simulate")
+    def simulate_campaign(
+        activity_id: int,
+        payload: CampaignSimulationRequest,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, CAMPAIGN_METRIC)
+        return operator_business_response(
+            request_id,
+            lambda: request.app.state.runtime.client.simulate_campaign(
+                activity_id,
+                payload.scenario_key,
+            ),
         )
 
     @application.post(

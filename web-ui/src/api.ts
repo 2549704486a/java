@@ -7,6 +7,7 @@ import type {
   CampaignDraftRecord,
   CampaignEffectMetricRecord,
   CampaignFunnelRecord,
+  CampaignSimulationRecord,
   OperatorChatResponse,
   OrdersResponse,
   NotificationActionResponse,
@@ -227,6 +228,24 @@ export async function fetchCampaignFunnel(
     { headers: authenticatedHeaders(accessToken) }
   );
   return readJson<ToolEnvelope<CampaignFunnelRecord>>(response);
+}
+
+export async function simulateCampaignActivity(
+  accessToken: string,
+  activityId: number
+): Promise<ToolEnvelope<CampaignSimulationRecord>> {
+  const response = await fetch(
+    `/v1/operator/campaign/activities/${activityId}/simulate`,
+    {
+      method: "POST",
+      headers: {
+        ...authenticatedHeaders(accessToken),
+        "Content-Type": "application/json; charset=utf-8"
+      },
+      body: JSON.stringify({ scenario_key: "DEMO_BASELINE_V1" })
+    }
+  );
+  return readJson<ToolEnvelope<CampaignSimulationRecord>>(response);
 }
 
 export async function fetchHealth(): Promise<boolean> {

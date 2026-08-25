@@ -22,7 +22,8 @@ import {
   fetchCampaignDrafts,
   fetchCampaignFunnel,
   fetchCurrentOperator,
-  sendOperatorChat
+  sendOperatorChat,
+  simulateCampaignActivity
 } from "../api";
 import type {
   CampaignActivityRecord,
@@ -91,6 +92,8 @@ export default function OperatorApp() {
   const [workflowError, setWorkflowError] = useState<string | null>(null);
   const [metricActivityId, setMetricActivityId] = useState<number | null>(null);
   const [campaignFunnel, setCampaignFunnel] = useState<CampaignFunnelRecord | null>(null);
+  const [simulationLoading, setSimulationLoading] = useState(false);
+  const [simulationNotice, setSimulationNotice] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: messageId(),
@@ -156,6 +159,7 @@ export default function OperatorApp() {
     setCampaignDrafts([]);
     setActivities([]);
     setCampaignFunnel(null);
+    setSimulationNotice(null);
   }
 
   async function refreshWorkflow() {
@@ -221,12 +225,34 @@ export default function OperatorApp() {
   async function selectFunnelActivity(activityId: number) {
     setMetricActivityId(activityId);
     setWorkflowError(null);
+    setSimulationNotice(null);
     try {
       const result = await fetchCampaignFunnel(accessToken, activityId);
       setCampaignFunnel(result.success ? result.data : null);
     } catch (error) {
       setCampaignFunnel(null);
       setWorkflowError(error instanceof Error ? error.message : "无法读取活动效果漏斗");
+    }
+  }
+
+  async function runFixtureSimulation() {
+    if (!metricActivityId || simulationLoading) return;
+    setSimulationLoading(true);
+    setSimulationNotice(null);
+    setWorkflowError(null);
+    try {
+      const result = await simulateCampaignActivity(accessToken, metricActivityId);
+      if (!result.success || !result.data) throw new Error(result.message);
+      setCampaignFunnel(result.data.funnel);
+      setSimulationNotice(
+        result.data.insertedEvents > 0
+          ? `已生成 ${result.data.insertedEvents} 条隔离演示事件`
+          : "固定演示事件已经存在，本次没有重复写入"
+      );
+    } catch (error) {
+      setWorkflowError(error instanceof Error ? error.message : "无法生成演示行为");
+    } finally {
+      setSimulationLoading(false);
     }
   }
 
@@ -480,6 +506,20 @@ export default function OperatorApp() {
                       </span>
                       <small>{formatDate(campaignFunnel.measuredAt)} 更新</small>
                     </div>
+                    {campaignFunnel.dataSource === "SIMULATED" &&
+                      operator.permissions.includes("campaign:metric") && (
+                        <div className="operator-simulation-actions">
+                          <button
+                            type="button"
+                            disabled={simulationLoading}
+                            onClick={() => void runFixtureSimulation()}
+                          >
+                            {simulationLoading ? <LoaderCircle size={14} className="spin" /> : <Sparkles size={14} />}
+                            {simulationLoading ? "生成中" : "生成演示行为"}
+                          </button>
+                          {simulationNotice && <span>{simulationNotice}</span>}
+                        </div>
+                      )}
                     <div className="operator-funnel-groups">
                       {[campaignFunnel.treatment, campaignFunnel.control].map((group) => (
                         <article key={group.experimentGroup}>

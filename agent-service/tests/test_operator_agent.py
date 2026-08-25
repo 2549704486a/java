@@ -65,6 +65,7 @@ class OperatorAgentTest(unittest.TestCase):
     def test_intent_selects_only_required_tools(self):
         tools = [
             SimpleNamespace(name="get_campaign_planning_snapshot"),
+            SimpleNamespace(name="get_campaign_funnel"),
             SimpleNamespace(name="search_operator_knowledge"),
             SimpleNamespace(name="draft_campaign_plan"),
         ]
@@ -78,6 +79,7 @@ class OperatorAgentTest(unittest.TestCase):
         self.assertEqual(
             {
                 "get_campaign_planning_snapshot",
+                "get_campaign_funnel",
                 "search_operator_knowledge",
             },
             {tool.name for tool in knowledge_tools},

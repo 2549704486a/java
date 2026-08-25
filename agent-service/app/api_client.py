@@ -161,6 +161,16 @@ class BusinessApiClient:
             f"/agent/operator/campaigns/activities/{activity_id}/funnel"
         )
 
+    def simulate_campaign(
+        self,
+        activity_id: int,
+        scenario_key: str = "DEMO_BASELINE_V1",
+    ) -> ToolEnvelope:
+        return self._post(
+            f"/agent/operator/campaigns/activities/{activity_id}/simulate",
+            {"scenarioKey": scenario_key},
+        )
+
     def submit_exchange(
         self,
         *,

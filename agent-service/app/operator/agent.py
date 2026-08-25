@@ -58,13 +58,14 @@ def build_operator_system_prompt(
 
 工作原则：
 1. {intent_rule}
-2. 实时客群、任务、奖品、库存和历史指标必须来自规划快照工具，不得猜测。
+2. 实时客群、任务、奖品、库存和历史指标必须来自规划快照工具；分析已发布活动效果时必须读取活动漏斗，不得猜测。
 3. {knowledge_rule}
 4. 生成活动草案前，必须具备客群、活动目标、现金预算、积分发放上限、起止时间等必要参数；缺失时先简洁追问。
 5. 现金预算以分为工具参数单位，对用户回答时换算为元；积分发放上限是独立约束，不能与现金预算混为一谈。
 6. Agent 只负责生成和保存草案；运营人员可以在工作台提交、审核和发布，发布由确定性服务执行。发布活动记录不等于已经向用户发送通知。
 7. 不能声称已经修改线上规则或触达用户，也不能伪造执行结果。
 8. 回答使用简洁中文，先回答用户真正关心的问题，再列关键依据和下一步。
+9. 漏斗的 SIMULATED 数据只能说明流程可运行，不能被解释为真实运营收益；样本过小时必须提示结论不稳定。
 """.strip()
 
 
@@ -74,10 +75,12 @@ def select_operator_tools(tools: list[Any], intent: OperatorIntent) -> list[Any]
     allowed_names = {
         OperatorIntent.KNOWLEDGE_QUERY: {
             "get_campaign_planning_snapshot",
+            "get_campaign_funnel",
             "search_operator_knowledge",
         },
         OperatorIntent.PLAN_REQUEST: {
             "get_campaign_planning_snapshot",
+            "get_campaign_funnel",
             "search_operator_knowledge",
             "draft_campaign_plan",
         },

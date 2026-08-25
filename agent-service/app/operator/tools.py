@@ -73,6 +73,10 @@ class OperatorKnowledgeSearchInput(BaseModel):
     limit: int = Field(default=3, ge=1, le=5)
 
 
+class CampaignFunnelInput(BaseModel):
+    activity_id: int = Field(gt=0, description="需要分析的已发布活动 ID")
+
+
 def build_operator_tools(
     data_provider: CampaignDataProvider,
     operator: AuthenticatedOperator,
@@ -116,6 +120,30 @@ def build_operator_tools(
         return execute_traced("get_campaign_planning_snapshot", arguments, execute)
 
     available_tools = [get_campaign_planning_snapshot]
+
+    if business_client is not None:
+
+        @tool(args_schema=CampaignFunnelInput)
+        def get_campaign_funnel(activity_id: int) -> dict:
+            """读取活动实验组、对照组的自动漏斗与 Lift，用于效果分析。"""
+
+            arguments = {
+                "operator_id": operator.operator_id,
+                "activity_id": activity_id,
+            }
+
+            def execute() -> dict:
+                try:
+                    return business_client.get_campaign_funnel(
+                        activity_id
+                    ).model_dump(mode="json")
+                except BusinessApiError as exc:
+                    return exc.as_envelope().model_dump(mode="json")
+
+            return execute_traced("get_campaign_funnel", arguments, execute)
+
+        available_tools.append(get_campaign_funnel)
+
     if knowledge_search is not None:
 
         @tool(args_schema=OperatorKnowledgeSearchInput)
