@@ -244,7 +244,7 @@ $outputPrice = [double](Read-Host "每百万输出 Token 的美元单价")
 
 ## 8. 构建 RAG 知识索引
 
-当前已完成知识源治理、文档切分和本地向量索引构建，还没有把 RAG 检索接入 Agent。新增或修改 `knowledge/documents/` 后，先审核动态事实边界并同步文档版本与目录版本，再执行目录校验和切分检查：
+当前已完成知识源治理、文档切分、本地向量索引以及用户侧和运营侧只读检索接入。新增或修改 `knowledge/documents/` 后，先审核动态事实边界并同步文档版本与目录版本，再执行目录校验和切分检查：
 
 ```powershell
 .\.venv\Scripts\python.exe -m app.knowledge.catalog

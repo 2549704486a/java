@@ -5,7 +5,7 @@
 ## 1. 当前基线
 
 - 项目目录：`D:\工作\incentive-事务消息`
-- 代码基线：`f64c9cd0c3ca5a0a016d62953cbc2e72c0d7f986`
+- 代码基线：以当前 Git `HEAD` 和源码为准；不在文档中硬编码容易过期的提交号
 - 业务链路：只讨论旧事务消息链路 `/userAward/exchange`
 - 新链路：已删除，不得推测或恢复 `/exchangeRedisMq`、Redis 预扣订单等逻辑
 - 事实来源：当前 Java 源码、配置文件和数据库初始化 SQL
