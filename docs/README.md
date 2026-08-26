@@ -8,7 +8,8 @@
 | --- | --- |
 | [`../AGENTS.md`](../AGENTS.md) | Coding Agent 的仓库导航、事实优先级、不可破坏边界和开发协议 |
 | [`../PRODUCT.md`](../PRODUCT.md) | 当前产品用户、核心旅程、能力基线、指标口径和明确非目标 |
-| [`specs/TEMPLATE.md`](specs/TEMPLATE.md) | 跨服务、高风险或存在非显然取舍时使用的 Feature Spec 模板 |
+| [`../openspec/changes/`](../openspec/changes/) | 跨服务、高风险或存在非显然取舍时使用的 OpenSpec 变更工件 |
+| [`../openspec/config.yaml`](../openspec/config.yaml) | OpenSpec 的项目上下文、提案规则、设计原则和任务约束 |
 
 新任务先读根目录 `AGENTS.md`，再按其中的渐进加载顺序进入项目上下文和当前路线图。不要把本目录当作需要顺序通读的教程。
 
@@ -18,7 +19,8 @@
 | --- | --- |
 | `agent-context/` | 当前项目事实、旧链路、代码索引和 Agent 接入边界 |
 | `agent-design/` | Agent 产品需求、工具契约、评测用例和阶段实现说明 |
-| `specs/` | 复杂功能实施前的问题、证据、方案取舍、验收与回滚边界 |
+| `../openspec/specs/` | 已归档并生效的行为契约；不能用活动变更代替当前事实 |
+| `../openspec/changes/` | 复杂功能实施前的问题、行为规格、方案取舍、任务与回滚边界 |
 | `agent-learning/` | 历史技术学习清单和专题笔记；不参与开发规划，仅在明确学习或复习时按需使用 |
 | `agent-journal/` | 按完成时间记录需求、开发、测试、学习和排查任务的简要日记 |
 | `../agent-service/README.md` | Python 服务安装、配置、运行和测试命令 |

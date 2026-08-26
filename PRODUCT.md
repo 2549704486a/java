@@ -116,4 +116,4 @@
 - 当前优先级：[Agent 课程能力落地路线图](docs/agent-design/20_Agent课程能力落地路线图.md)
 - 项目事实：[Agent 上下文包](docs/agent-context/README.md)
 - 代码与运行文档：[文档导航](docs/README.md)
-- 复杂功能设计：[Feature Spec 模板](docs/specs/TEMPLATE.md)
+- 复杂功能设计：[OpenSpec 当前变更](openspec/changes/)；使用规则见 [AGENTS.md](AGENTS.md)

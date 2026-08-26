@@ -1,0 +1,39 @@
+schema: spec-driven
+
+context: |
+  This is a brownfield points-incentive product with a Java business service,
+  Python user/operator Agents, and a React web UI.
+  Read AGENTS.md first for repository navigation and immutable boundaries.
+  Read PRODUCT.md for the current product baseline, then load only the relevant
+  files from docs/agent-context/ and the current priority roadmap at
+  docs/agent-design/20_Agent课程能力落地路线图.md.
+  The exchange flow only uses the existing RocketMQ transaction-message chain.
+  Historical load-test documents and results are excluded from Agent work.
+
+rules:
+  proposal:
+    - Start from the user or operational problem, not from a technology to introduce.
+    - Separate confirmed facts, hypotheses, alternative explanations, and open questions.
+    - Include explicit goals and non-goals; do not present Fixture or Simulated evidence as production outcomes.
+    - Keep the proposal concise and link to existing context instead of copying it.
+  specs:
+    - Describe externally observable behavior and business boundaries, not implementation structure.
+    - Cover the main success path and material failure, identity, permission, or state-boundary scenarios.
+    - Dynamic points, inventory, orders, and campaign state must come from business facts, not model inference.
+  design:
+    - Compare the minimal approach, at least one viable alternative, and keeping the current behavior.
+    - Reuse existing Tools, Skills, deterministic services, and state machines; do not pre-build MCP or multi-Agent abstractions.
+    - State source-of-truth, authorization, idempotency, audit, and rollback boundaries when relevant.
+  tasks:
+    - Keep each task scoped to one observable outcome and order tasks by dependency.
+    - Include documentation updates only where they prevent factual drift; do not create parallel documentation systems.
+    - Prefer targeted checks; require broad regression only when the change impact justifies it.
+
+operations:
+  apply:
+    guidance:
+      - Keep changes minimal and do not modify files outside the approved change scope.
+      - If implementation contradicts a confirmed fact or acceptance scenario, pause and update the artifacts instead of silently narrowing scope.
+  archive:
+    guidance:
+      - Before archiving, distinguish implemented behavior, evidence, remaining risks, and intentionally excluded work.

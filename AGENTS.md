@@ -8,7 +8,7 @@
 2. 阅读 [项目上下文入口](docs/agent-context/README.md) 与 [上下文清单](docs/agent-context/00_上下文清单.md)。
 3. 阅读 [最高优先级路线图](docs/agent-design/20_Agent课程能力落地路线图.md)，确认当前阶段。
 4. 根据任务类型，从上下文清单选择专项文档和源码；不要顺序读取全部 `agent-design/`。
-5. 若需求跨服务、改变状态机或权限边界、引入数据结构，先使用 [Feature Spec 模板](docs/specs/TEMPLATE.md) 收敛问题和方案。
+5. 若需求跨服务、改变状态机或权限边界、引入数据结构，先使用 OpenSpec 收敛问题和方案：探索后创建 `openspec/changes/<change>/`，人工审阅规划工件后再进入实现。
 
 ## 2. 事实来源
 
@@ -16,11 +16,12 @@
 
 1. 当前源码、接口契约和数据库迁移。
 2. 当前生效的配置及可复现的运行证据。
-3. `docs/agent-context/` 中经源码核对的项目事实。
-4. `docs/agent-design/` 中的当前方案和路线图。
-5. `docs/agent-journal/`、课程资料及历史说明。
+3. `openspec/specs/` 中已归档并生效的行为契约。
+4. `docs/agent-context/` 中经源码核对的项目事实。
+5. `docs/agent-design/` 中的当前方案和路线图。
+6. `docs/agent-journal/`、课程资料及历史说明。
 
-文档中的提交号、完成状态和接口清单都可能过期。引用前必须与当前源码核对；不能把计划、Fixture 或模型推断写成已经实现的事实。
+`openspec/changes/` 是计划或正在实施的变更，不代表当前系统已经具备相应能力。文档中的提交号、完成状态和接口清单都可能过期；引用前必须与当前源码核对，不能把计划、Fixture 或模型推断写成已经实现的事实。
 
 ## 3. 目录职责
 
@@ -31,7 +32,9 @@
 | `web-ui/` | 用户奖品中心、对话页面和运营工作台 | 修改可见交互时 |
 | `docs/agent-context/` | 当前项目事实、旧链路和代码索引 | 每项任务按需读取 |
 | `docs/agent-design/` | 已实施方案、取舍、评测与最高优先级路线图 | 需要理解某项能力为何存在时 |
-| `docs/specs/` | 尚待实现或正在实施的复杂功能决策 | 跨模块、高风险或需求不清时 |
+| `openspec/specs/` | 已归档并生效的行为契约 | 核对系统承诺的外部行为时 |
+| `openspec/changes/` | 复杂变更的提案、规格、设计和任务 | 跨模块、高风险或存在非显然取舍时 |
+| `.agents/skills/openspec-*/` | OpenSpec 的 Explore、Propose、Apply、Archive 等 Agent 工作流 | 执行对应 OpenSpec 阶段时按需加载 |
 | `docs/agent-journal/` | 已完成任务的简要时间线 | 完成并验证后更新 |
 | `docs/agent-interview/` | 有代码或证据支撑的面试表达 | 仅在整理面试材料时读取 |
 | `docs/agent-learning/` | 历史学习资料 | 仅在用户明确要求学习时读取 |
@@ -56,7 +59,8 @@
 - 先回答用户真正要解决的问题，不要急于罗列能力边界或技术清单。
 - 将事实、假设、替代解释和待确认问题分开记录。
 - 存在非显然取舍时，先比较最小方案、替代方案及不做的后果，再实施。
-- 小型修复、注释和纯文档整理无需机械创建 Spec。
+- 复杂变更先使用 `$openspec-explore` 调查和发散，再用 `$openspec-propose` 生成规划工件；提案经审阅后才使用 `$openspec-apply-change` 实施，验收完成后再归档。
+- 小型修复、注释和纯文档整理无需机械创建 OpenSpec change。
 
 ### 再修改代码
 
