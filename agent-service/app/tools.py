@@ -223,12 +223,12 @@ def build_tools(
 
     @tool
     def get_user_points() -> dict:
-        """查询当前登录用户的实时积分。仅在用户询问积分时使用。"""
+        """查询当前登录用户的实时积分。用户只问积分时单独使用，不为丰富回答追加奖品或任务查询。"""
         return safe_result("get_user_points", {}, lambda: client.get_user_points(user_id))
 
     @tool
     def list_available_tasks() -> dict:
-        """查询当前用户可参与或已完成待领奖的有效任务，不返回已领奖任务。"""
+        """用户只想查看任务时，查询可参与或已完成待领奖的有效任务；制定积分方案时改用规划 Skill。"""
         return safe_result(
             "list_available_tasks",
             {},
@@ -237,7 +237,7 @@ def build_tools(
 
     @tool(args_schema=AwardIdInput)
     def get_award_detail(award_id: int) -> dict:
-        """按奖品 ID 查询奖品价格、库存和活动时间等实时详情。"""
+        """按奖品 ID 查询价格、库存和活动时间等实时详情；只问能否兑换时改用资格检查工具。"""
         return safe_result(
             "get_award_detail",
             {"award_id": award_id},
@@ -246,7 +246,7 @@ def build_tools(
 
     @tool(args_schema=ListAwardsInput)
     def list_awards(redeemable_only: bool = False) -> dict:
-        """查询奖品列表；用户未明确奖品 ID、希望查看可选奖品时使用。"""
+        """查询全部奖品，或按用户提供的奖品名称解析内部 ID。名称匹配不唯一时展示候选让用户选择；需要个性化推荐时改用推荐 Skill。"""
         return safe_result(
             "list_awards",
             {"redeemable_only": redeemable_only},
@@ -255,7 +255,7 @@ def build_tools(
 
     @tool(args_schema=AwardIdInput)
     def check_exchange_eligibility(award_id: int) -> dict:
-        """检查当前用户是否满足指定奖品的兑换条件，并返回准确原因和积分缺口。"""
+        """仅用于“能否兑换、是否满足条件、还差多少”等资格咨询，并返回当前积分、所需积分和缺口；用户明确要求兑换或换奖品时改用 prepare_exchange，无需再查询积分或奖品详情。"""
         return safe_result(
             "check_exchange_eligibility",
             {"award_id": award_id},
@@ -264,7 +264,7 @@ def build_tools(
 
     @tool(args_schema=ListExchangeRecordsInput)
     def list_my_exchange_records(award_id: int | None = None) -> dict:
-        """查询当前用户真实的兑换记录和最终处理状态，可按奖品 ID 过滤。"""
+        """查询当前用户真实的订单、兑换记录和最终状态，可按奖品 ID 过滤；处理中不能解释为成功。"""
         return safe_result(
             "list_my_exchange_records",
             {"award_id": award_id},
@@ -273,7 +273,12 @@ def build_tools(
 
     @tool(
         args_schema=PlanPointsInput,
-        description=points_manifest.tool_description,
+        description=(
+            f"{points_manifest.tool_description}"
+            "该 Skill 已完成资格、奖品和实时任务查询，不要在前后重复调用基础工具。"
+            "用户按名称排除任务或限定可做任务时，直接填写 excluded_task_names "
+            "或 allowed_task_names，Skill 会基于实时任务完成匹配。"
+        ),
         extras=points_manifest.trace_metadata(),
     )
     def plan_points_for_award(
@@ -311,6 +316,8 @@ def build_tools(
             "用户要求为已经保存的长期目标制定积分计划时使用。"
             "该 Skill 会读取目标、确定性解析当前奖品并查询实时积分、资格和任务；"
             "不要在前后重复调用 get_growth_memory、list_awards 或 plan_points_for_award。"
+            "没有目标或目标过期时提示新增或更新；存在多个目标或多个匹配奖品时"
+            "只返回候选让用户选择，不替用户猜测。"
         ),
         extras=points_manifest.trace_metadata(),
     )
@@ -351,7 +358,11 @@ def build_tools(
 
     @tool(
         args_schema=RecommendAwardsInput,
-        description=recommendation_manifest.tool_description,
+        description=(
+            f"{recommendation_manifest.tool_description}"
+            "该 Skill 已查询实时积分和奖品资格，不要重复调用积分或奖品列表工具；"
+            "用户明确要查看全部奖品而不是推荐时改用 list_awards。"
+        ),
         extras=recommendation_manifest.trace_metadata(),
     )
     def recommend_awards(limit: int = 3) -> dict:
@@ -387,8 +398,10 @@ def build_tools(
     @tool(
         args_schema=AwardIdInput,
         description=(
-            "用户明确表示想兑换指定奖品时使用。它只检查实时条件并生成一次性确认摘要，"
-            "不会立即扣积分或提交兑换。若用户要求跳过、不用或绕过确认，不得调用本工具。"
+            "用户明确表示“我想兑换、帮我兑换、换这个奖品”时直接使用，不要先调用资格检查。"
+            "它只检查实时条件并生成一次性确认摘要，"
+            "不会立即扣积分或提交兑换，且内部已完成资格检查，不要提前重复检查。"
+            "若用户要求跳过、不用或绕过确认，不得调用本工具。"
         ),
         extras=exchange_manifest.trace_metadata(),
     )
@@ -440,7 +453,9 @@ def build_tools(
     @tool(
         args_schema=GetGrowthMemoryInput,
         description=(
-            "按当前问题读取少量相关长期记忆。业务过程中传 query、需要的 memory_types 和较小 limit；"
+            "只有用户明确引用之前保存的目标或偏好，或当前任务确实需要历史个性化信息时，"
+            "才按当前问题读取少量相关长期记忆；用户已在本轮明确目标或条件时不要调用。"
+            "业务过程中传 query、需要的 memory_types 和较小 limit；"
             "只有用户明确要求查看全部记忆时才设置 include_all=true。"
             "不得用它查询实时积分、库存、任务完成状态或订单状态。"
         ),
@@ -475,7 +490,8 @@ def build_tools(
         description=(
             "用户直接表达跨会话仍有价值的偏好、目标或稳定个人信息时使用。"
             "原文可以宽泛或不完整，不得为了保存记忆追问奖品 ID、精确日期或业务分类；"
-            "结构化字段只是可选辅助。临时条件、实时业务事实、敏感信息和模型推测不得写入。"
+            "结构化字段只是可选辅助。这是新增或更新单条原子记忆的默认工具；"
+            "临时条件、实时业务事实、敏感信息和模型推测不得写入。"
         ),
         extras=memory_manifest.trace_metadata(),
     )
@@ -515,7 +531,8 @@ def build_tools(
     @tool(
         args_schema=SaveRedemptionGoalInput,
         description=(
-            "用户直接声明稳定的长期兑换目标，或明确要求记住、修改目标时使用，并立即保存。"
+            "只有用户已经明确给出奖品 ID 和精确目标日期，并希望保存绑定业务对象的"
+            "兑换目标时使用。宽泛或不完整的目标应使用 remember_user_memory 保留原文；"
             "不能根据猜测或一次性计划自动写入。"
         ),
         extras=memory_manifest.trace_metadata(),
@@ -543,8 +560,9 @@ def build_tools(
     @tool(
         args_schema=SaveUserPreferencesInput,
         description=(
-            "用户用第一人称直接声明稳定的奖品类别、排斥类别或任务偏好时使用，"
-            "不要求用户额外说请记住。该工具按完整列表立即替换；不能保存本轮临时条件、临时情绪或模型推测。"
+            "只有用户明确要求用一组完整列表替换现有奖品类别、排斥类别或任务偏好时使用。"
+            "单条自然语言偏好应使用 remember_user_memory，避免覆盖其他既有偏好；"
+            "不能保存本轮临时条件、临时情绪或模型推测。"
         ),
         extras=memory_manifest.trace_metadata(),
     )

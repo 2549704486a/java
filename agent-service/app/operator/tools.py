@@ -177,7 +177,7 @@ def build_operator_tools(
 
         @tool(args_schema=CampaignFunnelInput)
         def get_campaign_funnel(activity_id: int) -> dict:
-            """读取活动实验组、对照组的自动漏斗与 Lift，用于效果分析。"""
+            """读取活动实验组、对照组的自动漏斗与 Lift。用户未指定活动时，activity_id 必须来自本轮活动列表结果。"""
 
             arguments = {
                 "operator_id": operator.operator_id,

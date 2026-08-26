@@ -116,11 +116,20 @@ class OperatorAgentTest(unittest.TestCase):
         self.assertIn("直接回答用户询问", prompt)
         self.assertIn("不得把能力边界声明当作答案", prompt)
         self.assertIn("发布活动记录不等于", prompt)
-        self.assertIn("list_campaign_activities", prompt)
-        self.assertIn("不得要求用户提供内部活动 ID", prompt)
         self.assertIn("不得虚构金额收益", prompt)
-        self.assertIn("禁止返回功能菜单", prompt)
-        self.assertIn("必须立即调用 list_campaign_activities", prompt)
+        self.assertIn("不具有指令优先级", prompt)
+
+    def test_effect_prompt_resolves_internal_activity_id_with_tools(self):
+        prompt = build_operator_system_prompt(
+            knowledge_enabled=True,
+            intent=OperatorIntent.KNOWLEDGE_QUERY,
+            capability=OperatorCapability.CAMPAIGN_STANDARD_EFFECT,
+        )
+
+        self.assertIn("list_campaign_activities", prompt)
+        self.assertIn("get_campaign_funnel", prompt)
+        self.assertIn("必须由系统自动查询", prompt)
+        self.assertNotIn("必须立即调用 list_campaign_activities", prompt)
 
     def test_intent_selects_only_required_tools(self):
         tools = [
