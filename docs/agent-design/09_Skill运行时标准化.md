@@ -1,55 +1,78 @@
 # Skill 运行时标准化
 
-> 这一阶段解决的问题是：以前 `SKILL.md` 只是给人看的说明书，Agent 实际只认识 Python Tool。现在声明文件成为运行时事实来源，但确定性业务计算仍由代码负责，避免把积分计算和异常分支交给模型自由发挥。
+> 本章说明当前项目中的真实 Skill 是什么，以及它怎样进入模型上下文。最重要的边界是：`SKILL.md` 是给模型阅读的执行说明，Tool 是模型可调用入口，Service 是完成确定性业务计算的代码。三者不能互相冒充。
 
-## 1. 为什么需要改造
+## 1. 为什么要纠偏
 
-原实现已经具备完整的积分规划代码，但存在两套彼此独立的信息：
+课程第十讲给出的定义是：
 
-| 载体 | 原有职责 | 原有问题 |
+```text
+Skill = Tool + 触发条件 + 执行流程 + 上下文知识
+```
+
+旧实现虽然会扫描和校验 `SKILL.md`，但正文只停留在 Python 对象中。模型直接调用业务 Tool，Tool 再调用当时命名为 `PointsPlanningSkill` 等 Python 类。因此旧链路实际上是：
+
+```text
+模型 -> 业务 Tool -> 确定性 Python 代码 -> Java 接口
+```
+
+这是一条有效的 Tool Calling 链路，却不能证明模型读过 Skill。现在已经把这两件事分开：
+
+| 组件 | 当前职责 | 例子 |
 | --- | --- | --- |
-| `skills/points-planning/SKILL.md` | 描述触发条件、流程和安全边界 | 运行时不读取，修改后不会影响 Agent |
-| `app/skills/points_plan.py` | 查询业务数据并确定性计算积分方案 | 无法证明自己对应哪一版 Skill 声明 |
-| `app/tools.py` | 将组合能力暴露给模型 | Tool 描述由代码硬编码，可能与声明漂移 |
+| `skills/*/SKILL.md` | 告诉模型何时使用、执行哪些步骤、怎样处理失败 | `skills/points-planning/SKILL.md` |
+| `load_skill` | 命中任务后把对应正文作为 Tool 结果返回模型 | `app/skills/loader.py` |
+| 业务 Tool | 给模型提供参数明确的调用入口 | `plan_points_for_award` |
+| Service | 查询事实并执行可测试的业务计算或状态控制 | `app/services/points_planning.py` |
 
-课程第十节的核心定义是：`Skill = Tool + 触发条件 + 执行流程 + 上下文知识`。课程中的天气案例由 `SKILL.md` 描述“何时查询天气、需要组合哪些工具、如何给出出行建议”，由 `weather_api.py` 执行真实查询。本项目采用同样分层：声明文件负责能力契约，Python 代码负责可靠执行。
-
-## 2. 当前运行时流程
+## 2. 当前真实运行流程
 
 ```text
 Agent 启动
-  -> SkillRegistry 扫描 skills/*/SKILL.md
-  -> 解析 YAML Front Matter
-  -> 校验必要元数据和正文章节
-  -> 将 description + trigger 作为 Tool 描述
-  -> 将 name + version + SHA-256 写入 Tool 扩展元数据
+  -> SkillRegistry 扫描并校验 skills/*/SKILL.md
+  -> System Prompt 只获得当前 Agent 可用的名称、描述和触发条件
 
-用户询问积分规划
-  -> 模型根据精简元信息选择 plan_points_for_award
-  -> Tool 激活 points-planning Skill 定义
-  -> 日志记录 Skill 名称、版本和哈希
-  -> PointsPlanningSkill 执行确定性业务流程
-  -> 结构化 PointsPlan 返回模型
+用户提出“帮我规划兑换 6 号奖品所需积分”
+  -> 模型根据目录判断命中 points-planning
+  -> 模型调用 load_skill(skill_name="points-planning")
+  -> load_skill 返回该 SKILL.md 的完整正文
+  -> 正文以 ToolMessage 进入本轮 Agent 消息列表
+  -> 模型阅读正文，调用 plan_points_for_award
+  -> Tool 调用 PointsPlanningService
+  -> Service 查询实时资格、积分和任务并完成确定性计算
+  -> 模型把结构化结果解释给用户
 ```
 
-初始上下文只包含触发所需的精简元信息，不把完整 `SKILL.md` 塞入 System Prompt。完整说明由运行时加载和校验，代码执行型 Skill 不需要模型重新解释步骤，因此不会增加每次请求的 Prompt 体积。
+这里的“加载”不是只在日志里写一行，也不是 Python 自己读到文件就结束。验收标准是：完整正文必须出现在 `load_skill` 的 Tool 返回值中，并进入下一次模型调用可见的消息上下文。
 
-## 3. 声明契约
+## 3. 为什么不在启动时加载所有正文
 
-每个 Skill 必须位于与 `name` 同名的目录，并包含：
+如果启动时把五份 Skill 全塞进 System Prompt，哪怕用户只问“我有多少积分”，模型也要携带积分规划、奖品推荐、长期记忆、受控兑换和活动规划的全部说明。这会增加上下文体积，也容易让不相关规则互相干扰。
+
+当前采用渐进披露：
+
+1. **启动阶段**：只披露名称、描述和触发条件，让模型知道“有哪些能力”。
+2. **任务命中阶段**：调用 `load_skill`，只加载当前需要的一份正文。
+3. **执行阶段**：模型按照正文调用业务 Tool；Tool 再进入确定性 Service。
+
+例如，用户只查询当前积分时直接调用积分查询 Tool，不需要加载任何 Skill；用户要求“结合任务帮我规划怎样攒够积分”时，才加载 `points-planning`。
+
+## 4. 文件契约
+
+每个 Skill 位于：
 
 ```text
 skills/<skill-name>/SKILL.md
 ```
 
-YAML Front Matter 必填：
+YAML Front Matter 必须包含：
 
 - `name`
 - `description`
 - `trigger`
 - `version`
 
-正文必填章节：
+正文必须包含：
 
 - `何时使用`
 - `输入`
@@ -58,48 +81,44 @@ YAML Front Matter 必填：
 - `安全边界`
 - `输出`
 
-缺少元数据、目录名不一致、名称重复或正文缺少必要章节时，Agent 启动失败。这样可以在请求到来前发现损坏的 Skill，而不是让模型在运行中猜测。
+`SkillRegistry` 在启动时完成目录名、元数据、重复名称和正文章节校验。损坏的 Skill 会在提供服务前暴露，而不是等模型执行到一半再猜。
 
-## 4. 渐进披露的具体边界
+## 5. Skill 与 Service 的边界
 
-当前实现属于**代码执行型 Skill**：
-
-- 模型初始只看到精简触发信息。
-- Tool 被调用时激活完整 Skill 定义。
-- 执行步骤由已经过测试的 Python 代码落实。
-- `SKILL.md` 的完整正文不直接注入模型上下文。
-
-这与“Prompt 执行型 Skill”不同。后者需要在触发后把完整说明注入模型，让模型按照步骤编排多个 Tool；适用于开放式研究或文档处理。本积分规划流程分支明确、计算可验证，使用确定性代码更可靠，也更节省 Token。
-
-## 5. 可追踪性与评测
-
-运行时记录：
+积分规划可以最直观地说明两者为何都需要：
 
 ```text
-skill_activated name=points-planning version=1.0.0 sha256=...
-skill_complete name=points-planning version=1.0.0 status=... elapsed_ms=...
+points-planning/SKILL.md
+  负责：告诉模型何时规划、先调用哪个组合 Tool、失败后停止追加查询
+
+plan_points_for_award Tool
+  负责：校验 award_id 等输入，向模型暴露稳定调用契约
+
+PointsPlanningService
+  负责：计算积分缺口、过滤任务并选择最小覆盖方案
 ```
 
-评测结果元数据增加当前 Skill 的名称、版本和哈希。以后比较两次评测时，可以判断差异是否来自 Skill 定义变化，而不是只看 Prompt 和模型名称。
+把所有计算都交给模型，结果容易随表达变化；只保留 Service 而不让模型读取 `SKILL.md`，则只是普通 Tool Calling。当前结构同时保留模型可读流程和确定性业务内核。
 
-新增测试验证：
+## 6. Agent 隔离
 
-1. 能发现并激活 `points-planning`。
-2. Tool 描述和扩展元数据来自 `SKILL.md`。
-3. Tool 调用时确实执行运行时激活。
-4. 缺少必要章节的 Skill 会被拒绝。
+两个 Agent 只能加载各自允许的 Skill：
 
-## 6. 当前完成度与后续边界
+| Agent | 可加载 Skill |
+| --- | --- |
+| 兑换助手 | `points-planning`、`award-recommendation`、`controlled-exchange`、`growth-memory` |
+| 智能运营 Agent | `campaign-planning` |
 
-本阶段已经完成文件型声明、运行时注册、契约校验、精简元信息暴露、激活日志和版本追踪。它没有把所有正文交给模型，也没有为了形式增加一次 `load_skill` Tool 调用。
+例如，兑换助手尝试加载 `campaign-planning` 会返回 `SKILL_NOT_AVAILABLE`。这既减少无关上下文，也避免把运营能力暴露给普通用户 Agent。
 
-以后增加开放式 Skill 时，可以在同一个注册表上扩展“触发后注入完整说明”；在只有一个确定性积分规划 Skill 的当前阶段，不需要提前引入复杂的动态中间件。
+## 7. 当前验证标准
 
-## 7. 回归验证
+关键测试不只检查文件能否被读取，还要覆盖以下事实：
 
-- 离线单元测试：`13/13` 通过。
-- 首轮模型回归：`13/15`，暴露一个评分同义短语遗漏和一个重复查询奖品列表的问题，原始结果保留在 `skill_runtime_fixture_20260820.json`。
-- 针对性复验：E03、E06 均通过，结果保留在 `skill_runtime_targeted_20260820.json`。
-- 最终完整回归：`15/15`，工具选择、参数、后端路径、回答内容和安全检查均为 `100%`，结果保留在 `skill_runtime_fixture_final_20260820.json`。
+1. 启动 Prompt 只有 Skill 目录，没有完整正文。
+2. `load_skill` 返回真实正文，并拒绝未知或越界名称。
+3. `load_skill` 的返回内容以 ToolMessage 进入 Agent 循环，下一次模型调用可见。
+4. 后续业务 Tool 仍调用确定性 Service，关键计算没有转移给模型。
+5. Tool 轨迹能够还原 `load_skill -> 业务 Tool` 的实际顺序。
 
-这里没有通过重复运行碰结果：先保留失败轨迹，再分别修正规则评分同义表达和 Skill 触发契约，最后执行全量回归。
+完整的错误审计、代码正名和迁移映射见 `59_Skill事实审计与运行时纠偏.md`。

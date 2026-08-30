@@ -16,7 +16,9 @@
 
 ```text
 用户提出奖品推荐需求
-  -> 模型选择 recommend_awards
+  -> 模型根据 Skill 目录命中 award-recommendation
+  -> 调用 load_skill 读取完整 SKILL.md 正文
+  -> 模型按照正文调用 recommend_awards
   -> Runtime 注入当前 user_id
   -> 查询实时积分
   -> 查询带资格判断的活动奖品列表
@@ -25,7 +27,7 @@
   -> 模型解释结构化推荐结果
 ```
 
-核心代码为 `app/skills/award_recommendation.py`。代码中的三个步骤级注释分别标记查询、数据校验和推荐计算，便于沿主流程阅读。
+确定性业务代码位于 `app/services/award_recommendation.py`。代码中的三个步骤级注释分别标记查询、数据校验和推荐计算，便于沿主流程阅读。
 
 ## 3. 为什么规则不写进 Prompt
 
@@ -43,17 +45,18 @@ Prompt 只告诉模型何时使用 Skill，不让模型自行判断库存或计�
 
 | 层次 | 载体 | 作用 |
 | --- | --- | --- |
-| Tool | `recommend_awards` | 向模型暴露名称、触发条件和 `limit` 参数 |
-| Skill 声明 | `skills/award-recommendation/SKILL.md` | 描述流程、错误和只读边界，并提供版本与哈希 |
-| Skill 实现 | `app/skills/award_recommendation.py` | 编排两个查询并执行确定性推荐 |
+| Skill 正文 | `skills/award-recommendation/SKILL.md` | 告诉模型何时推荐、调用哪个 Tool、怎样处理失败 |
+| 加载 Tool | `load_skill` | 命中任务后把 Skill 正文送入模型上下文 |
+| 业务 Tool | `recommend_awards` | 向模型暴露 `limit` 参数并调用推荐 Service |
+| Service | `app/services/award_recommendation.py` | 编排两个查询并执行确定性推荐 |
 | 数据契约 | `UserPointsData`、`AwardOptionData`、`AwardRecommendation` | 校验 Java JSON 并稳定输出结构 |
 
-奖品列表真实结构是 `AwardOptionView` 外层包含资格信息、内层包含 `award`。如果缺少嵌套奖品字段，Skill 返回 `INVALID_BUSINESS_RESPONSE`，不会把残缺数据交给模型猜测。
+奖品列表真实结构是 `AwardOptionView` 外层包含资格信息、内层包含 `award`。如果缺少嵌套奖品字段，Service 返回 `INVALID_BUSINESS_RESPONSE`，不会把残缺数据交给模型猜测。
 
 ## 5. 验证结果
 
-- 单元测试：项目全量 `25/25` 通过，其中推荐 Skill 新增 5 个确定性测试。
-- 真实 Skill：用户 10 当前有 1680 积分，按顺序返回智能手环、蓝牙耳机和视频会员月卡。
+- 当时的单元测试：项目全量 `25/25` 通过，其中推荐 Service 新增 5 个确定性测试。
+- 当时的业务验证：用户 10 当前有 1680 积分，按顺序返回智能手环、蓝牙耳机和视频会员月卡。
 - 积分规划：兑换 6 号智能手表还差 3320 积分；领取待领取奖励并完成全部可用任务后仍差 2860 积分。
 - 完整 Fixture：原 15 例加 3 例多 Skill 路由，共 `18/18` 通过。
 

@@ -9,7 +9,7 @@ POST /v1/chat
   -> Pydantic 校验 user_id 和 message
   -> 生成或接收 X-Request-ID
   -> AgentRuntime 按 user_id 获取 Agent
-  -> LangChain Agent 选择 Tool/Skill
+  -> LangChain Agent 按需加载 Skill 并选择业务 Tool
   -> Java 只读业务接口
   -> 返回 answer 和 elapsed_ms
 ```

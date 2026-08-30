@@ -6,7 +6,9 @@
 
 ```text
 用户提出兑换
-  -> 模型调用 prepare_exchange
+  -> 模型根据目录命中 controlled-exchange
+  -> 调用 load_skill 读取完整执行说明
+  -> 模型按照说明调用 prepare_exchange
   -> Java 实时查询资格与奖品
   -> ConfirmationStore 创建 PREPARED 记录
   -> 模型只看到不含凭证的业务摘要
@@ -27,7 +29,9 @@
 | --- | --- |
 | `app/exchange/confirmation_store.py` | 定义统一存储契约，并提供供单元测试使用的内存实现 |
 | `app/exchange/redis_store.py` | 使用 Redis 和 Lua 保存共享凭证并完成跨实例原子状态迁移 |
-| `app/skills/controlled_exchange.py` | 编排准备、确认和取消；用保守短语白名单识别明确动作 |
+| `skills/controlled-exchange/SKILL.md` | 告诉模型何时准备兑换、必须展示什么摘要以及禁止直接确认的边界 |
+| `app/skills/loader.py` | 命中兑换任务后把 Skill 正文送入模型上下文 |
+| `app/services/controlled_exchange.py` | 编排准备、确认和取消；用保守短语白名单识别明确动作 |
 | `app/runtime.py` | 有待确认记录时确定性路由确认或取消，不让模型猜测高风险授权 |
 | `app/tools.py` | 向模型暴露 prepare/cancel，移除 prepare 结果中的一次性凭证 |
 | `app/web.py` | 返回不含凭证的 `pending_exchange` 页面契约 |

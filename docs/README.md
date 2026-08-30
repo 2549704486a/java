@@ -27,17 +27,17 @@
 | `../agent-service/skills/` | Skill 的触发条件、执行步骤、错误处理和安全边界 |
 | `agent-design/05_本地环境一键启动.md` | 本地中间件与 Java 应用的一键启动、状态检查和日志位置 |
 | `agent-design/08_Agent评测体系升级.md` | 从固定回归走向盲测、重复试验、混合评分和线上反馈闭环的升级方案 |
-| `agent-design/09_Skill运行时标准化.md` | SKILL.md 的运行时注册、契约校验、渐进披露和版本追踪 |
+| `agent-design/09_Skill运行时标准化.md` | Skill 目录披露、SKILL.md 正文按需加载、Tool 与 Service 的真实边界 |
 | `agent-design/10_Agent服务化.md` | FastAPI 接口、多用户身份隔离、有界 Agent 缓存、生命周期和请求追踪 |
 | `agent-design/11_短期记忆与会话隔离.md` | InMemorySaver、thread_id、会话隔离、串行执行和会话 LRU |
-| `agent-design/12_奖品推荐Skill.md` | 第二个业务 Skill、确定性推荐规则、嵌套数据契约和多 Skill 路由评测 |
+| `agent-design/12_奖品推荐Skill.md` | 奖品推荐 Skill 的模型执行说明、业务 Tool、确定性推荐 Service 和数据契约 |
 | `agent-design/13_本地演示数据基线.md` | 可重复执行的业务演示数据、关键用户故事、一致性约束和重置顺序 |
-| `agent-design/14_Tool调用链可观测性.md` | 请求级 Tool/Skill 结构化轨迹、结果摘要、耗时统计和轨迹评分 |
+| `agent-design/14_Tool调用链可观测性.md` | 请求级 Tool 结构化轨迹、Skill 加载顺序、结果摘要和耗时统计 |
 | `agent-design/15_受控兑换Skill需求与状态机.md` | 高风险兑换的二次确认、一次性凭证、状态机和职责边界 |
 | `agent-design/16_受控兑换Tool契约.md` | 准备与确认 Tool、Java 写入适配、重试和审计契约 |
 | `agent-design/17_受控兑换评测用例.md` | 授权、重复提交、并发、未知结果和回归评测场景 |
 | `agent-design/18_奖品中心与Agent前端.md` | React 奖品中心、Agent 对话、dashboard 聚合接口和同源部署边界 |
-| `agent-design/19_受控兑换Skill实现.md` | 一次性确认存储、旧链路 POST 适配、状态语义和安全测试证据 |
+| `agent-design/19_受控兑换Skill实现.md` | 受控兑换 Skill、确定性 Service、一次性确认存储和旧链路 POST 适配 |
 | `agent-design/20_Agent课程能力落地路线图.md` | 项目最高优先级、课程能力覆盖、分阶段实施顺序和动态调整规则 |
 | `agent-design/21_Java兑换请求持久化幂等.md` | Agent 写入口的请求占位、响应重放、冲突检测和未知状态边界 |
 | `agent-design/22_Redis确认凭证共享存储.md` | 确认授权的 Redis Key 模型、Lua 原子迁移、TTL 和跨实例验证 |
@@ -46,7 +46,7 @@
 | `agent-design/32_兑换目标与长期偏好.md` 至 `36_复杂规划评测与任务约束.md` | 长期记忆、目标驱动规划和任务约束 |
 | `agent-design/37_运营活动草案最小闭环.md` 至 `47_运营意图路由与当前轮引用隔离.md` | 运营草案、身份、知识、审核发布和意图治理 |
 | `agent-design/48_Agent开发问题与解决方案复盘.md` 至 `50_Agent核心代码调用全景.md` | 问题复盘、业务域目录和代码调用全景 |
-| `agent-design/51_活动执行与效果观测技术方案.md` 至 `58_SystemPrompt与工具契约分层.md` | 活动执行、实验、投放、效果分析、运行时 Harness，以及 Prompt 与工具规则分层 |
+| `agent-design/51_活动执行与效果观测技术方案.md` 至 `59_Skill事实审计与运行时纠偏.md` | 活动执行、实验、投放、效果分析、运行时 Harness、Prompt/Skill 纠偏，以及 Skill 运行时事实纠偏 |
 
 这些文档服务于开发、调试和代码评审，可以记录具体路径、接口、状态码和运行命令。
 

@@ -62,7 +62,7 @@ flowchart TD
   -> 同键不同参数 -> IDEMPOTENCY_KEY_CONFLICT
 ```
 
-请求指纹是 `userId + awardId` 规范字符串的 SHA-256。这样同一个幂等键不能被改换用户或奖品后重复利用。
+请求指纹由规范化的 `userId + awardId` 生成。这样同一个幂等键不能被改换用户或奖品后重复利用。
 
 幂等键只允许 ASCII 字母、数字和 `._:-`，数据库使用 `ascii_bin` 精确比较，避免默认大小写不敏感排序规则混淆两个不同键。
 

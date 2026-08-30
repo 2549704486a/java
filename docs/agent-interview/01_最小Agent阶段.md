@@ -16,7 +16,7 @@
 - Skill 是带业务上下文的组合能力，负责停止条件、工具顺序和积分方案计算。
 - 模型负责识别意图、选择能力和解释结果，不直接计算关键积分，也不访问数据库。
 
-对应证据：`agent-service/app/tools.py`、`agent-service/app/skills/points_plan.py`。
+对应证据：`agent-service/app/tools.py`、`agent-service/app/services/points_planning.py`。
 
 ## 3. 如何保证动态事实可信
 
@@ -41,4 +41,3 @@ Tool 层只对幂等 GET 的超时、连接失败和部分瞬时 HTTP 错误做�
 - Java 服务不可达时返回明确失败，不生成虚假积分方案。
 
 当前尚未进行真实模型端到端评测，因此不能声称工具选择准确率或自然语言回答质量已经达到生产标准。
-

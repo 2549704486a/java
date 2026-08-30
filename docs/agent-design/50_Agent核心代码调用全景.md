@@ -1,6 +1,6 @@
 # Agent 核心代码调用全景
 
-> 这张图用于回顾当前项目中 Agent 请求从哪里进入、模型如何选择 Tool、Skill 如何访问业务数据，以及短期记忆、长期记忆、RAG、受控兑换和智能运营分别落在哪一层。图中只保留当前真实存在的代码，不包含已经回滚的 MCP，也不包含尚未实现的多 Agent 调度器。
+> 这张图用于回顾当前项目中 Agent 请求从哪里进入、`SKILL.md` 怎样按需进入模型上下文、Tool 怎样调用 Service，以及短期记忆、长期记忆、RAG、受控兑换和智能运营分别落在哪一层。图中只保留当前真实存在的代码，不包含已经回滚的 MCP，也不包含尚未实现的多 Agent 调度器。
 
 ## 1. 分块调用图
 
@@ -40,7 +40,8 @@ flowchart TB
     MODEL["ChatOpenAI"] --> AGENT
 
     AGENT --> TOOLS["app/tools.py"]
-    DIRECT --> EXCHANGE["ControlledExchangeSkill"]
+    TOOLS --> LOAD["load_skill 按需读取 SKILL.md"]
+    DIRECT --> EXCHANGE["ControlledExchangeService"]
     TOOLS --> EXCHANGE
     TOOLS --> OTHER["查询 规划 推荐 记忆 RAG"]
 ```
@@ -50,21 +51,24 @@ flowchart TB
 ```mermaid
 flowchart TB
     TOOLS["app/tools.py"] --> QUERY["积分 任务 奖品 资格 订单"]
+    TOOLS --> LOAD["load_skill"]
     TOOLS --> PLAN["积分规划 目标规划 奖品推荐"]
     TOOLS --> EXCHANGE["准备兑换与取消兑换"]
     TOOLS --> MEMORY["长期记忆读写"]
     TOOLS --> RAG["业务知识检索"]
 
-    QUERY --> CLIENT["BusinessApiClient"]
-    PLAN --> SKILLS["app/skills 业务编排"]
-    SKILLS --> CLIENT
+    LOAD --> SKILLDOCS["skills/*/SKILL.md 正文"]
 
-    EXCHANGE --> CONTROLLED["ControlledExchangeSkill"]
+    QUERY --> CLIENT["BusinessApiClient"]
+    PLAN --> SERVICES["app/services 确定性业务编排"]
+    SERVICES --> CLIENT
+
+    EXCHANGE --> CONTROLLED["ControlledExchangeService"]
     CONTROLLED --> CONFIRM["app/exchange 确认凭证"]
     CONTROLLED --> CLIENT
 
-    MEMORY --> MEMORYSKILL["GrowthMemorySkill"]
-    MEMORYSKILL --> STORE["app/memory"]
+    MEMORY --> MEMORYSERVICE["GrowthMemoryService"]
+    MEMORYSERVICE --> STORE["app/memory"]
 
     RAG --> SEARCH["app/knowledge/search.py"]
     SEARCH --> VECTOR["Chroma 向量索引"]
@@ -80,9 +84,12 @@ flowchart TB
     INTENT --> AGENT["app/operator/agent.py"]
     AGENT --> TOOLS["app/operator/tools.py"]
 
+    TOOLS --> LOAD["load_skill"]
     TOOLS --> SNAPSHOT["活动规划快照"]
     TOOLS --> KNOWLEDGE["运营知识检索"]
-    TOOLS --> DRAFT["CampaignPlanningSkill"]
+    TOOLS --> DRAFT["CampaignPlanningService"]
+
+    LOAD --> SKILLDOC["campaign-planning/SKILL.md"]
 
     WORKBENCH["运营工作台接口"] --> RULES["权限 状态机 版本校验"]
 
@@ -145,27 +152,31 @@ flowchart TB
     PAGEQUERY["奖品中心与订单页面只读接口"]
     WEB --> PAGEQUERY
 
-    subgraph USERSKILLS["用户 Tool 与 Skill"]
+    subgraph USERSKILLS["用户 Skill、Tool 与 Service"]
+        LOADSKILL["load_skill"]
+        USERSKILLDOCS["兑换助手 SKILL.md 正文"]
         QUERYTOOLS["积分 任务 奖品 资格 订单查询"]
-        POINTSSKILL["积分规划 PointsPlanningSkill"]
-        GOALSKILL["目标规划 SavedGoalPlanningSkill"]
-        RECOMMENDSKILL["奖品推荐 AwardRecommendationSkill"]
+        POINTSSERVICE["积分规划 PointsPlanningService"]
+        GOALSERVICE["目标规划 SavedGoalPlanningService"]
+        RECOMMENDSERVICE["奖品推荐 AwardRecommendationService"]
         EXCHANGETOOL["准备兑换与取消兑换"]
-        EXCHANGESKILL["受控兑换 ControlledExchangeSkill"]
+        EXCHANGESERVICE["受控兑换 ControlledExchangeService"]
         MEMORYTOOL["长期记忆读写 Tool"]
-        MEMORYSKILL["记忆处理 GrowthMemorySkill"]
+        MEMORYSERVICE["记忆处理 GrowthMemoryService"]
         RAGTOOL["业务知识检索 Tool"]
 
+        UTOOLS --> LOADSKILL
+        LOADSKILL --> USERSKILLDOCS
         UTOOLS --> QUERYTOOLS
-        UTOOLS --> POINTSSKILL
-        UTOOLS --> GOALSKILL
-        UTOOLS --> RECOMMENDSKILL
+        UTOOLS --> POINTSSERVICE
+        UTOOLS --> GOALSERVICE
+        UTOOLS --> RECOMMENDSERVICE
         UTOOLS --> EXCHANGETOOL
         UTOOLS --> MEMORYTOOL
         UTOOLS --> RAGTOOL
-        EXCHANGETOOL --> EXCHANGESKILL
-        DETERMINISTIC --> EXCHANGESKILL
-        MEMORYTOOL --> MEMORYSKILL
+        EXCHANGETOOL --> EXCHANGESERVICE
+        DETERMINISTIC --> EXCHANGESERVICE
+        MEMORYTOOL --> MEMORYSERVICE
     end
 
     subgraph OPFLOW["智能运营 Agent"]
@@ -174,16 +185,20 @@ flowchart TB
         INTENT["意图分类 app/operator/intent.py"]
         OAGENT["运营 Agent app/operator/agent.py"]
         OTOOLS["运营 Tool app/operator/tools.py"]
+        OLOADSKILL["load_skill"]
+        OSKILLDOC["campaign-planning/SKILL.md 正文"]
         SNAPSHOT["活动规划快照"]
-        CAMPAIGNSKILL["活动草案 CampaignPlanningSkill"]
+        CAMPAIGNSERVICE["活动草案 CampaignPlanningService"]
         ORAG["运营知识检索"]
 
         OAUTH --> ORUNTIME
         ORUNTIME --> INTENT
         INTENT --> OAGENT
         OAGENT --> OTOOLS
+        OTOOLS --> OLOADSKILL
+        OLOADSKILL --> OSKILLDOC
         OTOOLS --> SNAPSHOT
-        OTOOLS --> CAMPAIGNSKILL
+        OTOOLS --> CAMPAIGNSERVICE
         OTOOLS --> ORAG
     end
 
@@ -202,7 +217,7 @@ flowchart TB
         CLIENT["业务客户端 app/api_client.py"]
         EXECUTION["安全执行上下文 app/execution_context.py"]
         TRACE["调用轨迹 app/trace.py"]
-        SKILLREGISTRY["Skill 清单 app/skills/registry.py"]
+        SKILLREGISTRY["Skill 发现与加载 app/skills/registry.py"]
         MODELS["数据契约 app/models.py"]
         SETTINGS["配置 app/config.py"]
     end
@@ -213,8 +228,8 @@ flowchart TB
     OAGENT --> LLM
     UTOOLS -.-> TRACE
     OTOOLS -.-> TRACE
-    POINTSSKILL --> SKILLREGISTRY
-    CAMPAIGNSKILL --> SKILLREGISTRY
+    LOADSKILL --> SKILLREGISTRY
+    OLOADSKILL --> SKILLREGISTRY
     SETTINGS -.-> URUNTIME
     SETTINGS -.-> ORUNTIME
     MODELS -.-> UTOOLS
@@ -226,10 +241,10 @@ flowchart TB
         CONFIRMSTORE["确认凭证 app/exchange"]
         CONFIRMBACKEND["进程内存或 Redis"]
 
-        MEMORYSKILL --> LONGMEMORY
-        GOALSKILL --> LONGMEMORY
+        MEMORYSERVICE --> LONGMEMORY
+        GOALSERVICE --> LONGMEMORY
         LONGMEMORY --> MEMORYBACKEND
-        EXCHANGESKILL --> CONFIRMSTORE
+        EXCHANGESERVICE --> CONFIRMSTORE
         CONFIRMSTORE --> CONFIRMBACKEND
     end
 
@@ -250,13 +265,13 @@ flowchart TB
 
     QUERYTOOLS --> CLIENT
     PAGEQUERY --> CLIENT
-    POINTSSKILL --> CLIENT
-    GOALSKILL --> CLIENT
-    RECOMMENDSKILL --> CLIENT
-    EXCHANGESKILL --> CLIENT
-    MEMORYSKILL --> CLIENT
+    POINTSSERVICE --> CLIENT
+    GOALSERVICE --> CLIENT
+    RECOMMENDSERVICE --> CLIENT
+    EXCHANGESERVICE --> CLIENT
+    MEMORYSERVICE --> CLIENT
     SNAPSHOT --> CLIENT
-    CAMPAIGNSKILL --> CLIENT
+    CAMPAIGNSERVICE --> CLIENT
     RULE --> CLIENT
 
     subgraph JAVA["Java 业务系统"]
@@ -285,22 +300,23 @@ flowchart TB
 1. `web.py` 的 `/v1/chat` 从令牌中取得可信 `user_id`，生成或透传 `request_id`，然后调用 `AgentRuntime.answer`。
 2. `AgentRuntime` 先按 `user_id + session_id` 获取会话锁。若输入是对待确认兑换的明确确认或取消，直接走确定性路由，不再让模型判断。
 3. 普通对话通过 `_agent_for` 获取当前用户的 Agent。首次使用时，`build_agent` 将模型、Prompt、Tool、上下文中间件和 Checkpointer 组装为 LangChain Agent。
-4. 模型根据 Tool Schema 选择 `tools.py` 中的工具。简单查询直接调用 `BusinessApiClient`；多步骤业务由对应 Skill 编排；知识问题进入 RAG；偏好和目标进入长期记忆。
-5. Tool 和 Skill 返回结构化结果，模型只负责组织用户可理解的答案。使用 RAG 时，`agent.py` 还会检查并补齐当前轮次的知识引用。
+4. 模型先根据 System Prompt 中的精简 Skill 目录判断是否命中多步骤任务。命中时调用 `load_skill`，对应 `SKILL.md` 正文作为 ToolMessage 返回；简单查询则不加载 Skill。
+5. 模型按照正文调用业务 Tool。Tool 把确定性计算交给 `app/services/`，简单查询直接进入 `BusinessApiClient`；知识问题进入 RAG，偏好和目标进入长期记忆。
+6. Tool 返回结构化结果，模型只负责组织用户可理解的答案。使用 RAG 时，`agent.py` 还会检查并补齐当前轮次的知识引用。
 
 ## 3. 一次受控兑换如何执行
 
-1. 模型只能调用 `prepare_exchange`，由 `ControlledExchangeSkill.prepare` 查询实时兑换资格并生成服务端确认记录，不立即兑换。
+1. 模型先加载 `controlled-exchange` 正文，再按照说明调用 `prepare_exchange`；`ControlledExchangeService.prepare` 查询实时兑换资格并生成服务端确认记录，不立即兑换。
 2. 确认记录由 `ConfirmationStoreBackend` 保存，可使用进程内存或 Redis；前端只能看到兑换摘要，看不到内部确认凭证。
-3. 用户下一轮明确确认后，`AgentRuntime` 检测到待确认记录并绕过模型，调用 `ControlledExchangeSkill.confirm`。
-4. Skill 原子认领确认记录，再通过 `BusinessApiClient` 调用 Java `AgentCommandController`，最终进入项目保留的旧事务消息兑换链路。
+3. 用户下一轮明确确认后，`AgentRuntime` 检测到待确认记录并绕过模型，调用 `ControlledExchangeService.confirm`。
+4. Service 原子认领确认记录，再通过 `BusinessApiClient` 调用 Java `AgentCommandController`，最终进入项目保留的旧事务消息兑换链路。
 5. 确定性执行结果通过 `append_agent_turn` 写回短期会话记忆，使下一轮对话能够看到真实结果。
 
 ## 4. 一次运营对话如何执行
 
 1. `/v1/operator/chat` 先使用 `operator/auth.py` 绑定运营身份与权限，再进入 `OperatorAgentRuntime`。
 2. `OperatorIntentRouter` 将当前请求分为知识咨询、方案规划或执行请求，并据此收敛本轮可见 Tool，而不是把所有 Tool 都交给模型。
-3. 运营 Agent 可读取活动规划快照、检索运营知识，或使用 `CampaignPlanningSkill` 生成并保存草案。
+3. 规划请求只向模型提供 `campaign-planning` 目录项和 `load_skill`；模型加载正文后调用草案 Tool，`CampaignPlanningService` 使用真实快照生成并保存草案。
 4. 草案提交、审核、发布和指标回流不由模型自行执行，而由运营工作台调用 `web.py` 中的确定性接口，再交给 Java `CampaignWorkflowController` 校验权限、状态与版本。
 
 ## 5. 推荐阅读顺序
@@ -310,8 +326,8 @@ flowchart TB
 | 1 | `app/web.py` | HTTP 入口、身份绑定、用户与运营两条入口 |
 | 2 | `app/runtime.py` | 用户 Agent 生命周期、会话隔离、确认操作确定性路由 |
 | 3 | `app/agent.py` | 模型、Prompt、Tool、中间件和 Checkpointer 如何组装 |
-| 4 | `app/tools.py` | 模型实际能调用哪些用户能力，Tool 与 Skill 的边界 |
-| 5 | `app/skills/` | 积分规划、奖品推荐、目标规划、长期记忆和受控兑换的确定性业务编排 |
+| 4 | `app/skills/registry.py`、`app/skills/loader.py`、`skills/*/SKILL.md` | Skill 怎样发现、按 Agent 隔离并把正文送入模型上下文 |
+| 5 | `app/tools.py`、`app/services/` | 模型实际能调用哪些 Tool，以及确定性业务计算落在哪些 Service |
 | 6 | `app/api_client.py` | Python 如何调用 Java，如何统一处理信封、重试和请求 ID |
 | 7 | `app/operator/agent.py` | 运营意图分类后如何构建不同 Tool 集合的 Agent |
 | 8 | `app/operator/tools.py` | 规划快照、运营知识和活动草案的 Tool 契约 |
@@ -322,6 +338,6 @@ flowchart TB
 
 ## 6. 最容易混淆的三个边界
 
-- **Tool 与 Skill**：Tool 是给模型看的调用入口；Skill 才负责多个确定性步骤的业务编排。
+- **Skill、Tool 与 Service**：Skill 正文告诉模型何时、按什么流程调用；Tool 是模型的结构化调用入口；Service 才执行确定性计算、存储和状态控制。
 - **短期记忆与长期记忆**：`InMemorySaver` 保存会话消息；`app/memory/` 保存跨会话仍有价值的偏好、目标和稳定信息。
 - **Agent 与确定性执行**：模型可以理解意图、选择只读能力和生成草案，但兑换确认、活动审核与发布必须由可信代码执行状态校验。

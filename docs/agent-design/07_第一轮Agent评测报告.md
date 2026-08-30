@@ -26,7 +26,7 @@
 | 模型 | `deepseek-chat` |
 | Temperature | 0 |
 | 运行用户 | `user_id=10` |
-| 最终 Prompt SHA-256 | `1e5010ff18ad5e18c9a1d9e8e2bf4a7a7cd3d24b3a280aa0380ae04fff8ea29f` |
+| 最终 Prompt 版本 | 本轮评测冻结版本 |
 | Git 基础提交 | `f64c9cd`；Agent 评测改动尚在工作区 |
 | 固定场景 | 15 个 Fixture 用例 |
 | 真实场景 | 2 个本地 Java 只读接口用例 |
@@ -110,4 +110,3 @@ Agent 行为只修改了 System Prompt，模型、Tool Schema、Skill 和 Fixtur
 | `final_fixture_rescored.json` | 同一输出离线修正规则后的最终固定场景结果 |
 | `final_live.json` | 最终 Prompt 的真实 Java 集成结果 |
 | `e09_stability_run1~3.json` | E09 连续三次稳定性验证 |
-

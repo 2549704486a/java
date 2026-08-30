@@ -12,7 +12,7 @@
 | 会话待确认指针 | `agent:exchange:confirmation:pending:{session_hash}` String | O(1) 找到当前会话唯一的待确认凭证 |
 | 容量索引 | `agent:exchange:confirmation:records` ZSet | 按创建时间治理容量和清理陈旧成员 |
 
-会话 ID 经过 SHA-256 后进入 Redis Key；完整会话 ID 仍保存在凭证 Hash 中用于身份校验。业务 Redis 与 Agent 状态共用实例时，通过固定前缀隔离命名空间。
+会话 ID 转换为不直接暴露原文的键片段后进入 Redis Key；完整会话 ID 仍保存在凭证 Hash 中用于身份校验。业务 Redis 与 Agent 状态共用实例时，通过固定前缀隔离命名空间。
 
 ## 2. 原子状态迁移
 

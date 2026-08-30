@@ -47,7 +47,7 @@ topics: [exchange, eligibility, status]
 fact_scope: stable_rules_only
 source_refs:
   - incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java
-  - agent-service/app/skills/controlled_exchange.py
+  - agent-service/app/services/controlled_exchange.py
 ```
 
 其中 `knowledge_id` 是稳定身份，文档内容变化时通常不换 ID，而是提升 `version`。`status: active` 表示它可以进入索引；`draft` 和 `retired` 仍会接受格式校验，但不会交给后续切分。

@@ -6,7 +6,7 @@
 
 - Python Agent：`agent-service/`
 - Java 只读接口：`incentive/src/main/java/com/budou/incentive/controller/AgentQueryController.java`
-- 组合 Skill：`agent-service/app/skills/points_plan.py`
+- 积分规划 Service：`agent-service/app/services/points_planning.py`
 - Skill 声明：`agent-service/skills/points-planning/SKILL.md`
 - System Prompt：`agent-service/app/prompt.py`
 - Function Calling Tool：`agent-service/app/tools.py`
@@ -46,4 +46,3 @@ cd D:\工作\incentive-事务消息\agent-service
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 .\.venv\Scripts\python.exe -m app.main --user-id 10 --plan-award-id 6
 ```
-
