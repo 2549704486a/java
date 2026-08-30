@@ -14,11 +14,12 @@ from app.exchange.confirmation_store import ConfirmationStore, ConfirmationStore
 from app.execution_context import current_thread_id
 from app.memory.store import GrowthMemoryStore, GrowthMemoryStoreBackend
 from app.knowledge.search import KnowledgeSearchError, KnowledgeSearchService
-from app.skills.award_recommendation import AwardRecommendationSkill
-from app.skills.controlled_exchange import ControlledExchangeSkill
-from app.skills.growth_memory import GrowthMemorySkill
-from app.skills.points_plan import PointsPlanningSkill
-from app.skills.saved_goal_plan import SavedGoalPlanningSkill
+from app.services.award_recommendation import AwardRecommendationService
+from app.services.controlled_exchange import ControlledExchangeService
+from app.services.growth_memory import GrowthMemoryService
+from app.services.points_planning import PointsPlanningService
+from app.services.saved_goal_planning import SavedGoalPlanningService
+from app.skills.loader import CONSUMER_SKILL_NAMES, build_load_skill_tool
 from app.skills.registry import SkillRegistry
 from app.trace import current_correlation_id, execute_traced
 
@@ -189,23 +190,24 @@ def build_tools(
     growth_memory_store: GrowthMemoryStoreBackend | None = None,
 ):
     registry = skill_registry or SkillRegistry()
+    load_skill = build_load_skill_tool(registry, CONSUMER_SKILL_NAMES)
     points_manifest = registry.require_manifest("points-planning")
     recommendation_manifest = registry.require_manifest("award-recommendation")
     exchange_manifest = registry.require_manifest("controlled-exchange")
     memory_manifest = registry.require_manifest("growth-memory")
     active_memory_store = growth_memory_store or GrowthMemoryStore()
-    points_skill = PointsPlanningSkill(client)
-    saved_goal_skill = SavedGoalPlanningSkill(
+    points_service = PointsPlanningService(client)
+    saved_goal_service = SavedGoalPlanningService(
         client,
         active_memory_store,
-        points_skill,
+        points_service,
     )
-    recommendation_skill = AwardRecommendationSkill(client)
-    controlled_exchange_skill = ControlledExchangeSkill(
+    recommendation_service = AwardRecommendationService(client)
+    controlled_exchange_service = ControlledExchangeService(
         client,
         confirmation_store or ConfirmationStore(),
     )
-    growth_memory_skill = GrowthMemorySkill(
+    growth_memory_service = GrowthMemoryService(
         client,
         active_memory_store,
     )
@@ -275,9 +277,9 @@ def build_tools(
         args_schema=PlanPointsInput,
         description=(
             f"{points_manifest.tool_description}"
-            "该 Skill 已完成资格、奖品和实时任务查询，不要在前后重复调用基础工具。"
+            "本工具内部已完成资格、奖品和实时任务查询，不要在前后重复调用基础工具。"
             "用户按名称排除任务或限定可做任务时，直接填写 excluded_task_names "
-            "或 allowed_task_names，Skill 会基于实时任务完成匹配。"
+            "或 allowed_task_names，规划 Service 会基于实时任务完成匹配。"
         ),
         extras=points_manifest.trace_metadata(),
     )
@@ -295,14 +297,11 @@ def build_tools(
         }
 
         def execute() -> dict:
-            # Skill 激活时加载清单与正文，再执行由多个业务查询组成的确定性流程。
             started = time.perf_counter()
-            active_definition = registry.activate(points_manifest.name)
-            plan = points_skill.plan(user_id=user_id, **arguments)
+            plan = points_service.plan(user_id=user_id, **arguments)
             logger.info(
-                "skill_complete name=%s version=%s status=%s elapsed_ms=%.2f",
-                active_definition.manifest.name,
-                active_definition.manifest.version,
+                "business_service_complete service=points_planning "
+                "status=%s elapsed_ms=%.2f",
                 plan.status,
                 (time.perf_counter() - started) * 1000,
             )
@@ -313,8 +312,9 @@ def build_tools(
     @tool(
         args_schema=PlanSavedGoalInput,
         description=(
+            "仅在已经加载 points-planning Skill 后使用。"
             "用户要求为已经保存的长期目标制定积分计划时使用。"
-            "该 Skill 会读取目标、确定性解析当前奖品并查询实时积分、资格和任务；"
+            "本工具会通过规划 Service 读取目标、确定性解析当前奖品并查询实时积分、资格和任务；"
             "不要在前后重复调用 get_growth_memory、list_awards 或 plan_points_for_award。"
             "没有目标或目标过期时提示新增或更新；存在多个目标或多个匹配奖品时"
             "只返回候选让用户选择，不替用户猜测。"
@@ -336,8 +336,7 @@ def build_tools(
 
         def execute() -> dict:
             started = time.perf_counter()
-            active_definition = registry.activate(points_manifest.name)
-            result = saved_goal_skill.plan(
+            result = saved_goal_service.plan(
                 user_id=user_id,
                 goal_query=goal_query,
                 excluded_task_ids=excluded_task_ids or [],
@@ -345,10 +344,8 @@ def build_tools(
                 allowed_task_names=allowed_task_names or [],
             )
             logger.info(
-                "skill_complete name=%s version=%s operation=saved_goal_plan "
+                "business_service_complete service=saved_goal_planning "
                 "status=%s elapsed_ms=%.2f",
-                active_definition.manifest.name,
-                active_definition.manifest.version,
                 result.status,
                 (time.perf_counter() - started) * 1000,
             )
@@ -360,7 +357,7 @@ def build_tools(
         args_schema=RecommendAwardsInput,
         description=(
             f"{recommendation_manifest.tool_description}"
-            "该 Skill 已查询实时积分和奖品资格，不要重复调用积分或奖品列表工具；"
+            "本工具内部已查询实时积分和奖品资格，不要重复调用积分或奖品列表工具；"
             "用户明确要查看全部奖品而不是推荐时改用 list_awards。"
         ),
         extras=recommendation_manifest.trace_metadata(),
@@ -369,14 +366,11 @@ def build_tools(
         arguments = {"limit": limit}
 
         def execute() -> dict:
-            # 外层轨迹把整个 Skill 视为一次 Agent 工具调用，便于统计端到端耗时。
             started = time.perf_counter()
-            active_definition = registry.activate(recommendation_manifest.name)
-            recommendation = recommendation_skill.recommend(user_id, limit)
+            recommendation = recommendation_service.recommend(user_id, limit)
             logger.info(
-                "skill_complete name=%s version=%s status=%s elapsed_ms=%.2f",
-                active_definition.manifest.name,
-                active_definition.manifest.version,
+                "business_service_complete service=award_recommendation "
+                "status=%s elapsed_ms=%.2f",
                 recommendation.status,
                 (time.perf_counter() - started) * 1000,
             )
@@ -398,6 +392,7 @@ def build_tools(
     @tool(
         args_schema=AwardIdInput,
         description=(
+            "仅在已经加载 controlled-exchange Skill 后使用。"
             "用户明确表示“我想兑换、帮我兑换、换这个奖品”时直接使用，不要先调用资格检查。"
             "它只检查实时条件并生成一次性确认摘要，"
             "不会立即扣积分或提交兑换，且内部已完成资格检查，不要提前重复检查。"
@@ -412,17 +407,14 @@ def build_tools(
             context_error = exchange_context_error()
             if context_error is not None:
                 return context_error
-            active_definition = registry.activate(exchange_manifest.name)
-            result = controlled_exchange_skill.prepare(
+            result = controlled_exchange_service.prepare(
                 user_id=user_id,
                 session_id=current_thread_id() or "",
                 request_id=current_correlation_id() or "-",
                 award_id=award_id,
             )
             logger.info(
-                "skill_complete name=%s version=%s status=%s",
-                active_definition.manifest.name,
-                active_definition.manifest.version,
+                "business_service_complete service=controlled_exchange status=%s",
                 result.code,
             )
             payload = result.model_dump(mode="json")
@@ -434,7 +426,10 @@ def build_tools(
         return execute_traced("prepare_exchange", arguments, execute)
 
     @tool(
-        description="用户明确表示取消、不换了时使用，使当前会话尚未使用的兑换确认立即失效。",
+        description=(
+            "仅在已经加载 controlled-exchange Skill 后使用。"
+            "用户明确表示取消、不换了时使用，使当前会话尚未使用的兑换确认立即失效。"
+        ),
         extras=exchange_manifest.trace_metadata(),
     )
     def cancel_exchange() -> dict:
@@ -442,7 +437,7 @@ def build_tools(
             context_error = exchange_context_error()
             if context_error is not None:
                 return context_error
-            result = controlled_exchange_skill.cancel(
+            result = controlled_exchange_service.cancel(
                 user_id=user_id,
                 session_id=current_thread_id() or "",
             )
@@ -453,6 +448,7 @@ def build_tools(
     @tool(
         args_schema=GetGrowthMemoryInput,
         description=(
+            "仅在已经加载 growth-memory Skill 后使用。"
             "只有用户明确引用之前保存的目标或偏好，或当前任务确实需要历史个性化信息时，"
             "才按当前问题读取少量相关长期记忆；用户已在本轮明确目标或条件时不要调用。"
             "业务过程中传 query、需要的 memory_types 和较小 limit；"
@@ -476,7 +472,7 @@ def build_tools(
         return execute_traced(
             "get_growth_memory",
             arguments,
-            lambda: growth_memory_skill.get(
+            lambda: growth_memory_service.get(
                 user_id,
                 query=query,
                 memory_types=memory_types,
@@ -488,6 +484,7 @@ def build_tools(
     @tool(
         args_schema=RememberUserMemoryInput,
         description=(
+            "仅在已经加载 growth-memory Skill 后使用。"
             "用户直接表达跨会话仍有价值的偏好、目标或稳定个人信息时使用。"
             "原文可以宽泛或不完整，不得为了保存记忆追问奖品 ID、精确日期或业务分类；"
             "结构化字段只是可选辅助。这是新增或更新单条原子记忆的默认工具；"
@@ -514,8 +511,7 @@ def build_tools(
             context_error = exchange_context_error()
             if context_error is not None:
                 return context_error
-            registry.activate(memory_manifest.name)
-            return growth_memory_skill.remember(
+            return growth_memory_service.remember(
                 user_id=user_id,
                 session_id=current_thread_id() or "",
                 memory_type=memory_type,
@@ -531,6 +527,7 @@ def build_tools(
     @tool(
         args_schema=SaveRedemptionGoalInput,
         description=(
+            "仅在已经加载 growth-memory Skill 后使用。"
             "只有用户已经明确给出奖品 ID 和精确目标日期，并希望保存绑定业务对象的"
             "兑换目标时使用。宽泛或不完整的目标应使用 remember_user_memory 保留原文；"
             "不能根据猜测或一次性计划自动写入。"
@@ -547,8 +544,7 @@ def build_tools(
             context_error = exchange_context_error()
             if context_error is not None:
                 return context_error
-            registry.activate(memory_manifest.name)
-            return growth_memory_skill.save_goal(
+            return growth_memory_service.save_goal(
                 user_id=user_id,
                 session_id=current_thread_id() or "",
                 award_id=award_id,
@@ -560,6 +556,7 @@ def build_tools(
     @tool(
         args_schema=SaveUserPreferencesInput,
         description=(
+            "仅在已经加载 growth-memory Skill 后使用。"
             "只有用户明确要求用一组完整列表替换现有奖品类别、排斥类别或任务偏好时使用。"
             "单条自然语言偏好应使用 remember_user_memory，避免覆盖其他既有偏好；"
             "不能保存本轮临时条件、临时情绪或模型推测。"
@@ -581,8 +578,7 @@ def build_tools(
             context_error = exchange_context_error()
             if context_error is not None:
                 return context_error
-            registry.activate(memory_manifest.name)
-            return growth_memory_skill.save_preferences(
+            return growth_memory_service.save_preferences(
                 user_id=user_id,
                 session_id=current_thread_id() or "",
                 preferred_categories=preferred_categories or [],
@@ -595,6 +591,7 @@ def build_tools(
     @tool(
         args_schema=ForgetGrowthMemoryInput,
         description=(
+            "仅在已经加载 growth-memory Skill 后使用。"
             "用户明确要求遗忘已保存的兑换目标、偏好或全部长期记忆时使用。"
             "按用户明确指定的范围立即删除。"
         ),
@@ -607,8 +604,7 @@ def build_tools(
             context_error = exchange_context_error()
             if context_error is not None:
                 return context_error
-            registry.activate(memory_manifest.name)
-            return growth_memory_skill.forget(
+            return growth_memory_service.forget(
                 user_id=user_id,
                 scope=scope,
             ).model_dump(mode="json")
@@ -616,6 +612,7 @@ def build_tools(
         return execute_traced("forget_growth_memory", arguments, execute)
 
     available_tools = [
+        load_skill,
         get_user_points,
         list_available_tasks,
         get_award_detail,

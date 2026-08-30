@@ -19,7 +19,7 @@ from app.operator.tools import (
     build_operator_tools,
 )
 from app.operator.auth import AuthenticatedOperator, OperatorPermissionError
-from app.skills.campaign_planning import CampaignPlanningSkill
+from app.services.campaign_planning import CampaignPlanningService
 
 
 TZ = timezone(timedelta(hours=8))
@@ -128,12 +128,12 @@ def brief(**overrides) -> CampaignBrief:
     return CampaignBrief(**values)
 
 
-class CampaignPlanningSkillTest(unittest.TestCase):
+class CampaignPlanningServiceTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.skill = CampaignPlanningSkill(now_provider=lambda: NOW)
+        self.service = CampaignPlanningService(now_provider=lambda: NOW)
 
     def test_generates_traceable_non_publishable_draft(self):
-        result = self.skill.create_draft(brief(), planning_snapshot())
+        result = self.service.create_draft(brief(), planning_snapshot())
 
         self.assertEqual("DRAFT_READY", result.status)
         self.assertEqual(200, result.estimated_participants)
@@ -152,7 +152,7 @@ class CampaignPlanningSkillTest(unittest.TestCase):
         )
 
     def test_refuses_to_guess_when_historical_rate_is_missing(self):
-        result = self.skill.create_draft(
+        result = self.service.create_draft(
             brief(),
             planning_snapshot(include_metric=False),
         )
@@ -163,7 +163,7 @@ class CampaignPlanningSkillTest(unittest.TestCase):
         self.assertIsNone(result.planned_award_cost_cents)
 
     def test_rejects_stale_snapshot(self):
-        result = self.skill.create_draft(
+        result = self.service.create_draft(
             brief(),
             planning_snapshot(generated_at=NOW - timedelta(days=2)),
         )
@@ -172,7 +172,7 @@ class CampaignPlanningSkillTest(unittest.TestCase):
         self.assertEqual("STALE_PLANNING_SNAPSHOT", result.reason_code)
 
     def test_reports_constraint_conflict_when_no_task_fits_points_cap(self):
-        result = self.skill.create_draft(
+        result = self.service.create_draft(
             brief(points_issuance_cap=100),
             planning_snapshot(),
         )
@@ -182,7 +182,7 @@ class CampaignPlanningSkillTest(unittest.TestCase):
         self.assertIn("NO_TASK_FITS_POINTS_CAP", [risk.code for risk in result.risks])
 
     def test_reports_constraint_conflict_when_money_budget_cannot_buy_award(self):
-        result = self.skill.create_draft(
+        result = self.service.create_draft(
             brief(budget_amount_cents=9999),
             planning_snapshot(),
         )
@@ -198,7 +198,7 @@ class CampaignPlanningSkillTest(unittest.TestCase):
         source = planning_snapshot()
         source.awards[0].unit_cost_cents = None
 
-        result = self.skill.create_draft(brief(), source)
+        result = self.service.create_draft(brief(), source)
 
         self.assertEqual("NEEDS_DATA", result.status)
         self.assertEqual("AWARD_UNIT_COST_MISSING", result.reason_code)
@@ -212,7 +212,7 @@ class CampaignPlanningSkillTest(unittest.TestCase):
             )
         ]
 
-        result = self.skill.create_draft(brief(), source)
+        result = self.service.create_draft(brief(), source)
 
         self.assertEqual("CONSTRAINT_CONFLICT", result.status)
         self.assertEqual([], result.suggested_tasks)
@@ -253,11 +253,11 @@ class OperatorToolsTest(unittest.TestCase):
         tools = build_operator_tools(
             provider,
             operator,
-            planning_skill=CampaignPlanningSkill(now_provider=lambda: NOW),
+            planning_service=CampaignPlanningService(now_provider=lambda: NOW),
         )
 
         self.assertEqual(
-            {"get_campaign_planning_snapshot", "draft_campaign_plan"},
+            {"load_skill", "get_campaign_planning_snapshot", "draft_campaign_plan"},
             {item.name for item in tools},
         )
         draft_tool = next(item for item in tools if item.name == "draft_campaign_plan")

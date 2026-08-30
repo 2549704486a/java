@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from app.models import ToolEnvelope
-from app.skills.points_plan import PointsPlanningSkill
+from app.services.points_planning import PointsPlanningService
 
 
 def ok(code: str, data) -> ToolEnvelope:
@@ -62,11 +62,11 @@ def eligibility(
     )
 
 
-class PointsPlanningSkillTest(unittest.TestCase):
+class PointsPlanningServiceTest(unittest.TestCase):
     def test_returns_ready_without_querying_tasks_when_eligible(self):
         client = FakeClient(eligibility(True, "ELIGIBLE", 120, 100))
 
-        plan = PointsPlanningSkill(client).plan(10, 6)
+        plan = PointsPlanningService(client).plan(10, 6)
 
         self.assertEqual("READY_TO_EXCHANGE", plan.status)
         self.assertEqual(0, client.task_calls)
@@ -91,7 +91,7 @@ class PointsPlanningSkillTest(unittest.TestCase):
             ],
         )
 
-        plan = PointsPlanningSkill(client).plan(10, 6)
+        plan = PointsPlanningService(client).plan(10, 6)
 
         self.assertEqual("PLAN_READY", plan.status)
         self.assertEqual([2], [task.task_id for task in plan.recommended_tasks])
@@ -123,7 +123,7 @@ class PointsPlanningSkillTest(unittest.TestCase):
             ],
         )
 
-        plan = PointsPlanningSkill(client).plan(10, 6)
+        plan = PointsPlanningService(client).plan(10, 6)
 
         self.assertEqual([3], [task.task_id for task in plan.recommended_tasks])
         self.assertEqual(80, plan.recommended_points)
@@ -141,7 +141,7 @@ class PointsPlanningSkillTest(unittest.TestCase):
             ],
         )
 
-        plan = PointsPlanningSkill(client).plan(10, 6)
+        plan = PointsPlanningService(client).plan(10, 6)
 
         self.assertEqual("INSUFFICIENT_TASK_REWARDS", plan.status)
         self.assertEqual(50, plan.remaining_gap)
@@ -149,7 +149,7 @@ class PointsPlanningSkillTest(unittest.TestCase):
     def test_stops_on_non_points_business_blocker(self):
         client = FakeClient(eligibility(False, "OUT_OF_STOCK"))
 
-        plan = PointsPlanningSkill(client).plan(10, 6)
+        plan = PointsPlanningService(client).plan(10, 6)
 
         self.assertEqual("BLOCKED", plan.status)
         self.assertEqual(0, client.task_calls)
@@ -173,7 +173,7 @@ class PointsPlanningSkillTest(unittest.TestCase):
             ],
         )
 
-        plan = PointsPlanningSkill(client).plan(10, 6, excluded_task_ids=[1])
+        plan = PointsPlanningService(client).plan(10, 6, excluded_task_ids=[1])
 
         self.assertEqual([2], [task.task_id for task in plan.recommended_tasks])
         self.assertEqual(20, plan.remaining_gap)
@@ -197,7 +197,7 @@ class PointsPlanningSkillTest(unittest.TestCase):
             ],
         )
 
-        plan = PointsPlanningSkill(client).plan(
+        plan = PointsPlanningService(client).plan(
             10,
             6,
             excluded_task_names=["分享"],
@@ -231,7 +231,7 @@ class PointsPlanningSkillTest(unittest.TestCase):
             ],
         )
 
-        plan = PointsPlanningSkill(client).plan(
+        plan = PointsPlanningService(client).plan(
             10,
             6,
             allowed_task_names=["签到", "浏览"],
@@ -248,7 +248,7 @@ class PointsPlanningSkillTest(unittest.TestCase):
             )
         )
 
-        plan = PointsPlanningSkill(client).plan(10, 6)
+        plan = PointsPlanningService(client).plan(10, 6)
 
         self.assertEqual("QUERY_FAILED", plan.status)
         self.assertEqual("INVALID_BUSINESS_RESPONSE", plan.reason_code)

@@ -90,6 +90,7 @@ CAPABILITY_CONTRACTS: dict[OperatorCapability, CapabilityContract] = {
         capability=OperatorCapability.CAMPAIGN_DRAFT,
         allowed_tools=frozenset(
             {
+                "load_skill",
                 "get_campaign_planning_snapshot",
                 "list_campaign_activities",
                 "get_campaign_funnel",

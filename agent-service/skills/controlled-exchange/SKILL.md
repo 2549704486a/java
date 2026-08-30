@@ -2,7 +2,7 @@
 name: controlled-exchange
 description: 在不绕过旧事务消息链路的前提下，通过一次性确认凭证安全地受理奖品兑换。
 trigger: 用户明确提出兑换奖品或取消尚未确认的兑换时；明确确认由服务端确定性路由处理。
-version: 1.0.0
+version: 2.0.0
 tags:
   - exchange
   - confirmation
@@ -21,7 +21,11 @@ tags:
 
 ## 执行步骤
 
-先查询实时资格并生成短期确认凭证，向用户展示奖品与积分消耗。只有同一会话内明确确认后，才原子消费凭证并调用一次 Java 旧兑换链路。
+1. 用户明确要求兑换时调用 `prepare_exchange(award_id)`；不要提前调用资格检查，因为准备 Tool 内部已经检查实时条件。
+2. 准备成功后只展示奖品、积分消耗和确认提示，不得声称已经提交兑换。
+3. 下一轮用户明确确认时，不再调用 Tool；服务端确定性路由会消费确认记录并调用一次 Java 旧兑换链路。
+4. 用户明确取消时调用 `cancel_exchange`。
+5. 用户要求跳过确认或当前没有有效待确认记录时，不得声称已提交。
 
 ## 错误与重试
 
@@ -33,4 +37,4 @@ tags:
 
 ## 输出
 
-返回稳定信封。准备成功为 `EXCHANGE_CONFIRMATION_REQUIRED`；提交后只允许 `EXCHANGE_PROCESSING`、`EXCHANGE_REJECTED`、`ALREADY_REDEEMED` 或 `SUBMISSION_UNKNOWN` 等明确状态。
+Tool 返回稳定信封。向用户解释时将内部状态转换成“等待确认、处理中、已拒绝、已经兑换或暂时无法判断”，最终结果以订单页为准。

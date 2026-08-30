@@ -6,8 +6,8 @@ from datetime import date
 from app.execution_context import bind_execution_context
 from app.memory.store import GrowthMemoryStore
 from app.models import ToolEnvelope
-from app.skills.points_plan import PointsPlanningSkill
-from app.skills.saved_goal_plan import SavedGoalPlanningSkill
+from app.services.points_planning import PointsPlanningService
+from app.services.saved_goal_planning import SavedGoalPlanningService
 from app.tools import build_tools
 
 
@@ -79,15 +79,15 @@ class FakeClient:
         return ok("TASKS_FOUND", [])
 
 
-class SavedGoalPlanningSkillTest(unittest.TestCase):
+class SavedGoalPlanningServiceTest(unittest.TestCase):
     def setUp(self) -> None:
         self.store = GrowthMemoryStore()
 
-    def skill(self, client: FakeClient) -> SavedGoalPlanningSkill:
-        return SavedGoalPlanningSkill(
+    def service(self, client: FakeClient) -> SavedGoalPlanningService:
+        return SavedGoalPlanningService(
             client,
             self.store,
-            PointsPlanningSkill(client),
+            PointsPlanningService(client),
             today_provider=lambda: date(2026, 8, 22),
         )
 
@@ -103,7 +103,7 @@ class SavedGoalPlanningSkillTest(unittest.TestCase):
     def test_returns_without_business_query_when_no_goal_exists(self):
         client = FakeClient()
 
-        result = self.skill(client).plan(user_id=10)
+        result = self.service(client).plan(user_id=10)
 
         self.assertEqual("NO_SAVED_GOAL", result.status)
         self.assertEqual([], client.calls)
@@ -112,7 +112,7 @@ class SavedGoalPlanningSkillTest(unittest.TestCase):
         self.remember_goal("我计划兑换 6 号奖品", subject="6号奖品", awardId=6)
         client = FakeClient()
 
-        result = self.skill(client).plan(user_id=10)
+        result = self.service(client).plan(user_id=10)
 
         self.assertEqual("TARGET_RESOLVED", result.status)
         self.assertEqual(6, result.plan.award_id)
@@ -125,7 +125,7 @@ class SavedGoalPlanningSkillTest(unittest.TestCase):
             [award_option(6, "城市随行保温杯"), award_option(8, "智能手环")]
         )
 
-        result = self.skill(client).plan(user_id=10, goal_query="手环目标")
+        result = self.service(client).plan(user_id=10, goal_query="手环目标")
 
         self.assertEqual("TARGET_RESOLVED", result.status)
         self.assertEqual(8, result.plan.award_id)
@@ -138,7 +138,7 @@ class SavedGoalPlanningSkillTest(unittest.TestCase):
             [award_option(8, "智能手环"), award_option(9, "运动手环")]
         )
 
-        result = self.skill(client).plan(user_id=10)
+        result = self.service(client).plan(user_id=10)
 
         self.assertEqual("AWARD_NEEDS_SELECTION", result.status)
         self.assertEqual([8, 9], [item.award_id for item in result.candidates])
@@ -153,7 +153,7 @@ class SavedGoalPlanningSkillTest(unittest.TestCase):
         )
         client = FakeClient([award_option(8, "智能手环")])
 
-        result = self.skill(client).plan(user_id=10)
+        result = self.service(client).plan(user_id=10)
 
         self.assertEqual("GOAL_EXPIRED", result.status)
         self.assertEqual(2025, result.target_year)
@@ -164,7 +164,7 @@ class SavedGoalPlanningSkillTest(unittest.TestCase):
         self.remember_goal("我年底想换一个保温杯", subject="保温杯", targetYear=2026)
         client = FakeClient()
 
-        result = self.skill(client).plan(user_id=10, goal_query="之前的目标")
+        result = self.service(client).plan(user_id=10, goal_query="之前的目标")
 
         self.assertEqual("GOAL_NEEDS_SELECTION", result.status)
         self.assertEqual(2, len(result.goal_candidates))

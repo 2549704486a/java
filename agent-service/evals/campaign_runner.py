@@ -12,7 +12,7 @@ from app.operator.campaign_data import StaticCampaignDataProvider
 from app.models import CampaignBrief, CampaignPlanDraft, CampaignPlanningSnapshot
 from app.operator.auth import AuthenticatedOperator
 from app.operator.tools import CAMPAIGN_DRAFT, CAMPAIGN_READ, build_operator_tools
-from app.skills.campaign_planning import CampaignPlanningSkill
+from app.services.campaign_planning import CampaignPlanningService
 
 
 ROOT = Path(__file__).resolve().parent
@@ -101,7 +101,7 @@ def evaluate_case(
         tools = build_operator_tools(
             provider,
             operator,
-            planning_skill=CampaignPlanningSkill(now_provider=lambda: frozen_at),
+            planning_service=CampaignPlanningService(now_provider=lambda: frozen_at),
         )
     except Exception as exc:  # The expected permission exception is scored below.
         build_error = exc

@@ -11,7 +11,7 @@ authority_level: system_contract
 effective_from: 2026-08-21
 source_refs:
   - incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java
-  - agent-service/app/skills/points_plan.py
+  - agent-service/app/services/points_planning.py
 ---
 
 # 积分与任务规则

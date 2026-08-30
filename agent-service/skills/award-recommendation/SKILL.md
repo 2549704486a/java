@@ -2,7 +2,7 @@
 name: award-recommendation
 description: 根据当前用户的实时积分和奖品状态，推荐现在真正满足兑换条件的奖品，并优先充分利用积分。
 trigger: 用户询问当前能兑换哪些奖品、希望推荐一个或多个可兑换奖品；用户只是查看全部奖品时不触发。
-version: 1.0.0
+version: 2.0.0
 tags: [award, recommendation, read-only]
 ---
 
@@ -23,16 +23,16 @@ tags: [award, recommendation, read-only]
 
 ## 执行步骤
 
-1. 查询当前用户实时积分。
-2. 查询包含兑换资格判断的活动奖品列表。
-3. 校验积分和嵌套奖品数据结构。
-4. 只保留后端判定可兑换、库存大于零且积分足够的奖品。
-5. 按所需积分从高到低排序，同积分时按奖品 ID 排序，返回前 `limit` 个。
+1. 根据用户要求确定 `limit`；没有明确数量时使用默认值，用户说“推荐一个”时传 1。
+2. 调用一次 `recommend_awards`，不要提前或随后重复调用积分和奖品列表 Tool。
+3. 推荐 Service 会读取实时积分与奖品资格，过滤不可兑换项并稳定排序。
+4. 根据 Tool 返回结果说明当前积分、奖品所需积分和兑换后的剩余积分。
+5. 没有可兑换奖品时如实说明，不把全部奖品列表包装成推荐结果。
 
 ## 错误与重试
 
 - Tool 层只对 GET 瞬时网络错误做有限退避重试。
-- Skill 不叠加网络重试，任一查询失败即返回 `QUERY_FAILED`。
+- 推荐 Service 不叠加网络重试，任一查询失败即返回 `QUERY_FAILED`。
 - 响应结构异常时返回 `INVALID_BUSINESS_RESPONSE`，不根据残缺字段继续推荐。
 
 ## 安全边界
@@ -44,4 +44,4 @@ tags: [award, recommendation, read-only]
 
 ## 输出
 
-输出稳定结构 `AwardRecommendation`，包含当前积分、推荐状态和按顺序排列的奖品 ID、名称、所需积分、库存及兑换后剩余积分。
+`recommend_awards` 输出稳定结构 `AwardRecommendation`。最终回答只展示用户需要的奖品名称、所需积分和兑换后剩余积分。

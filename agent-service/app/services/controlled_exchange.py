@@ -48,7 +48,7 @@ def explicit_exchange_action(message: str) -> ExchangeAction | None:
     return None
 
 
-class ControlledExchangeSkill:
+class ControlledExchangeService:
     """将资格查询、一次性授权和旧链路写调用编排为受控状态机。"""
 
     def __init__(

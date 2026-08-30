@@ -1,42 +1,11 @@
-"""
-SkillRegistry()
-      │
-      ▼
-找到 skills 目录
-      │
-      ▼
-扫描 */SKILL.md
-      │
-      ▼
-_load_definition()
-      │
-      ├── 读取文件
-      ├── 拆 YAML Front Matter
-      ├── YAML 解析
-      ├── 检查 name / description / trigger / version
-      ├── 检查必须存在的 Markdown 章节
-      ├── 检查 tags
-      └── 计算 SHA256
-      │
-      ▼
-SkillDefinition
-      │
-      ▼
-检查「目录名 == Skill name」
-      │
-      ▼
-注册到 _definitions
-      │
-      ▼
-运行时 activate("xxx")
-"""
+"""发现、校验并按需加载文件型 Skill。"""
 
 from __future__ import annotations
 
-import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterable
 
 import yaml
 
@@ -60,34 +29,52 @@ class SkillDefinitionError(ValueError):
 
 @dataclass(frozen=True)
 class SkillManifest:
+    """启动阶段可以提供给模型的精简 Skill 元数据。"""
+
     name: str
     description: str
     trigger: str
     version: str
     tags: tuple[str, ...]
     source_path: Path
-    sha256: str
 
     @property
     def tool_description(self) -> str:
-        return f"{self.description} 触发条件：{self.trigger}"
+        return (
+            f"仅在已经加载 {self.name} Skill 后使用。{self.description} "
+            f"触发条件：{self.trigger}"
+        )
 
     def trace_metadata(self) -> dict[str, str]:
         return {
             "skill_name": self.name,
             "skill_version": self.version,
-            "skill_sha256": self.sha256,
         }
 
 
 @dataclass(frozen=True)
 class SkillDefinition:
+    """命中任务后才返回给模型的完整 Skill 定义。"""
+
     manifest: SkillManifest
     instructions: str
 
+    def as_tool_result(self) -> dict:
+        return {
+            "success": True,
+            "code": "SKILL_LOADED",
+            "data": {
+                "name": self.manifest.name,
+                "version": self.manifest.version,
+                "instructions": self.instructions,
+            },
+            "message": "Skill 执行说明已加载，请按照 instructions 完成当前任务",
+            "retryable": False,
+        }
+
 
 class SkillRegistry:
-    """发现并校验文件型 Skill，按名称提供运行时激活。"""
+    """启动时发现元数据，任务命中后按名称加载完整正文。"""
 
     def __init__(self, skills_dir: Path | str = DEFAULT_SKILLS_DIR) -> None:
         self.skills_dir = Path(skills_dir).resolve()
@@ -102,16 +89,35 @@ class SkillRegistry:
     def require_manifest(self, name: str) -> SkillManifest:
         return self._require(name).manifest
 
-    def activate(self, name: str) -> SkillDefinition:
+    def load(
+        self,
+        name: str,
+        *,
+        allowed_names: Iterable[str] | None = None,
+    ) -> SkillDefinition:
+        if allowed_names is not None and name not in frozenset(allowed_names):
+            raise SkillDefinitionError(f"当前 Agent 不允许加载 Skill：{name}")
         definition = self._require(name)
-        manifest = definition.manifest
         logger.info(
-            "skill_activated name=%s version=%s sha256=%s",
-            manifest.name,
-            manifest.version,
-            manifest.sha256,
+            "skill_loaded name=%s version=%s",
+            definition.manifest.name,
+            definition.manifest.version,
         )
         return definition
+
+    def catalog(self, names: Iterable[str]) -> str:
+        """生成启动时披露给模型的目录，不包含 Skill 正文。"""
+
+        manifests = [self.require_manifest(name) for name in names]
+        lines = ["以下仅为 Skill 目录，正文尚未加载："]
+        for manifest in manifests:
+            lines.extend(
+                (
+                    f"- {manifest.name}: {manifest.description}",
+                    f"  触发条件：{manifest.trigger}",
+                )
+            )
+        return "\n".join(lines)
 
     def trace_metadata(self) -> list[dict[str, str]]:
         return [manifest.trace_metadata() for manifest in self.manifests()]
@@ -194,6 +200,5 @@ class SkillRegistry:
             version=str(metadata["version"]).strip(),
             tags=tuple(tag.strip() for tag in raw_tags),
             source_path=skill_path.resolve(),
-            sha256=hashlib.sha256(content.encode("utf-8")).hexdigest(),
         )
         return SkillDefinition(manifest=manifest, instructions=instructions)

@@ -12,7 +12,7 @@ effective_from: 2026-08-21
 source_refs:
   - incentive/src/main/java/com/budou/incentive/service/AgentQueryService.java
   - incentive/src/main/java/com/budou/incentive/service/AgentExchangeCommandService.java
-  - agent-service/app/skills/controlled_exchange.py
+  - agent-service/app/services/controlled_exchange.py
 ---
 
 # 奖品兑换规则与状态

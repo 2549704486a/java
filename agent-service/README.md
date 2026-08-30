@@ -5,10 +5,10 @@
 ## 1. 当前能力
 
 - 通过 LangChain `create_agent` 运行 Function Calling 循环。
-- 使用 5 个基础查询 Tool、2 个只读组合 Skill、1 个受控兑换 Skill 和 1 个长期记忆 Skill。
+- 使用基础查询 Tool、组合业务 Tool 和受控写 Tool，并通过 5 份 `SKILL.md` 告诉模型何时、按什么流程组合这些工具。
 - `plan_points_for_award` 使用确定性代码计算积分缺口和任务组合。
 - `recommend_awards` 使用确定性代码过滤并排序当前真正可兑换的奖品。
-- 启动时发现并校验 `skills/*/SKILL.md`，Tool 描述和 Skill 版本来自声明文件。
+- 启动时发现并校验 `skills/*/SKILL.md`，只向模型披露 Skill 目录；命中任务后由 `load_skill` 把对应正文按需送入模型上下文。
 - 提供 FastAPI HTTP 接口，支持请求校验、请求 ID、错误脱敏和有界 Agent 缓存。
 - 使用空闲 TTL 回收会话，并在每次模型调用前按完整轮次和估算 token 裁剪可见上下文；裁剪指标与模型实际 token 写入日志。
 - 使用签名 JWT 验证用户身份，查询、会话和兑换不接受浏览器自行指定用户 ID。
@@ -96,16 +96,16 @@ Invoke-RestMethod `
 
 运营对话会先输出 `KNOWLEDGE_QUERY`、`PLAN_REQUEST` 或 `ACTION_REQUEST` 三类结构化意图，再按意图收敛 Prompt 与 Tool。日志中的 `operator_intent_decision` 可用于排查路由，`operator_agent_tool_trace` 用于还原本轮 Tool 调用；知识引用只允许来自当前对话轮次的真实检索结果。
 
-## 3. 先验证业务 Skill
+## 3. 先验证确定性业务 Service
 
-这一步不调用大模型，只验证 Java 接口和确定性积分计算：
+这一步不调用大模型，也不执行 Skill 加载，只验证 Java 接口和确定性业务计算：
 
 ```powershell
 .\.venv\Scripts\python.exe -m app.main --user-id 10 --plan-award-id 6
 .\.venv\Scripts\python.exe -m app.main --user-id 10 --recommend-awards 3
 ```
 
-Agent 启动时只把 Skill 的名称、描述、触发条件和版本通过 Tool 元数据提供给模型。调用 `plan_points_for_award` 时，运行时激活完整 Skill 定义并记录版本；积分计算仍由 `app/skills/points_plan.py` 的确定性代码完成，不让模型按说明文字自行计算。
+自然语言 Agent 启动时只把 Skill 的名称、描述和触发条件放入 System Prompt。复杂任务先调用 `load_skill`，对应 `SKILL.md` 正文会作为 Tool 结果进入模型上下文；模型再按照正文调用业务 Tool。积分缺口和任务组合仍由 `app/services/points_planning.py` 的确定性代码计算，不让模型自行算账。
 
 ## 4. 运行 Agent
 
@@ -271,7 +271,7 @@ agent-service/logs/agent-service.log
 
 日志会记录 HTTP 请求 ID、用户 ID、请求总耗时，每次 Java 业务接口的路径、HTTP 状态、业务码、重试次数和耗时，以及组合 Skill 的名称、版本和总耗时。确认凭证不写入普通日志或 Tool 轨迹。
 
-每次 Agent 调用还会输出一条 `agent_tool_trace` 结构化日志，以 `request_id` 关联本次实际执行的 Tool/Skill，记录参数、完成状态、业务结果码和耗时。轨迹不记录 API Key、用户问题正文和完整业务响应。
+每次 Agent 调用还会输出一条 `agent_tool_trace` 结构化日志，以 `request_id` 关联本次实际执行的 Tool，包括 `load_skill` 与后续业务 Tool，并记录参数、完成状态、业务结果码和耗时。轨迹不记录 API Key、用户问题正文和完整业务响应。
 
 Spring Boot 请求日志由一键启动脚本保存到：
 

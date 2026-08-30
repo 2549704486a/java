@@ -17,7 +17,7 @@ from app.models import (
 )
 
 
-class PointsPlanningSkill:
+class PointsPlanningService:
     """组合资格、奖品和任务查询，确定性地生成积分方案。"""
 
     def __init__(self, client: BusinessApiClient) -> None:

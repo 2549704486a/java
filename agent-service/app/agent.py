@@ -16,6 +16,7 @@ from app.memory.store import GrowthMemoryStoreBackend
 from app.knowledge.search import KnowledgeSearchService
 from app.prompt import build_system_prompt
 from app.skills.registry import SkillRegistry
+from app.skills.loader import CONSUMER_SKILL_NAMES
 from app.tools import build_tools
 from app.trace import capture_tool_trace
 
@@ -159,7 +160,10 @@ def build_agent(
             knowledge_search=knowledge_search,
             growth_memory_store=growth_memory_store,
         ),
-        system_prompt=build_system_prompt(knowledge_search is not None),
+        system_prompt=build_system_prompt(
+            knowledge_search is not None,
+            registry.catalog(CONSUMER_SKILL_NAMES),
+        ),
         middleware=[
             build_context_window_middleware(
                 policy=ContextWindowPolicy(

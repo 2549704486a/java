@@ -21,8 +21,8 @@ from app.models import PendingExchangeData, ToolEnvelope
 from app.memory.mysql_store import MysqlGrowthMemoryStore
 from app.exchange.redis_store import RedisConfirmationStore
 from app.memory.redis_store import RedisGrowthMemoryStore
-from app.skills.controlled_exchange import (
-    ControlledExchangeSkill,
+from app.services.controlled_exchange import (
+    ControlledExchangeService,
     explicit_exchange_action,
 )
 from app.skills.registry import SkillRegistry
@@ -99,7 +99,7 @@ class AgentRuntime:
                 allowed_audiences=("operator",),
             )
             self._owns_operator_knowledge_search = True
-        self._controlled_exchange = ControlledExchangeSkill(
+        self._controlled_exchange = ControlledExchangeService(
             self.client,
             self.confirmation_store,
         )

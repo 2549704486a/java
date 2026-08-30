@@ -57,6 +57,20 @@ RAG_PROMPT = """
 """
 
 
-def build_system_prompt(rag_enabled: bool) -> str:
-    """只有真正注入检索 Tool 时，才向模型声明对应能力。"""
-    return SYSTEM_PROMPT + RAG_PROMPT if rag_enabled else SYSTEM_PROMPT
+SKILL_PROMPT = """
+
+## Skill 渐进加载
+{skill_catalog}
+
+- 上述内容只是能力目录，不是完整执行说明。
+- 当前问题命中某个 Skill 的触发条件时，先调用 load_skill，读取返回的 instructions，再执行其中指定的业务 Tool。
+- 一个问题没有命中 Skill 时不要调用 load_skill；普通的单项积分、奖品、任务或订单查询直接使用对应基础 Tool。
+- 不得声称已经加载未成功返回的 Skill，也不得加载目录之外的名称。
+"""
+
+
+def build_system_prompt(rag_enabled: bool, skill_catalog: str) -> str:
+    """正文按需加载，系统提示词只携带精简 Skill 目录。"""
+
+    prompt = SYSTEM_PROMPT + SKILL_PROMPT.format(skill_catalog=skill_catalog)
+    return prompt + RAG_PROMPT if rag_enabled else prompt

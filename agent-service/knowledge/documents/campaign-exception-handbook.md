@@ -12,7 +12,7 @@ effective_from: 2026-08-22
 source_refs:
   - agent-service/app/operator/campaign_data.py
   - agent-service/app/operator/tools.py
-  - agent-service/app/skills/campaign_planning.py
+  - agent-service/app/services/campaign_planning.py
 ---
 
 # 运营活动草案异常处理手册

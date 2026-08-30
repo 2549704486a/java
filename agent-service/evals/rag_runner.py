@@ -20,6 +20,7 @@ from app.execution_context import bind_execution_context
 from app.knowledge.search import KnowledgeSearchResult, open_knowledge_search
 from app.prompt import build_system_prompt
 from app.skills.registry import SkillRegistry
+from app.skills.loader import CONSUMER_SKILL_NAMES
 from app.tools import build_tools
 from app.trace import capture_tool_trace
 from evals.fixtures import FixtureBusinessApiClient
@@ -304,16 +305,20 @@ def run_agent_case(
 ) -> dict[str, Any]:
     client = FixtureBusinessApiClient(case["fixture"])
     recording_search = RecordingKnowledgeSearch(service)
+    registry = SkillRegistry()
     agent = create_agent(
         model=model,
         tools=build_tools(
             client,
             user_id,
-            SkillRegistry(),
+            registry,
             ConfirmationStore(),
             recording_search,
         ),
-        system_prompt=build_system_prompt(True),
+        system_prompt=build_system_prompt(
+            True,
+            registry.catalog(CONSUMER_SKILL_NAMES),
+        ),
     )
     started = time.perf_counter()
     thread_id = f"rag-eval:{case['id']}:user:{user_id}"

@@ -13,7 +13,8 @@ from app.api_client import BusinessApiClient, BusinessApiError
 from app.knowledge.search import KnowledgeSearchError, KnowledgeSearchService
 from app.models import CampaignBrief
 from app.operator.auth import AuthenticatedOperator, OperatorPermissionError
-from app.skills.campaign_planning import CampaignPlanningSkill
+from app.services.campaign_planning import CampaignPlanningService
+from app.skills.loader import OPERATOR_SKILL_NAMES, build_load_skill_tool
 from app.skills.registry import SkillRegistry
 from app.trace import execute_traced
 
@@ -90,13 +91,14 @@ def build_operator_tools(
     data_provider: CampaignDataProvider,
     operator: AuthenticatedOperator,
     skill_registry: SkillRegistry | None = None,
-    planning_skill: CampaignPlanningSkill | None = None,
+    planning_service: CampaignPlanningService | None = None,
     knowledge_search: KnowledgeSearchService | None = None,
     business_client: BusinessApiClient | None = None,
 ):
     """构建独立运营 Tool；普通用户 Agent 不会调用此函数。"""
 
     _require_permissions(operator, CAMPAIGN_READ)
+    registry = skill_registry or SkillRegistry()
 
     @tool(args_schema=CampaignSnapshotInput)
     def get_campaign_planning_snapshot(target_segment_key: str) -> dict:
@@ -241,9 +243,12 @@ def build_operator_tools(
     if CAMPAIGN_DRAFT not in operator.permissions:
         return available_tools
 
-    registry = skill_registry or SkillRegistry()
+    available_tools.insert(
+        0,
+        build_load_skill_tool(registry, OPERATOR_SKILL_NAMES),
+    )
     manifest = registry.require_manifest("campaign-planning")
-    skill = planning_skill or CampaignPlanningSkill()
+    planning_service = planning_service or CampaignPlanningService()
 
     @tool(
         args_schema=CampaignDraftInput,
@@ -271,7 +276,6 @@ def build_operator_tools(
         }
 
         def execute() -> dict:
-            registry.activate(manifest.name)
             try:
                 snapshot = data_provider.get_planning_snapshot(target_segment_key)
             except CampaignDataUnavailable as exc:
@@ -293,7 +297,7 @@ def build_operator_tools(
                 max_tasks=max_tasks,
                 max_awards=max_awards,
             )
-            plan = skill.create_draft(brief, snapshot)
+            plan = planning_service.create_draft(brief, snapshot)
             plan_data = plan.model_dump(mode="json")
             if business_client is None or plan.status != "DRAFT_READY":
                 return plan_data

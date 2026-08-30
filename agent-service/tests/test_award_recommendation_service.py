@@ -4,7 +4,7 @@ import unittest
 
 from app.api_client import BusinessApiError
 from app.models import ToolEnvelope
-from app.skills.award_recommendation import AwardRecommendationSkill
+from app.services.award_recommendation import AwardRecommendationService
 
 
 def ok(code: str, data) -> ToolEnvelope:
@@ -57,7 +57,7 @@ class FakeClient:
         return ok("AWARDS_FOUND", self.awards)
 
 
-class AwardRecommendationSkillTest(unittest.TestCase):
+class AwardRecommendationServiceTest(unittest.TestCase):
     def test_recommends_highest_affordable_award_first_and_honors_limit(self):
         client = FakeClient(
             awards=[
@@ -67,7 +67,7 @@ class AwardRecommendationSkillTest(unittest.TestCase):
             ]
         )
 
-        result = AwardRecommendationSkill(client).recommend(10, limit=2)
+        result = AwardRecommendationService(client).recommend(10, limit=2)
 
         self.assertEqual("RECOMMENDATIONS_READY", result.status)
         self.assertEqual([2, 3], [item.award_id for item in result.recommendations])
@@ -95,7 +95,7 @@ class AwardRecommendationSkillTest(unittest.TestCase):
             ]
         )
 
-        result = AwardRecommendationSkill(client).recommend(10)
+        result = AwardRecommendationService(client).recommend(10)
 
         self.assertEqual("NO_REDEEMABLE_AWARDS", result.status)
         self.assertEqual([], result.recommendations)
@@ -104,13 +104,13 @@ class AwardRecommendationSkillTest(unittest.TestCase):
     def test_rejects_malformed_nested_award_data(self):
         client = FakeClient(awards=[{"award": {"awardId": 1}}])
 
-        result = AwardRecommendationSkill(client).recommend(10)
+        result = AwardRecommendationService(client).recommend(10)
 
         self.assertEqual("QUERY_FAILED", result.status)
         self.assertEqual("INVALID_BUSINESS_RESPONSE", result.reason_code)
 
     def test_preserves_business_api_error(self):
-        result = AwardRecommendationSkill(FakeClient(raise_error=True)).recommend(10)
+        result = AwardRecommendationService(FakeClient(raise_error=True)).recommend(10)
 
         self.assertEqual("QUERY_FAILED", result.status)
         self.assertEqual("BUSINESS_API_UNAVAILABLE", result.reason_code)
@@ -118,7 +118,7 @@ class AwardRecommendationSkillTest(unittest.TestCase):
     def test_rejects_invalid_limit_before_querying_backend(self):
         client = FakeClient()
 
-        result = AwardRecommendationSkill(client).recommend(10, limit=6)
+        result = AwardRecommendationService(client).recommend(10, limit=6)
 
         self.assertEqual("QUERY_FAILED", result.status)
         self.assertEqual("INVALID_ARGUMENT", result.reason_code)

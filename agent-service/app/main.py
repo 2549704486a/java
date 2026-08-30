@@ -13,8 +13,8 @@ from app.api_client import BusinessApiClient
 from app.config import Settings
 from app.logging_config import configure_logging
 from app.knowledge.search import open_knowledge_search
-from app.skills.award_recommendation import AwardRecommendationSkill
-from app.skills.points_plan import PointsPlanningSkill
+from app.services.award_recommendation import AwardRecommendationService
+from app.services.points_planning import PointsPlanningService
 from app.skills.registry import SkillRegistry
 
 
@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
     mode.add_argument(
         "--plan-award-id",
         type=int,
-        help="不调用 LLM，直接验证指定奖品的积分规划 Skill",
+        help="不调用 LLM，直接验证指定奖品的积分规划服务",
     )
     mode.add_argument(
         "--recommend-awards",
@@ -37,7 +37,7 @@ def parse_args() -> argparse.Namespace:
         nargs="?",
         const=3,
         metavar="N",
-        help="不调用 LLM，直接验证奖品推荐 Skill；默认推荐 3 个",
+        help="不调用 LLM，直接验证奖品推荐服务；默认推荐 3 个",
     )
     return parser.parse_args()
 
@@ -58,13 +58,10 @@ def main() -> None:
     ) as client:
         if args.plan_award_id is not None:
             started = time.perf_counter()
-            active_definition = skill_registry.activate("points-planning")
-            plan = PointsPlanningSkill(client).plan(args.user_id, args.plan_award_id)
+            plan = PointsPlanningService(client).plan(args.user_id, args.plan_award_id)
             logger.info(
-                "points_plan_complete skill=%s version=%s user_id=%s award_id=%s "
+                "points_plan_service_complete user_id=%s award_id=%s "
                 "status=%s elapsed_ms=%.2f",
-                active_definition.manifest.name,
-                active_definition.manifest.version,
                 args.user_id,
                 args.plan_award_id,
                 plan.status,
@@ -75,15 +72,12 @@ def main() -> None:
 
         if args.recommend_awards is not None:
             started = time.perf_counter()
-            active_definition = skill_registry.activate("award-recommendation")
-            recommendation = AwardRecommendationSkill(client).recommend(
+            recommendation = AwardRecommendationService(client).recommend(
                 args.user_id, args.recommend_awards
             )
             logger.info(
-                "award_recommendation_complete skill=%s version=%s user_id=%s "
+                "award_recommendation_service_complete user_id=%s "
                 "limit=%s status=%s elapsed_ms=%.2f",
-                active_definition.manifest.name,
-                active_definition.manifest.version,
                 args.user_id,
                 args.recommend_awards,
                 recommendation.status,

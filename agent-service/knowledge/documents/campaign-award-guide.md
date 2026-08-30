@@ -11,7 +11,7 @@ authority_level: system_contract
 effective_from: 2026-08-22
 source_refs:
   - agent-service/app/models.py
-  - agent-service/app/skills/campaign_planning.py
+  - agent-service/app/services/campaign_planning.py
   - incentive/src/main/java/com/budou/incentive/dao/model/AwardConfig.java
   - incentive/src/main/java/com/budou/incentive/service/AgentOperatorQueryService.java
 ---

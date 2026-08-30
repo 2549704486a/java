@@ -17,22 +17,22 @@ from app.models import (
     SavedGoalCandidate,
     SavedGoalPointsPlan,
 )
-from app.skills.points_plan import PointsPlanningSkill
+from app.services.points_planning import PointsPlanningService
 
 
-class SavedGoalPlanningSkill:
+class SavedGoalPlanningService:
     """把已保存的长期目标解析为奖品，再复用实时积分规划。"""
 
     def __init__(
         self,
         client: BusinessApiClient,
         memory_store: GrowthMemoryStoreBackend,
-        points_skill: PointsPlanningSkill,
+        points_service: PointsPlanningService,
         today_provider: Callable[[], date] = date.today,
     ) -> None:
         self._client = client
         self._memory_store = memory_store
-        self._points_skill = points_skill
+        self._points_service = points_service
         self._today = today_provider
 
     def plan(
@@ -205,7 +205,7 @@ class SavedGoalPlanningSkill:
         excluded_task_names: Iterable[str],
         allowed_task_names: Iterable[str],
     ) -> SavedGoalPointsPlan:
-        plan = self._points_skill.plan(
+        plan = self._points_service.plan(
             user_id=user_id,
             award_id=award_id,
             excluded_task_ids=excluded_task_ids,
@@ -232,7 +232,7 @@ class SavedGoalPlanningSkill:
 
     @staticmethod
     def _goal_candidate(goal: MemoryItem) -> SavedGoalCandidate:
-        fields = SavedGoalPlanningSkill._goal_time_fields(goal)
+        fields = SavedGoalPlanningService._goal_time_fields(goal)
         subject = goal.normalized_data.get("subject")
         return SavedGoalCandidate(
             raw_text=goal.raw_text,
@@ -255,7 +255,7 @@ class SavedGoalPlanningSkill:
             reason_code=reason_code,
             message=message,
             goal_raw_text=goal.raw_text if goal else None,
-            **(SavedGoalPlanningSkill._goal_time_fields(goal) if goal else {}),
+            **(SavedGoalPlanningService._goal_time_fields(goal) if goal else {}),
         )
 
     def _goal_expired(self, goal: MemoryItem) -> bool:

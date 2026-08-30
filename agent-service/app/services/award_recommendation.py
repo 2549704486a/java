@@ -12,7 +12,7 @@ from app.models import (
 )
 
 
-class AwardRecommendationSkill:
+class AwardRecommendationService:
     """根据实时积分和奖品状态，确定性地推荐当前可兑换奖品。"""
 
     def __init__(self, client: BusinessApiClient) -> None:

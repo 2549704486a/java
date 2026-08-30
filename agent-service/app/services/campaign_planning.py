@@ -17,7 +17,7 @@ from app.models import (
 )
 
 
-class CampaignPlanningSkill:
+class CampaignPlanningService:
     """基于只读事实快照生成可编辑、不可直接发布的活动草案。"""
 
     def __init__(

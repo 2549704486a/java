@@ -6,7 +6,7 @@ from datetime import date
 from app.execution_context import bind_execution_context
 from app.memory.store import GrowthMemoryStore
 from app.models import ToolEnvelope
-from app.skills.growth_memory import GrowthMemorySkill
+from app.services.growth_memory import GrowthMemoryService
 from app.tools import build_tools
 
 
@@ -26,17 +26,17 @@ class AwardClient:
         )
 
 
-class GrowthMemorySkillTest(unittest.TestCase):
+class GrowthMemoryServiceTest(unittest.TestCase):
     def setUp(self) -> None:
         self.store = GrowthMemoryStore()
-        self.skill = GrowthMemorySkill(
+        self.service = GrowthMemoryService(
             AwardClient(),
             self.store,
             today_provider=lambda: date(2026, 8, 22),
         )
 
     def test_goal_is_saved_immediately_and_readable(self):
-        saved = self.skill.save_goal(
+        saved = self.service.save_goal(
             user_id=10,
             session_id="user:10:session:a",
             award_id=6,
@@ -44,18 +44,18 @@ class GrowthMemorySkillTest(unittest.TestCase):
         )
 
         self.assertEqual("REDEMPTION_GOAL_SAVED", saved.code)
-        queried = self.skill.get(10, include_all=True)
+        queried = self.service.get(10, include_all=True)
         self.assertEqual(6, queried.data["goal"]["targetAwardId"])
         self.assertNotIn("sourceSession", queried.data["goal"])
 
     def test_rejects_past_or_after_activity_goal_date(self):
-        past = self.skill.save_goal(
+        past = self.service.save_goal(
             user_id=10,
             session_id="user:10:session:a",
             award_id=6,
             target_date=date(2026, 8, 21),
         )
-        too_late = self.skill.save_goal(
+        too_late = self.service.save_goal(
             user_id=10,
             session_id="user:10:session:a",
             award_id=6,
@@ -67,7 +67,7 @@ class GrowthMemorySkillTest(unittest.TestCase):
         self.assertIsNone(self.store.get(10).goal)
 
     def test_preferences_are_saved_immediately_and_conflicts_rejected(self):
-        conflict = self.skill.save_preferences(
+        conflict = self.service.save_preferences(
             user_id=10,
             session_id="user:10:session:a",
             preferred_categories=["实物"],
@@ -76,7 +76,7 @@ class GrowthMemorySkillTest(unittest.TestCase):
         )
         self.assertEqual("CONFLICTING_PREFERENCES", conflict.code)
 
-        saved = self.skill.save_preferences(
+        saved = self.service.save_preferences(
             user_id=10,
             session_id="user:10:session:a",
             preferred_categories=[" 实物 ", "实物"],
@@ -89,15 +89,15 @@ class GrowthMemorySkillTest(unittest.TestCase):
         self.assertEqual(["实物"], preferences.preferred_categories)
 
     def test_forget_executes_immediately_and_is_idempotent(self):
-        self.skill.save_goal(
+        self.service.save_goal(
             user_id=10,
             session_id="user:10:session:a",
             award_id=6,
             target_date=date(2026, 9, 1),
         )
 
-        forgotten = self.skill.forget(user_id=10, scope="goal")
-        repeated = self.skill.forget(user_id=10, scope="goal")
+        forgotten = self.service.forget(user_id=10, scope="goal")
+        repeated = self.service.forget(user_id=10, scope="goal")
 
         self.assertEqual("GROWTH_MEMORY_FORGOTTEN", forgotten.code)
         self.assertEqual("NOTHING_TO_FORGET", repeated.code)
@@ -153,7 +153,7 @@ class GrowthMemorySkillTest(unittest.TestCase):
         self.assertNotIn("sourceSession", queried["data"]["memories"][0])
 
     def test_query_returns_only_relevant_memory(self):
-        self.skill.remember(
+        self.service.remember(
             user_id=10,
             session_id="user:10:session:a",
             memory_type="preference",
@@ -161,7 +161,7 @@ class GrowthMemorySkillTest(unittest.TestCase):
             subject="小鸟",
             polarity="LIKE",
         )
-        self.skill.remember(
+        self.service.remember(
             user_id=10,
             session_id="user:10:session:a",
             memory_type="goal",
@@ -171,7 +171,7 @@ class GrowthMemorySkillTest(unittest.TestCase):
             target_year=2027,
         )
 
-        queried = self.skill.get(
+        queried = self.service.get(
             10,
             query="帮我看看手环计划",
             memory_types=["goal"],
@@ -187,7 +187,7 @@ class GrowthMemorySkillTest(unittest.TestCase):
 
     def test_type_filter_handles_generic_preference_question(self):
         for subject in ["数码类商品", "小鸟"]:
-            self.skill.remember(
+            self.service.remember(
                 user_id=10,
                 session_id="user:10:session:a",
                 memory_type="preference",
@@ -195,7 +195,7 @@ class GrowthMemorySkillTest(unittest.TestCase):
                 subject=subject,
                 polarity="LIKE",
             )
-        self.skill.remember(
+        self.service.remember(
             user_id=10,
             session_id="user:10:session:a",
             memory_type="profile",
@@ -203,7 +203,7 @@ class GrowthMemorySkillTest(unittest.TestCase):
             subject="职业",
         )
 
-        queried = self.skill.get(
+        queried = self.service.get(
             10,
             query="你记得我喜欢什么吗",
             memory_types=["preference"],
@@ -216,7 +216,7 @@ class GrowthMemorySkillTest(unittest.TestCase):
         )
 
     def test_unrelated_query_does_not_inject_memory_without_type_filter(self):
-        self.skill.remember(
+        self.service.remember(
             user_id=10,
             session_id="user:10:session:a",
             memory_type="preference",
@@ -225,19 +225,19 @@ class GrowthMemorySkillTest(unittest.TestCase):
             polarity="LIKE",
         )
 
-        queried = self.skill.get(10, query="查询当前订单状态", limit=5)
+        queried = self.service.get(10, query="查询当前订单状态", limit=5)
 
         self.assertEqual("GROWTH_MEMORY_EMPTY", queried.code)
         self.assertEqual([], queried.data["memories"])
 
     def test_explicit_all_returns_every_memory_and_legacy_projection(self):
-        self.skill.save_goal(
+        self.service.save_goal(
             user_id=10,
             session_id="user:10:session:a",
             award_id=6,
             target_date=date(2026, 9, 1),
         )
-        self.skill.remember(
+        self.service.remember(
             user_id=10,
             session_id="user:10:session:a",
             memory_type="preference",
@@ -246,7 +246,7 @@ class GrowthMemorySkillTest(unittest.TestCase):
             polarity="LIKE",
         )
 
-        queried = self.skill.get(10, include_all=True, limit=1)
+        queried = self.service.get(10, include_all=True, limit=1)
 
         self.assertEqual("ALL", queried.data["retrieval"]["mode"])
         self.assertEqual(2, queried.data["retrieval"]["returned"])

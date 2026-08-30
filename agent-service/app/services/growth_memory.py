@@ -18,7 +18,7 @@ from app.memory.retrieval import select_memories
 from app.models import AwardData, GrowthMemoryData, MemoryItem, ToolEnvelope
 
 
-class GrowthMemorySkill:
+class GrowthMemoryService:
     """保存用户明确表达的稳定目标和偏好，不保存实时业务事实或模型推测。"""
 
     def __init__(

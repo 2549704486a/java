@@ -6,8 +6,8 @@ import unittest
 from app.api_client import BusinessApiError
 from app.exchange.confirmation_store import ConfirmationStatus, ConfirmationStore
 from app.models import ToolEnvelope
-from app.skills.controlled_exchange import (
-    ControlledExchangeSkill,
+from app.services.controlled_exchange import (
+    ControlledExchangeService,
     explicit_exchange_action,
 )
 
@@ -65,14 +65,14 @@ class ExchangeClient:
         return self.submit_result
 
 
-class ControlledExchangeSkillTest(unittest.TestCase):
+class ControlledExchangeServiceTest(unittest.TestCase):
     def setUp(self) -> None:
         self.client = ExchangeClient()
         self.store = ConfirmationStore(token_factory=lambda: "x" * 32)
-        self.skill = ControlledExchangeSkill(self.client, self.store)
+        self.service = ControlledExchangeService(self.client, self.store)
 
     def prepare(self):
-        return self.skill.prepare(
+        return self.service.prepare(
             user_id=10,
             session_id="session-a",
             request_id="request-prepare",
@@ -90,13 +90,13 @@ class ControlledExchangeSkillTest(unittest.TestCase):
     def test_repeated_confirmation_calls_java_exactly_once(self):
         confirmation_id = self.prepare().data["confirmationId"]
 
-        first = self.skill.confirm(
+        first = self.service.confirm(
             user_id=10,
             session_id="session-a",
             request_id="request-confirm-1",
             confirmation_id=confirmation_id,
         )
-        second = self.skill.confirm(
+        second = self.service.confirm(
             user_id=10,
             session_id="session-a",
             request_id="request-confirm-2",
@@ -115,7 +115,7 @@ class ControlledExchangeSkillTest(unittest.TestCase):
 
         def confirm() -> None:
             barrier.wait()
-            result = self.skill.confirm(
+            result = self.service.confirm(
                 user_id=10,
                 session_id="session-a",
                 request_id="request-concurrent",
@@ -140,7 +140,7 @@ class ControlledExchangeSkillTest(unittest.TestCase):
             "SUBMISSION_UNKNOWN", "超时", False
         )
 
-        result = self.skill.confirm(
+        result = self.service.confirm(
             user_id=10,
             session_id="session-a",
             request_id="request-unknown",

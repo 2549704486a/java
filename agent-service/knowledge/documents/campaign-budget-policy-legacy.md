@@ -12,7 +12,7 @@ effective_from: 2026-08-01
 policy_key: campaign_budget_semantics
 source_refs:
   - docs/agent-design/37_运营活动草案最小闭环.md
-  - agent-service/app/skills/campaign_planning.py
+  - agent-service/app/services/campaign_planning.py
 ---
 
 # 活动积分预算旧口径
