@@ -33,6 +33,9 @@ USER_AUTHENTICATOR = JwtAuthenticator(
 
 
 class FakeRuntime:
+    async def initialize(self) -> None:
+        return None
+
     def __init__(self, operator_knowledge_search=None) -> None:
         self.client = object()
         self.operator_knowledge_search = operator_knowledge_search

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import ipaddress
 import os
 from dataclasses import dataclass
+from urllib.parse import urlparse
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -21,6 +23,10 @@ class Settings:
     business_api_base_url: str = "http://127.0.0.1:8088"
     business_api_timeout_seconds: float = 3.0
     business_api_max_retries: int = 2
+    award_detail_transport: str = "rest"
+    award_detail_mcp_url: str = "http://127.0.0.1:8088/mcp"
+    award_detail_mcp_initialization_timeout_seconds: float = 5.0
+    award_detail_mcp_call_timeout_seconds: float = 5.0
     llm_api_key: str | None = None
     llm_base_url: str | None = None
     llm_model: str = "gpt-4o-mini"
@@ -75,6 +81,36 @@ class Settings:
     growth_memory_mysql_table: str = "agent_long_term_memory"
     growth_memory_mysql_connect_timeout: int = 3
 
+    def __post_init__(self) -> None:
+        if self.award_detail_transport not in {"rest", "mcp"}:
+            raise ValueError("AWARD_DETAIL_TRANSPORT 仅支持 rest 或 mcp")
+        if self.award_detail_mcp_initialization_timeout_seconds <= 0:
+            raise ValueError(
+                "AWARD_DETAIL_MCP_INITIALIZATION_TIMEOUT_SECONDS 必须大于 0"
+            )
+        if self.award_detail_mcp_call_timeout_seconds <= 0:
+            raise ValueError("AWARD_DETAIL_MCP_CALL_TIMEOUT_SECONDS 必须大于 0")
+        if self.award_detail_transport == "mcp":
+            self._validate_award_detail_mcp_url()
+
+    def _validate_award_detail_mcp_url(self) -> None:
+        parsed = urlparse(self.award_detail_mcp_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+            raise ValueError("AWARD_DETAIL_MCP_URL 必须是有效的 HTTP(S) 地址")
+        if parsed.username or parsed.password or parsed.query or parsed.fragment:
+            raise ValueError("AWARD_DETAIL_MCP_URL 不允许包含凭据、查询参数或片段")
+        hostname = parsed.hostname.lower()
+        is_loopback = hostname == "localhost"
+        if not is_loopback:
+            try:
+                is_loopback = ipaddress.ip_address(hostname).is_loopback
+            except ValueError:
+                is_loopback = False
+        if not is_loopback:
+            raise ValueError("AWARD_DETAIL_MCP_URL 仅允许访问本机回环地址")
+        if parsed.path.rstrip("/") != "/mcp":
+            raise ValueError("AWARD_DETAIL_MCP_URL 路径必须是 /mcp")
+
     @classmethod
     def from_env(cls) -> "Settings":
         return cls(
@@ -86,6 +122,21 @@ class Settings:
             ),
             business_api_max_retries=int(
                 os.getenv("BUSINESS_API_MAX_RETRIES", "2")
+            ),
+            award_detail_transport=os.getenv(
+                "AWARD_DETAIL_TRANSPORT", "rest"
+            ).strip().lower(),
+            award_detail_mcp_url=os.getenv(
+                "AWARD_DETAIL_MCP_URL", "http://127.0.0.1:8088/mcp"
+            ).strip(),
+            award_detail_mcp_initialization_timeout_seconds=float(
+                os.getenv(
+                    "AWARD_DETAIL_MCP_INITIALIZATION_TIMEOUT_SECONDS",
+                    "5",
+                )
+            ),
+            award_detail_mcp_call_timeout_seconds=float(
+                os.getenv("AWARD_DETAIL_MCP_CALL_TIMEOUT_SECONDS", "5")
             ),
             llm_api_key=os.getenv("LLM_API_KEY") or None,
             llm_base_url=os.getenv("LLM_BASE_URL") or None,

@@ -5,6 +5,7 @@ import logging
 
 from langchain.agents import create_agent
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.tools import BaseTool
 from langchain_openai import ChatOpenAI
 
 from app.api_client import BusinessApiClient
@@ -140,6 +141,7 @@ def build_agent(
     confirmation_store: ConfirmationStoreBackend | None = None,
     knowledge_search: KnowledgeSearchService | None = None,
     growth_memory_store: GrowthMemoryStoreBackend | None = None,
+    award_detail_tool: BaseTool | None = None,
 ):
     registry = skill_registry or SkillRegistry()
     model = ChatOpenAI(
@@ -159,6 +161,7 @@ def build_agent(
             confirmation_store=confirmation_store,
             knowledge_search=knowledge_search,
             growth_memory_store=growth_memory_store,
+            award_detail_tool=award_detail_tool,
         ),
         system_prompt=build_system_prompt(
             knowledge_search is not None,
@@ -178,7 +181,7 @@ def build_agent(
     )
 
 
-def run_agent(
+async def run_agent(
     agent,
     message: str,
     thread_id: str | None = None,
@@ -193,7 +196,7 @@ def run_agent(
         thread_id
     ):
         try:
-            result = agent.invoke(
+            result = await agent.ainvoke(
                 {"messages": [{"role": "user", "content": message}]},
                 config=config,
             )
@@ -214,14 +217,14 @@ def run_agent(
     return ensure_knowledge_citations(messages, response)
 
 
-def append_agent_turn(
+async def append_agent_turn(
     agent,
     user_message: str,
     assistant_message: str,
     thread_id: str,
 ) -> None:
     """将确定性路由产生的对话写回 Agent 记忆，但不再次调用模型。"""
-    agent.update_state(
+    await agent.aupdate_state(
         {"configurable": {"thread_id": thread_id}},
         {
             "messages": [

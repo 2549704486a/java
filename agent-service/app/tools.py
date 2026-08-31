@@ -8,6 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from langchain.tools import tool
+from langchain_core.tools import BaseTool
 
 from app.api_client import BusinessApiClient, BusinessApiError
 from app.exchange.confirmation_store import ConfirmationStore, ConfirmationStoreBackend
@@ -188,6 +189,7 @@ def build_tools(
     confirmation_store: ConfirmationStoreBackend | None = None,
     knowledge_search: KnowledgeSearchService | None = None,
     growth_memory_store: GrowthMemoryStoreBackend | None = None,
+    award_detail_tool: BaseTool | None = None,
 ):
     registry = skill_registry or SkillRegistry()
     load_skill = build_load_skill_tool(registry, CONSUMER_SKILL_NAMES)
@@ -212,7 +214,13 @@ def build_tools(
         active_memory_store,
     )
 
-    def safe_result(tool_name: str, arguments: dict, callable_):
+    def safe_result(
+        tool_name: str,
+        arguments: dict,
+        callable_,
+        *,
+        transport: str | None = None,
+    ):
         # 基础 Tool 统一完成：调用业务接口、规范化业务错误、写入执行轨迹。
         def execute() -> dict:
             try:
@@ -221,7 +229,12 @@ def build_tools(
                 # 可预期的业务接口异常转成结构化结果，供模型决定如何回复用户。
                 return exc.as_envelope().model_dump(mode="json")
 
-        return execute_traced(tool_name, arguments, execute)
+        return execute_traced(
+            tool_name,
+            arguments,
+            execute,
+            transport=transport,
+        )
 
     @tool
     def get_user_points() -> dict:
@@ -244,6 +257,7 @@ def build_tools(
             "get_award_detail",
             {"award_id": award_id},
             lambda: client.get_award_detail(award_id),
+            transport="rest",
         )
 
     @tool(args_schema=ListAwardsInput)
@@ -611,11 +625,15 @@ def build_tools(
 
         return execute_traced("forget_growth_memory", arguments, execute)
 
+    selected_award_detail_tool = award_detail_tool or get_award_detail
+    if selected_award_detail_tool.name != "get_award_detail":
+        raise ValueError("远程奖品 Tool 名称必须是 get_award_detail")
+
     available_tools = [
         load_skill,
         get_user_points,
         list_available_tasks,
-        get_award_detail,
+        selected_award_detail_tool,
         list_awards,
         check_exchange_eligibility,
         list_my_exchange_records,

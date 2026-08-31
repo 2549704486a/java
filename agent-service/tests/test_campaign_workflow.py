@@ -205,6 +205,9 @@ class FakeWorkflowClient:
 
 
 class FakeRuntime:
+    async def initialize(self) -> None:
+        return None
+
     def __init__(self, client: FakeWorkflowClient) -> None:
         self.client = client
         self.operator_knowledge_search = None

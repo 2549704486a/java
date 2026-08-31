@@ -73,6 +73,15 @@ class ToolTraceTest(unittest.TestCase):
             event["arguments"],
         )
 
+    def test_local_award_detail_trace_identifies_rest_transport(self):
+        tools = build_tools(FixtureBusinessApiClient("eligible"), 10)
+        award_tool = next(tool for tool in tools if tool.name == "get_award_detail")
+
+        with capture_tool_trace("request-rest") as session:
+            award_tool.invoke({"award_id": 6})
+
+        self.assertEqual("rest", session.as_dicts()[0]["transport"])
+
 
 if __name__ == "__main__":
     unittest.main()

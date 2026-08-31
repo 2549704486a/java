@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import logging
 import time
@@ -13,6 +14,7 @@ from app.api_client import BusinessApiClient
 from app.config import Settings
 from app.logging_config import configure_logging
 from app.knowledge.search import open_knowledge_search
+from app.mcp_award_tool import discover_award_detail_mcp_tool
 from app.services.award_recommendation import AwardRecommendationService
 from app.services.points_planning import PointsPlanningService
 from app.skills.registry import SkillRegistry
@@ -40,6 +42,65 @@ def parse_args() -> argparse.Namespace:
         help="不调用 LLM，直接验证奖品推荐服务；默认推荐 3 个",
     )
     return parser.parse_args()
+
+
+async def run_agent_cli(
+    args: argparse.Namespace,
+    settings: Settings,
+    skill_registry: SkillRegistry,
+    client: BusinessApiClient,
+    log_path,
+) -> None:
+    logger.info(
+        "agent_start user_id=%s model=%s log_file=%s",
+        args.user_id,
+        settings.llm_model,
+        log_path,
+    )
+    knowledge_search = (
+        open_knowledge_search(settings) if settings.rag_enabled else None
+    )
+    try:
+        award_detail_tool = None
+        if settings.award_detail_transport == "mcp":
+            binding = await discover_award_detail_mcp_tool(settings)
+            award_detail_tool = binding.tool
+        agent = build_agent(
+            settings,
+            client,
+            args.user_id,
+            skill_registry,
+            knowledge_search=knowledge_search,
+            award_detail_tool=award_detail_tool,
+        )
+        cli_thread_id = f"user:{args.user_id}:session:cli"
+        if args.message:
+            print(
+                await run_agent(
+                    agent,
+                    args.message,
+                    cli_thread_id,
+                    uuid.uuid4().hex,
+                )
+            )
+            return
+
+        print("积分规划顾问已启动，输入 exit 退出。")
+        while True:
+            message = (await asyncio.to_thread(input, "你：")).strip()
+            if message.lower() in {"exit", "quit"}:
+                return
+            if message:
+                answer = await run_agent(
+                    agent,
+                    message,
+                    cli_thread_id,
+                    uuid.uuid4().hex,
+                )
+                print(f"顾问：{answer}")
+    finally:
+        if knowledge_search is not None:
+            knowledge_search.close()
 
 
 def main() -> None:
@@ -92,40 +153,8 @@ def main() -> None:
             )
             return
 
-        logger.info(
-            "agent_start user_id=%s model=%s log_file=%s",
-            args.user_id,
-            settings.llm_model,
-            log_path,
-        )
-        knowledge_search = (
-            open_knowledge_search(settings) if settings.rag_enabled else None
-        )
-        try:
-            agent = build_agent(
-                settings,
-                client,
-                args.user_id,
-                skill_registry,
-                knowledge_search=knowledge_search,
-            )
-            cli_thread_id = f"user:{args.user_id}:session:cli"
-            if args.message:
-                print(run_agent(agent, args.message, cli_thread_id, uuid.uuid4().hex))
-                return
-
-            print("积分规划顾问已启动，输入 exit 退出。")
-            while True:
-                message = input("你：").strip()
-                if message.lower() in {"exit", "quit"}:
-                    return
-                if message:
-                    print(
-                        f"顾问：{run_agent(agent, message, cli_thread_id, uuid.uuid4().hex)}"
-                    )
-        finally:
-            if knowledge_search is not None:
-                knowledge_search.close()
+        # CLI 只在进程入口创建一次事件循环；Tool 内部不会隐藏桥接同步/异步。
+        asyncio.run(run_agent_cli(args, settings, skill_registry, client, log_path))
 
 
 if __name__ == "__main__":

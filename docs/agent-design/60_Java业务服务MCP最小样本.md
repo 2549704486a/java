@@ -2,15 +2,23 @@
 
 > 这一轮不是把全部 Agent Tool 迁移到 MCP，而是用一个只读奖品查询回答一个更小的问题：现有 Java Web 服务能否在不复制业务逻辑的前提下，同时被 REST 客户端和标准 MCP 客户端调用。
 
+> 状态说明：本文记录 `2026-08-30` 的 Java Server 第一阶段验证。`2026-08-31` 用户兑换助手已增加显式 MCP 实验模式，当前调用边界和验证结果以 [61_Agent奖品查询接入Java_MCP.md](61_Agent奖品查询接入Java_MCP.md) 为准。
+
 ## 1. 最终结构
 
 ```text
-现有 Python Agent
+Python Agent 默认模式及确定性内部 Service
   -> BusinessApiClient
   -> REST Controller
   -> AgentQueryService
 
 标准 MCP 客户端
+  -> Streamable HTTP /mcp
+  -> get_award_detail
+  -> AgentQueryService
+
+Python Agent 显式 MCP 实验模式
+  -> 官方 LangChain MCP Adapter
   -> Streamable HTTP /mcp
   -> get_award_detail
   -> AgentQueryService
@@ -39,7 +47,7 @@
   "code": "AWARD_FOUND",
   "data": {
     "awardId": 6,
-    "awardName": "智能手环"
+    "name": "智能手环"
   },
   "message": "奖品查询成功",
   "retryable": false
@@ -100,7 +108,7 @@ mvn spring-boot:run
 Remove-Item Env:AGENT_MCP_ENABLED
 ```
 
-当前 Python Agent 不读取这个配置，也没有切换到 MCP。
+Java 的 `AGENT_MCP_ENABLED` 只控制 Server 是否开放 `/mcp`。Python 用户 Agent 是否使用它，由独立的 `AWARD_DETAIL_TRANSPORT=rest|mcp` 控制；默认仍为 `rest`。启用方法见 `61` 号文档。
 
 ## 5. 验证证据
 
@@ -141,10 +149,10 @@ Remove-Item Env:AGENT_MCP_ENABLED
 
 - 目前没有生产认证、授权和跨网络部署方案；
 - 只有一个只读 Tool，不能证明全部 Java 接口都适合 MCP；
-- 现有用户 Agent 和运营 Agent 仍走 REST，尚未得到真实第二调用方的复用收益；
+- 用户兑换助手仅在显式实验模式下让模型直接查询奖品详情走 MCP；运营 Agent 和所有确定性内部 Service 仍走 REST；
 - 身份查询和写操作不得照搬本样本，必须另行设计可信身份、权限、幂等和审计。
 
-因此下一步不是继续批量迁移 Tool，而是保留该样本，等待真实调用方需求后再提出独立变更。
+后续仍不批量迁移 Tool。新增第二个 MCP 能力前，需要先证明真实复用收益，并单独完成身份、权限和审计设计。
 
 ## 7. 回滚方式
 

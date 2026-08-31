@@ -144,12 +144,19 @@ class FakeRuntime:
         self,
         should_fail: bool = False,
         pending=None,
+        initialization_error: Exception | None = None,
     ) -> None:
         self.should_fail = should_fail
         self.pending = pending
         self.closed = False
         self.calls: list[tuple[int, str, str, str | None]] = []
         self.client = FakeBusinessClient()
+        self.initialization_error = initialization_error
+
+    async def initialize(self) -> None:
+        if self.initialization_error is not None:
+            raise self.initialization_error
+        return None
 
     def health(self):
         return {
@@ -162,7 +169,7 @@ class FakeRuntime:
             "skills": [],
         }
 
-    def answer(
+    async def answer(
         self,
         user_id: int,
         session_id: str,
@@ -181,6 +188,17 @@ class FakeRuntime:
         return self.pending
 
 class AgentWebTest(unittest.TestCase):
+    def test_runtime_initialization_failure_prevents_application_readiness(self):
+        runtime = FakeRuntime(
+            initialization_error=RuntimeError("mcp initialization failed")
+        )
+        app = create_test_app(runtime)
+
+        with self.assertRaisesRegex(RuntimeError, "mcp initialization failed"):
+            with TestClient(app):
+                self.fail("初始化失败时不应进入 ready 状态")
+        self.assertTrue(runtime.closed)
+
     def test_operator_deep_link_returns_spa_entry(self):
         runtime = FakeRuntime()
         with TemporaryDirectory() as temp_dir:

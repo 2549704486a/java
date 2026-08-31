@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 import threading
@@ -243,18 +244,31 @@ def create_app(
     async def lifespan(application: FastAPI):
         authenticator = authenticator_factory()
         runtime = runtime_factory()
-        application.state.runtime = runtime
-        application.state.authenticator = authenticator
-        application.state.operator_authenticator = operator_authenticator_factory()
-        application.state.campaign_data_provider = campaign_data_provider_factory(runtime)
-        application.state.operator_agent_runtime = None
-        application.state.operator_agent_runtime_factory = operator_agent_runtime_factory
-        application.state.operator_agent_runtime_lock = threading.Lock()
-        logger.info("agent_http_started health=%s", runtime.health())
         try:
+            # MCP 模式必须在 ready 前完成 Tool 发现；失败会直接终止应用启动。
+            await runtime.initialize()
+            application.state.runtime = runtime
+            application.state.authenticator = authenticator
+            application.state.operator_authenticator = (
+                operator_authenticator_factory()
+            )
+            application.state.campaign_data_provider = (
+                campaign_data_provider_factory(runtime)
+            )
+            application.state.operator_agent_runtime = None
+            application.state.operator_agent_runtime_factory = (
+                operator_agent_runtime_factory
+            )
+            application.state.operator_agent_runtime_lock = threading.Lock()
+            logger.info("agent_http_started health=%s", runtime.health())
             yield
         finally:
-            operator_runtime = application.state.operator_agent_runtime
+            # 初始化失败发生在 yield 之前，也必须释放 Runtime 已装配的资源。
+            operator_runtime = getattr(
+                application.state,
+                "operator_agent_runtime",
+                None,
+            )
             if operator_runtime is not None:
                 operator_runtime.close()
             runtime.close()
@@ -326,7 +340,7 @@ def create_app(
             503: {"model": ErrorResponse},
         },
     )
-    def chat(
+    async def chat(
         payload: ChatRequest,
         request: Request,
         x_request_id: str | None = Header(default=None),
@@ -346,7 +360,7 @@ def create_app(
             len(payload.message),
         )
         try:
-            answer, elapsed_ms = request.app.state.runtime.answer(
+            answer, elapsed_ms = await request.app.state.runtime.answer(
                 user_id,
                 session_id,
                 payload.message,
@@ -384,7 +398,8 @@ def create_app(
             user_id=user_id,
             answer=answer,
             elapsed_ms=round(elapsed_ms, 2),
-            pending_exchange=request.app.state.runtime.pending_exchange(
+            pending_exchange=await asyncio.to_thread(
+                request.app.state.runtime.pending_exchange,
                 user_id,
                 session_id,
             ),

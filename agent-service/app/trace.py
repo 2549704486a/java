@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import threading
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import asdict, dataclass
@@ -22,9 +22,13 @@ class ToolExecutionTrace:
     result_code: str | None
     elapsed_ms: float
     error_type: str | None = None
+    transport: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        if self.transport is None:
+            payload.pop("transport")
+        return payload
 
 
 @dataclass(frozen=True)
@@ -56,6 +60,7 @@ class ToolTraceSession:
         result_code: str | None,
         elapsed_ms: float,
         error_type: str | None = None,
+        transport: str | None = None,
         result: Any = None,
     ) -> None:
         with self._lock:
@@ -70,6 +75,7 @@ class ToolTraceSession:
                     result_code=result_code,
                     elapsed_ms=round(elapsed_ms, 2),
                     error_type=error_type,
+                    transport=transport,
                 )
             )
             if completed:
@@ -121,6 +127,8 @@ def execute_traced(
     tool_name: str,
     arguments: dict[str, Any],
     operation: Callable[[], T],
+    *,
+    transport: str | None = None,
 ) -> T:
     # 所有 Tool/Skill 都从这个统一入口执行，保证耗时和结果字段口径一致。
     started = time.perf_counter()
@@ -137,6 +145,7 @@ def execute_traced(
                 result_code=None,
                 elapsed_ms=(time.perf_counter() - started) * 1000,
                 error_type=exc.__class__.__name__,
+                transport=transport,
             )
         # 轨迹只负责观察，不改变原有异常处理语义。
         raise
@@ -150,6 +159,48 @@ def execute_traced(
             business_success=business_success,
             result_code=result_code,
             elapsed_ms=(time.perf_counter() - started) * 1000,
+            transport=transport,
+            result=result,
+        )
+    return result
+
+
+async def execute_traced_async(
+    tool_name: str,
+    arguments: dict[str, Any],
+    operation: Callable[[], Awaitable[T]],
+    *,
+    transport: str | None = None,
+) -> T:
+    """异步 Tool 的统一轨迹入口，保持与同步 Tool 相同的摘要口径。"""
+    started = time.perf_counter()
+    session = _ACTIVE_TRACE.get()
+    try:
+        result = await operation()
+    except BaseException as exc:
+        if session is not None:
+            session.record(
+                tool_name=tool_name,
+                arguments=arguments,
+                completed=False,
+                business_success=None,
+                result_code=None,
+                elapsed_ms=(time.perf_counter() - started) * 1000,
+                error_type=exc.__class__.__name__,
+                transport=transport,
+            )
+        raise
+
+    if session is not None:
+        business_success, result_code = _summarize_result(result)
+        session.record(
+            tool_name=tool_name,
+            arguments=arguments,
+            completed=True,
+            business_success=business_success,
+            result_code=result_code,
+            elapsed_ms=(time.perf_counter() - started) * 1000,
+            transport=transport,
             result=result,
         )
     return result
@@ -160,9 +211,14 @@ def _summarize_result(result: Any) -> tuple[bool | None, str | None]:
     payload = result
     model_dump = getattr(result, "model_dump", None)
     if callable(model_dump):
-        payload = model_dump(mode="json")
+        payload = model_dump(mode="json", by_alias=True)
     if not isinstance(payload, dict):
         return None, None
+    structured = payload.get("structuredContent") or payload.get(
+        "structured_content"
+    )
+    if isinstance(structured, dict):
+        payload = structured
 
     success = payload.get("success")
     business_success = success if isinstance(success, bool) else None

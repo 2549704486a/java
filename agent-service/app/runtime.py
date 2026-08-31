@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import threading
 import time
 from collections import OrderedDict
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -17,6 +18,10 @@ from app.exchange.confirmation_store import ConfirmationStore, ConfirmationStore
 from app.memory.store import GrowthMemoryStore, GrowthMemoryStoreBackend
 from app.config import Settings
 from app.knowledge.search import KnowledgeSearchService, open_knowledge_search
+from app.mcp_award_tool import (
+    McpAwardToolBinding,
+    discover_award_detail_mcp_tool,
+)
 from app.models import PendingExchangeData, ToolEnvelope
 from app.memory.mysql_store import MysqlGrowthMemoryStore
 from app.exchange.redis_store import RedisConfirmationStore
@@ -30,25 +35,13 @@ from app.trace import capture_tool_trace, execute_traced
 
 
 logger = logging.getLogger(__name__)
-AgentBuilder = Callable[
-    [
-        Settings,
-        BusinessApiClient,
-        int,
-        SkillRegistry,
-        Any,
-        ConfirmationStoreBackend,
-        KnowledgeSearchService | None,
-        GrowthMemoryStoreBackend,
-    ],
-    Any,
-]
-AgentRunner = Callable[[Any, str, str, str | None], str]
+AgentBuilder = Callable[..., Any]
+AgentRunner = Callable[[Any, str, str, str | None], Awaitable[str]]
 
 
 @dataclass
 class SessionSlot:
-    lock: threading.Lock
+    lock: asyncio.Lock
     in_use: int = 0
     last_access_monotonic: float = 0.0
 
@@ -112,8 +105,22 @@ class AgentRuntime:
         self._agents: OrderedDict[int, Any] = OrderedDict()
         self._sessions: OrderedDict[str, SessionSlot] = OrderedDict()
         self._lock = threading.Lock()
+        self._mcp_award_binding: McpAwardToolBinding | None = None
 
-    def answer(
+    async def initialize(self) -> None:
+        """在服务 ready 前完成可选 MCP Tool 的发现与契约校验。"""
+        if self.settings.award_detail_transport == "rest":
+            return
+        if self._mcp_award_binding is not None:
+            return
+        self._mcp_award_binding = await discover_award_detail_mcp_tool(self.settings)
+        logger.info(
+            "mcp_award_tool_ready server=%s discovered_tool_count=%s",
+            self._mcp_award_binding.server_name,
+            self._mcp_award_binding.discovered_tool_count,
+        )
+
+    async def answer(
         self,
         user_id: int,
         session_id: str,
@@ -121,16 +128,18 @@ class AgentRuntime:
         request_id: str | None = None,
     ) -> tuple[str, float]:
         started = time.perf_counter()
-        thread_id, slot = self._acquire_session(user_id, session_id)
+        thread_id, slot = await self._acquire_session(user_id, session_id)
         try:
             # 明确确认/取消属于高风险确定性动作。存在待确认记录时不再让模型猜测。
             action = explicit_exchange_action(message)
-            pending = self.confirmation_store.pending_for(
+            pending = await asyncio.to_thread(
+                self.confirmation_store.pending_for,
                 user_id=user_id,
                 session_id=thread_id,
             )
             if action is not None and pending is not None:
-                result = self._execute_exchange_action(
+                result = await asyncio.to_thread(
+                    self._execute_exchange_action,
                     action=action,
                     user_id=user_id,
                     thread_id=thread_id,
@@ -139,7 +148,7 @@ class AgentRuntime:
                 )
                 # 确认/取消绕过模型执行，但结果仍需写回 LangGraph 记忆。
                 # 否则下一轮模型看到的历史仍停留在“等待确认”。
-                self._append_exchange_action_turn(
+                await self._append_exchange_action_turn(
                     user_id=user_id,
                     thread_id=thread_id,
                     user_message=message,
@@ -149,7 +158,7 @@ class AgentRuntime:
 
             agent = self._agent_for(user_id)
             # thread_id 隔离会话记忆；request_id 只串联本次请求的日志与轨迹。
-            answer = self._agent_runner(agent, message, thread_id, request_id)
+            answer = await self._agent_runner(agent, message, thread_id, request_id)
             return answer, (time.perf_counter() - started) * 1000
         finally:
             slot.lock.release()
@@ -198,6 +207,8 @@ class AgentRuntime:
             "growth_memory": self.growth_memory_store.stats(),
             "rag_enabled": self.knowledge_search is not None,
             "operator_rag_enabled": self.operator_knowledge_search is not None,
+            "award_detail_transport": self.settings.award_detail_transport,
+            "mcp_award_tool_ready": self._mcp_award_binding is not None,
         }
 
     def close(self) -> None:
@@ -218,6 +229,11 @@ class AgentRuntime:
             self.client.close()
 
     def _agent_for(self, user_id: int) -> Any:
+        if (
+            self.settings.award_detail_transport == "mcp"
+            and self._mcp_award_binding is None
+        ):
+            raise RuntimeError("MCP 奖品 Tool 尚未初始化，不能创建用户 Agent")
         with self._lock:
             cached = self._agents.pop(user_id, None)
             if cached is not None:
@@ -225,7 +241,7 @@ class AgentRuntime:
                 logger.debug("agent_cache_hit user_id=%s", user_id)
                 return cached
 
-            agent = self._agent_builder(
+            builder_arguments = (
                 self.settings,
                 self.client,
                 user_id,
@@ -235,6 +251,13 @@ class AgentRuntime:
                 self.knowledge_search,
                 self.growth_memory_store,
             )
+            if self._mcp_award_binding is None:
+                agent = self._agent_builder(*builder_arguments)
+            else:
+                agent = self._agent_builder(
+                    *builder_arguments,
+                    award_detail_tool=self._mcp_award_binding.tool,
+                )
             self._agents[user_id] = agent
             logger.info("agent_cache_miss user_id=%s", user_id)
             if len(self._agents) > self._cache_size:
@@ -242,7 +265,7 @@ class AgentRuntime:
                 logger.info("agent_cache_evicted user_id=%s", evicted_user_id)
             return agent
 
-    def _acquire_session(
+    async def _acquire_session(
         self,
         user_id: int,
         session_id: str,
@@ -254,14 +277,22 @@ class AgentRuntime:
             slot = self._sessions.pop(thread_id, None)
             if slot is None:
                 slot = SessionSlot(
-                    lock=threading.Lock(),
+                    lock=asyncio.Lock(),
                     last_access_monotonic=now,
                 )
                 logger.info("session_created thread_id=%s", thread_id)
             self._sessions[thread_id] = slot
             slot.in_use += 1
             self._evict_sessions(excluded_thread_id=thread_id)
-        slot.lock.acquire()
+        try:
+            await slot.lock.acquire()
+        except BaseException:
+            # 等锁期间被取消也要归还引用计数，否则该会话将永远无法淘汰。
+            with self._lock:
+                slot.in_use -= 1
+                slot.last_access_monotonic = self._clock()
+                self._evict_sessions()
+            raise
         return thread_id, slot
 
     def _execute_exchange_action(
@@ -321,7 +352,7 @@ class AgentRuntime:
         )
         return result
 
-    def _append_exchange_action_turn(
+    async def _append_exchange_action_turn(
         self,
         *,
         user_id: int,
@@ -330,7 +361,7 @@ class AgentRuntime:
         assistant_message: str,
     ) -> None:
         try:
-            append_agent_turn(
+            await append_agent_turn(
                 self._agent_for(user_id),
                 user_message,
                 assistant_message,

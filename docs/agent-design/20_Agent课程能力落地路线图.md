@@ -37,7 +37,7 @@
 
 ### 2.2 覆盖表
 
-最后更新：`2026-08-27`
+最后更新：`2026-08-31`
 
 | 课程 | 核心能力 | 当前状态 | 已有证据 | 主要缺口 | 当前决策 |
 | --- | --- | --- | --- | --- | --- |
@@ -49,7 +49,7 @@
 | 6. LangChain 深入实践 | LCEL、Chain、Retriever、Output Parser、Callback | 部分落地 | 已有 Callback 类似的 Tool 轨迹、LangChain Agent 链路和递归文档切分 | 未显式落地 LCEL、Retriever、Output Parser | 当前 Tool 编排已通过评测，不为课程覆盖强行引入 LCEL |
 | 7. 记忆系统 | 短期记忆、裁剪、摘要和长期记忆 | 已落地 | `InMemorySaver`、完整轮次与 token 预算裁剪、原文优先的 `MemoryItem`、MySQL 持久化、原子增量写入、按需召回、目标驱动的实时积分规划、复杂目标消歧、临时条件过滤和遗忘测试 | Redis 缓存边界与单条管理按用户决策暂缓；对话检查点尚未共享；自动摘要仅在裁剪产生直接问题时再引入 | P3 已完成，进入 P4.1 运营工作台最小闭环 |
 | 8. 多 Agent | 角色拆分、协作与路由 | 未落地 | 无项目代码证据 | 当前用户侧单 Agent 尚未暴露稳定职责冲突；运营策划、数据分析和规则审核场景尚待建立 | P6 基于运营工作台建立协调、策划、分析和审核角色，并与单 Agent 基线做 A/B 验证 |
-| 9. MCP | 标准化工具、资源接入 | 最小样本已落地 | Java Streamable HTTP MCP Server、`get_award_detail`、标准客户端协议测试、REST/MCP 契约对照和 `60` 号文档 | 当前仅证明 Java Service 可被标准 MCP 客户端复用；现有 Agent 仍走 REST，默认关闭且无生产鉴权 | 保留单个只读样本；新增身份或运营能力前单独设计鉴权，并以真实第二调用方证明复用收益 |
+| 9. MCP | 标准化工具、资源接入 | Agent 实验接入已落地 | Java Streamable HTTP MCP Server、`get_award_detail`、官方 LangChain MCP Adapter、启动发现与契约校验、模型真实 Tool 调用、REST/MCP Envelope 对照、统一轨迹，以及 `60`、`61` 号文档 | 只覆盖本地、身份中立的单个只读 Tool；默认仍为 REST，尚无生产鉴权、跨进程统一请求标识和第二个能力的收益证据 | 保留显式实验模式；运营 Agent、身份查询、确定性内部 Service 和写操作继续走 REST，第二个 MCP Tool 必须重新论证 |
 | 10. Skill | Skill 定义、发现、渐进披露和按需加载 | 已落地 | 五个 `SKILL.md`、`app/skills/registry.py`、`app/skills/loader.py`、目录级 System Prompt、真实正文 ToolMessage、Agent 范围隔离和定向测试 | 尚需在模型评测中持续观察是否稳定遵循“先加载再执行” | 以 `09`、`59` 号文档为事实基线；不再把 Service 类称为 Skill |
 | 11. 评测与部署 | 回归、评判、服务化、流式输出和部署 | 部分落地 | Fixture、隔离记忆种子、Tool/后端调用次数、轨迹评分、调优/盲测集隔离、重复运行、模型与 Tool 耗时、Token 和可配置成本统计、运营草案四维确定性评分、运行时能力准入与证据 Harness、FastAPI、React 前端 | 缺少逐结论语义评审、Judge 校准、安全硬门禁、SSE、容器化和 CI | 先用 Harness 固定运行边界，再按失败证据增加评审能力和部署门禁 |
 | 12. 端到端项目实践 | 工程闭环、验收和反馈 | 部分落地 | 代码、测试、设计文档、任务日记、真实 HTTP 幂等验证、Redis 跨实例并发验证、兑换后会话一致性回归、最终结果查询与订单页面，以及运营身份、只读快照、草案持久化、审核发布、审计与效果回流闭环；活动侧已具备客群快照、实验分组、幂等任务、RocketMQ 实际投放、用户站内信、自动事件投影、实验漏斗、隔离演示行为、活动历史自动发现、Agent 效果解释和真实 HTTP Harness 验收 | 缺少固定真实兑换回归、生产行为数据、统一流水线和验收门禁 | 本地业务闭环已验收；下一阶段补可运维性，真实收益等待生产数据 |
@@ -290,6 +290,8 @@ CampaignPlanDraft(
 2. [x] 保留现有 Python Agent REST 调用作为基线，由标准 MCP 测试客户端调用同一 `AgentQueryService`。
 3. [x] 对比契约一致性、错误语义、协议日志和本地稳定连接耗时；结果见 `60_Java业务服务MCP最小样本.md`。
 4. [x] 证据支持保留单个默认关闭的只读样本，但尚不支持批量迁移；兑换、活动发布和规则变更不作为通用 MCP 写能力直接暴露。
+5. [x] 用户兑换助手增加显式 MCP 实验模式：官方 Adapter 只替换模型直接可见的 `get_award_detail`，积分规划、推荐、长期目标、受控兑换等内部 Service 继续走 REST。
+6. [x] 完成用户 Agent 有限异步改造、启动前发现与失败关闭、Schema 白名单、真实 Agent ToolMessage/轨迹验证和一条命令回滚；证据见 `61_Agent奖品查询接入Java_MCP.md`。
 
 ### P5：完善交互、部署和可运维性
 
@@ -348,9 +350,9 @@ CampaignPlanDraft(
 ## 6. 当前里程碑
 
 - 产品方向：`从兑换顾问扩展为用户侧增长顾问 + 运营侧智能工作台 + 共享业务能力中心`
-- 当前阶段：`智能运营本地业务闭环、运行时 Harness 和 Java MCP 最小样本已完成；继续可运维性建设，并等待真实行为数据验证运营收益`
+- 当前阶段：`智能运营本地业务闭环、运行时 Harness、Java MCP 最小样本及用户 Agent 实验接入已完成；继续可运维性建设，并等待真实行为数据验证运营收益`
 - 已有基础：受控兑换状态机、一次性确认、旧链路 POST 适配、Java 持久化 `Idempotency-Key`、Redis 共享确认、前端确认卡片、结构化轨迹和安全回归。
-- 已完成：`P0.1 Java 请求级持久化幂等`、`P0.2 Redis 确认凭证共享存储`、`P0.3 JWT 可信用户身份`、`P0.4 兑换最终结果查询与订单页面`、`P1.1 调优/盲测集隔离`、`P1.2 重复试验稳定性统计`、`P1.4 模型耗时、Token 与成本指标`、`P2.1-P2.6 RAG 闭环`、`P3.1 token 预算、完整轮次裁剪与会话 TTL`、`P3.2 原文优先记忆与按需召回`、`P3.3 长期目标驱动的实时积分规划`、`P3.4 复杂规划评测与任务约束契约`、`P4.1.1-P4.1.16 运营活动完整闭环`、`P4.2.1-P4.2.4 运营知识与路由治理`、`P4.3 Java MCP 只读最小样本`、`P5.1 运营 Agent 运行时 Harness`、`System Prompt 与 Tool 契约分层收敛`。
+- 已完成：`P0.1 Java 请求级持久化幂等`、`P0.2 Redis 确认凭证共享存储`、`P0.3 JWT 可信用户身份`、`P0.4 兑换最终结果查询与订单页面`、`P1.1 调优/盲测集隔离`、`P1.2 重复试验稳定性统计`、`P1.4 模型耗时、Token 与成本指标`、`P2.1-P2.6 RAG 闭环`、`P3.1 token 预算、完整轮次裁剪与会话 TTL`、`P3.2 原文优先记忆与按需召回`、`P3.3 长期目标驱动的实时积分规划`、`P3.4 复杂规划评测与任务约束契约`、`P4.1.1-P4.1.16 运营活动完整闭环`、`P4.2.1-P4.2.4 运营知识与路由治理`、`P4.3 Java MCP 只读样本与用户 Agent 实验接入`、`P5.1 运营 Agent 运行时 Harness`、`System Prompt 与 Tool 契约分层收敛`。
 - 开发治理：根目录 `AGENTS.md` 提供渐进式仓库导航与开发协议，`PRODUCT.md` 维护当前产品事实，复杂且存在非显然取舍的任务使用 `openspec/changes/` 完成 Explore、Propose、Apply、Archive；活动变更不代表当前能力，也不替代本路线图。
 - 下一项：按 P5 优先补健康检查、优雅停机、运行指标和本地部署固化；MCP 暂不扩展第二个 Tool，多 Agent 等待稳定职责冲突证据。
 - 当前阻塞：暂无本地功能阻塞；本地活跃摘要和演示事件为 `FIXTURE/SIMULATED`，只能验证闭环，生产环境仍需登录与行为链路持续更新 `user_activity_summary`。
@@ -386,3 +388,4 @@ CampaignPlanDraft(
 | 2026-08-27 | 兑换助手 System Prompt 已接近 3500 个字符，并与 Tool 描述重复维护大量局部路由规则 | 继续在中央 Prompt 追加每个 Tool 的触发条件和参数细节 | System Prompt 只保留跨场景原则；单个 Tool 的参数语义放回 Tool/Schema，组合流程写入 Skill，关键计算与状态控制由 Service/Harness 执行 | Prompt 收敛至约 1800 个字符，减少约 49%；相关定向测试 `42/42` 与 `8` 个代表性模型场景通过 |
 | 2026-08-27 | 事实审计发现 `SKILL.md` 正文虽被 Python 读取，却从未进入模型上下文；多个 `*Skill` 类实际是确定性业务 Service | 继续把注册日志和 Python 类视为 Skill 已激活 | 新增 `load_skill` 实现真正的渐进披露；将正文作为 ToolMessage 返回模型；六个业务类迁入 `app/services` 并正名，当前文档同步纠偏 | Skill、Tool、Service 的边界可由代码和消息轨迹直接验证，后续开发以 `09`、`59` 号文档为准 |
 | 2026-08-30 | 用户希望验证 Java 后端能否直接兼任 MCP Server，同时避免恢复此前多层 Python MCP 架构 | MCP 继续整体回滚，优先推进 P5 | 用默认关闭的 Java Streamable HTTP 和一个只读奖品 Tool 完成最小验证，随后回到 P5 | 标准客户端发现与调用、REST/MCP 契约对照和定向测试通过；只保留最小样本，不迁移现有 Agent，也不扩展身份和写能力 |
+| 2026-08-31 | 用户明确要求只把 Agent 需要的业务能力改走 MCP，并询问为何尚未接入真实 Agent | Java MCP 只保留协议测试样本 | 先做官方 Adapter 兼容性试验；确认其 Tool 仅支持异步后，经人工同意，只将用户 Agent 直接奖品查询改为可选 MCP，并有限异步化 HTTP/CLI 调用边界 | 真实 Agent 完成一次远程 Tool 调用，MCP/REST Envelope 一致；默认、运营 Agent、确定性内部 Service、身份查询和写操作仍走 REST，不扩展第二个 Tool |

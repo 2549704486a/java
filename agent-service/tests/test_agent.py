@@ -12,16 +12,16 @@ class FakeAgent:
     def __init__(self) -> None:
         self.config = None
 
-    def invoke(self, payload, config):
+    async def ainvoke(self, payload, config):
         self.config = config
         return {"messages": [type("Message", (), {"content": "ok"})()]}
 
 
-class RunAgentTest(unittest.TestCase):
-    def test_passes_thread_id_to_checkpointer_config(self):
+class RunAgentTest(unittest.IsolatedAsyncioTestCase):
+    async def test_passes_thread_id_to_checkpointer_config(self):
         agent = FakeAgent()
 
-        answer = run_agent(
+        answer = await run_agent(
             agent,
             "继续规划",
             "user:10:session:session-a",
