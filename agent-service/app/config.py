@@ -53,6 +53,15 @@ class Settings:
     agent_auth_issuer: str = "incentive-agent"
     agent_auth_audience: str = "incentive-agent-web"
     agent_access_token_ttl_seconds: int = 3600
+    agent_observability_enabled: bool = False
+    agent_observability_queue_capacity: int = 1000
+    agent_observability_retention_days: int = 30
+    agent_observability_mysql_host: str = "127.0.0.1"
+    agent_observability_mysql_port: int = 3306
+    agent_observability_mysql_database: str = "budou"
+    agent_observability_mysql_user: str = "root"
+    agent_observability_mysql_password: str = "root"
+    agent_observability_mysql_connect_timeout: int = 3
     operator_access_token: str | None = None
     operator_id: str = "local-operator"
     operator_permissions: frozenset[str] = frozenset(
@@ -90,6 +99,12 @@ class Settings:
             )
         if self.award_detail_mcp_call_timeout_seconds <= 0:
             raise ValueError("AWARD_DETAIL_MCP_CALL_TIMEOUT_SECONDS 必须大于 0")
+        if self.agent_observability_queue_capacity <= 0:
+            raise ValueError("AGENT_OBSERVABILITY_QUEUE_CAPACITY 必须大于 0")
+        if not 1 <= self.agent_observability_retention_days <= 30:
+            raise ValueError("AGENT_OBSERVABILITY_RETENTION_DAYS 必须在 1 到 30 之间")
+        if self.agent_observability_mysql_connect_timeout <= 0:
+            raise ValueError("AGENT_OBSERVABILITY_MYSQL_CONNECT_TIMEOUT 必须大于 0")
         if self.award_detail_transport == "mcp":
             self._validate_award_detail_mcp_url()
 
@@ -191,6 +206,46 @@ class Settings:
             ),
             agent_access_token_ttl_seconds=int(
                 os.getenv("AGENT_ACCESS_TOKEN_TTL_SECONDS", "3600")
+            ),
+            agent_observability_enabled=env_bool(
+                "AGENT_OBSERVABILITY_ENABLED", False
+            ),
+            agent_observability_queue_capacity=int(
+                os.getenv("AGENT_OBSERVABILITY_QUEUE_CAPACITY", "1000")
+            ),
+            agent_observability_retention_days=int(
+                os.getenv("AGENT_OBSERVABILITY_RETENTION_DAYS", "30")
+            ),
+            agent_observability_mysql_host=os.getenv(
+                "AGENT_OBSERVABILITY_MYSQL_HOST",
+                os.getenv("GROWTH_MEMORY_MYSQL_HOST", "127.0.0.1"),
+            ).strip(),
+            agent_observability_mysql_port=int(
+                os.getenv(
+                    "AGENT_OBSERVABILITY_MYSQL_PORT",
+                    os.getenv("GROWTH_MEMORY_MYSQL_PORT", "3306"),
+                )
+            ),
+            agent_observability_mysql_database=os.getenv(
+                "AGENT_OBSERVABILITY_MYSQL_DATABASE",
+                os.getenv("GROWTH_MEMORY_MYSQL_DATABASE", "budou"),
+            ).strip(),
+            agent_observability_mysql_user=os.getenv(
+                "AGENT_OBSERVABILITY_MYSQL_USER",
+                os.getenv(
+                    "GROWTH_MEMORY_MYSQL_USER",
+                    os.getenv("SPRING_DATASOURCE_USERNAME", "root"),
+                ),
+            ).strip(),
+            agent_observability_mysql_password=os.getenv(
+                "AGENT_OBSERVABILITY_MYSQL_PASSWORD",
+                os.getenv(
+                    "GROWTH_MEMORY_MYSQL_PASSWORD",
+                    os.getenv("SPRING_DATASOURCE_PASSWORD", "root"),
+                ),
+            ),
+            agent_observability_mysql_connect_timeout=int(
+                os.getenv("AGENT_OBSERVABILITY_MYSQL_CONNECT_TIMEOUT", "3")
             ),
             operator_access_token=os.getenv("OPERATOR_ACCESS_TOKEN") or None,
             operator_id=os.getenv("OPERATOR_ID", "local-operator").strip(),

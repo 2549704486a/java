@@ -39,5 +39,22 @@ class McpSettingsTest(unittest.TestCase):
             Settings(award_detail_mcp_call_timeout_seconds=0)
 
 
+class AgentObservabilitySettingsTest(unittest.TestCase):
+    def test_observability_is_disabled_with_bounded_defaults(self):
+        settings = Settings()
+
+        self.assertFalse(settings.agent_observability_enabled)
+        self.assertEqual(1000, settings.agent_observability_queue_capacity)
+        self.assertEqual(30, settings.agent_observability_retention_days)
+
+    def test_rejects_invalid_observability_limits(self):
+        with self.assertRaisesRegex(ValueError, "QUEUE_CAPACITY 必须大于 0"):
+            Settings(agent_observability_queue_capacity=0)
+        with self.assertRaisesRegex(ValueError, "必须在 1 到 30 之间"):
+            Settings(agent_observability_retention_days=31)
+        with self.assertRaisesRegex(ValueError, "CONNECT_TIMEOUT 必须大于 0"):
+            Settings(agent_observability_mysql_connect_timeout=0)
+
+
 if __name__ == "__main__":
     unittest.main()
