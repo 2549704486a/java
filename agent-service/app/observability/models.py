@@ -7,6 +7,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validato
 
 AgentType = Literal["USER", "OPERATOR"]
 AgentRunStatus = Literal["COMPLETED", "FAILED"]
+ObservationWindow = Literal["24h", "7d", "30d"]
 
 
 class AgentToolObservation(BaseModel):
@@ -64,3 +65,108 @@ class AgentRequestObservation(BaseModel):
     @property
     def tool_call_count(self) -> int:
         return len(self.tool_calls)
+
+
+class AgentRequestRecord(BaseModel):
+    """请求表中的可查询摘要，不包含 Tool 正文或调用者身份。"""
+
+    model_config = ConfigDict(frozen=True)
+
+    request_id: str
+    agent_type: AgentType
+    started_at: AwareDatetime
+    completed_at: AwareDatetime
+    status: AgentRunStatus
+    elapsed_ms: int = Field(ge=0)
+    model_call_count: int = Field(ge=0)
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
+    tool_call_count: int = Field(ge=0)
+    error_type: str | None = None
+
+
+class RatioMetric(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    numerator: int = Field(ge=0)
+    denominator: int = Field(ge=0)
+    value: float | None = Field(default=None, ge=0, le=1)
+
+
+class LatencyMetric(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    average_ms: float | None = Field(default=None, ge=0)
+    p95_ms: int | None = Field(default=None, ge=0)
+
+
+class RequestMetric(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    total: int = Field(ge=0)
+    completed: int = Field(ge=0)
+    failed: int = Field(ge=0)
+    completion: RatioMetric
+    latency: LatencyMetric
+
+
+class ModelUsageMetric(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    model_call_count: int = Field(ge=0)
+    covered_requests: int = Field(ge=0)
+    coverage: RatioMetric
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
+
+
+class ToolMetric(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    tool_name: str | None = None
+    total_calls: int = Field(ge=0)
+    completed_calls: int = Field(ge=0)
+    business_successful_calls: int = Field(ge=0)
+    execution_completion: RatioMetric
+    business_success: RatioMetric
+    latency: LatencyMetric
+
+
+class ObservationTrendPoint(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    started_at: AwareDatetime
+    ended_at: AwareDatetime
+    total: int = Field(ge=0)
+    completed: int = Field(ge=0)
+    failed: int = Field(ge=0)
+
+
+class AgentObservationSummary(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    window: ObservationWindow
+    started_at: AwareDatetime
+    ended_at: AwareDatetime
+    requests: RequestMetric
+    requests_by_agent_type: dict[AgentType, RequestMetric]
+    model_usage: ModelUsageMetric
+    tools: ToolMetric
+    tools_by_name: tuple[ToolMetric, ...]
+    trend: tuple[ObservationTrendPoint, ...]
+
+
+class AgentRequestPage(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    total: int = Field(ge=0)
+    page: int = Field(ge=1)
+    page_size: int = Field(ge=1, le=100)
+    items: tuple[AgentRequestRecord, ...]
+
+
+class AgentRequestDetail(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    request: AgentRequestRecord
+    tool_calls: tuple[AgentToolObservation, ...]
