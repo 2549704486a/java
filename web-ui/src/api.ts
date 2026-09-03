@@ -12,6 +12,12 @@ import type {
   OrdersResponse,
   NotificationActionResponse,
   NotificationsResponse,
+  AgentObservationSummary,
+  AgentRequestDetail,
+  AgentRequestPage,
+  AgentRunStatus,
+  AgentType,
+  ObservationWindow,
   ToolEnvelope
 } from "./types";
 
@@ -246,6 +252,55 @@ export async function simulateCampaignActivity(
     }
   );
   return readJson<ToolEnvelope<CampaignSimulationRecord>>(response);
+}
+
+export async function fetchAgentObservationSummary(
+  accessToken: string,
+  window: ObservationWindow,
+  signal?: AbortSignal
+): Promise<AgentObservationSummary> {
+  const response = await fetch(
+    `/v1/operator/agent-observability/summary?window=${window}`,
+    { headers: authenticatedHeaders(accessToken), signal }
+  );
+  return readJson<AgentObservationSummary>(response);
+}
+
+export async function fetchAgentObservationRequests(
+  accessToken: string,
+  options: {
+    window: ObservationWindow;
+    agentType: AgentType | "ALL";
+    status: AgentRunStatus | "ALL";
+    page: number;
+    pageSize?: number;
+  },
+  signal?: AbortSignal
+): Promise<AgentRequestPage> {
+  const query = new URLSearchParams({
+    window: options.window,
+    page: String(options.page),
+    page_size: String(options.pageSize ?? 20)
+  });
+  if (options.agentType !== "ALL") query.set("agent_type", options.agentType);
+  if (options.status !== "ALL") query.set("status", options.status);
+  const response = await fetch(
+    `/v1/operator/agent-observability/requests?${query.toString()}`,
+    { headers: authenticatedHeaders(accessToken), signal }
+  );
+  return readJson<AgentRequestPage>(response);
+}
+
+export async function fetchAgentObservationDetail(
+  accessToken: string,
+  observationRequestId: string,
+  signal?: AbortSignal
+): Promise<AgentRequestDetail> {
+  const response = await fetch(
+    `/v1/operator/agent-observability/requests/${encodeURIComponent(observationRequestId)}`,
+    { headers: authenticatedHeaders(accessToken), signal }
+  );
+  return readJson<AgentRequestDetail>(response);
 }
 
 export async function fetchHealth(): Promise<boolean> {

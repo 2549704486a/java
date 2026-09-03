@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   Activity,
+  BarChart3,
   BookOpenCheck,
   Bot,
   ClipboardList,
@@ -9,11 +10,14 @@ import {
   LoaderCircle,
   LogOut,
   MessageSquareText,
+  Megaphone,
   Send,
   ShieldCheck,
   Sparkles,
   RefreshCw
 } from "lucide-react";
+
+import AgentObservabilityDashboard from "./AgentObservabilityDashboard";
 
 import {
   ApiError,
@@ -83,6 +87,7 @@ export default function OperatorApp() {
   const [operator, setOperator] = useState<CurrentOperatorResponse | null>(null);
   const [authLoading, setAuthLoading] = useState(Boolean(initialToken()));
   const [authError, setAuthError] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<"campaign" | "agent">("campaign");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -177,6 +182,7 @@ export default function OperatorApp() {
     setActivities([]);
     setCampaignFunnel(null);
     setSimulationNotice(null);
+    setActiveView("campaign");
   }
 
   async function refreshWorkflow() {
@@ -346,12 +352,33 @@ export default function OperatorApp() {
           <span className="operator-mark"><ClipboardList size={21} /></span>
           <div><strong>增长运营台</strong><small>INCENTIVE OPERATIONS</small></div>
         </div>
+        <nav className="operator-view-switch" aria-label="运营工作台视图">
+          <button
+            className={activeView === "campaign" ? "is-active" : ""}
+            type="button"
+            onClick={() => setActiveView("campaign")}
+          >
+            <Megaphone size={15} /> 活动运营
+          </button>
+          {operator.permissions.includes("agent:observe") && (
+            <button
+              className={activeView === "agent" ? "is-active" : ""}
+              type="button"
+              onClick={() => setActiveView("agent")}
+            >
+              <BarChart3 size={15} /> Agent 数据
+            </button>
+          )}
+        </nav>
         <div className="operator-identity">
           <span>{operator.operator_id}</span>
           <button type="button" onClick={signOut}><LogOut size={14} /> 退出</button>
         </div>
       </header>
 
+      {activeView === "agent" && operator.permissions.includes("agent:observe") ? (
+        <AgentObservabilityDashboard accessToken={accessToken} />
+      ) : (
       <main className="operator-workbench">
         <aside className="operator-briefing">
           <p className="operator-kicker">TODAY'S BRIEFING</p>
@@ -575,6 +602,7 @@ export default function OperatorApp() {
           </div>
         </section>
       </main>
+      )}
     </div>
   );
 }

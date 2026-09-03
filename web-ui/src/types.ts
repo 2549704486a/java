@@ -212,3 +212,103 @@ export interface ChatMessage {
   content: string;
   elapsedMs?: number;
 }
+
+export type ObservationWindow = "24h" | "7d" | "30d";
+export type AgentType = "USER" | "OPERATOR";
+export type AgentRunStatus = "COMPLETED" | "FAILED";
+
+export interface RatioMetric {
+  numerator: number;
+  denominator: number;
+  value: number | null;
+}
+
+export interface LatencyMetric {
+  average_ms: number | null;
+  p95_ms: number | null;
+}
+
+export interface RequestMetric {
+  total: number;
+  completed: number;
+  failed: number;
+  completion: RatioMetric;
+  latency: LatencyMetric;
+}
+
+export interface ModelUsageMetric {
+  model_call_count: number;
+  covered_requests: number;
+  coverage: RatioMetric;
+  input_tokens: number | null;
+  output_tokens: number | null;
+}
+
+export interface ToolMetric {
+  tool_name: string | null;
+  total_calls: number;
+  completed_calls: number;
+  business_result_known_calls: number;
+  business_successful_calls: number;
+  execution_completion: RatioMetric;
+  business_success: RatioMetric;
+  latency: LatencyMetric;
+}
+
+export interface ObservationTrendPoint {
+  started_at: string;
+  ended_at: string;
+  total: number;
+  completed: number;
+  failed: number;
+}
+
+export interface AgentObservationSummary {
+  window: ObservationWindow;
+  started_at: string;
+  ended_at: string;
+  requests: RequestMetric;
+  requests_by_agent_type: Record<AgentType, RequestMetric>;
+  model_usage: ModelUsageMetric;
+  tools: ToolMetric;
+  tools_by_name: ToolMetric[];
+  trend: ObservationTrendPoint[];
+}
+
+export interface AgentRequestRecord {
+  request_id: string;
+  agent_type: AgentType;
+  started_at: string;
+  completed_at: string;
+  status: AgentRunStatus;
+  elapsed_ms: number;
+  model_call_count: number;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  tool_call_count: number;
+  error_type: string | null;
+}
+
+export interface AgentToolObservation {
+  request_id: string;
+  sequence: number;
+  tool_name: string;
+  transport: string | null;
+  completed: boolean;
+  business_success: boolean | null;
+  result_code: string | null;
+  elapsed_ms: number;
+  error_type: string | null;
+}
+
+export interface AgentRequestPage {
+  total: number;
+  page: number;
+  page_size: number;
+  items: AgentRequestRecord[];
+}
+
+export interface AgentRequestDetail {
+  request: AgentRequestRecord;
+  tool_calls: AgentToolObservation[];
+}
