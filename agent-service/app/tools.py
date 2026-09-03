@@ -219,7 +219,7 @@ def build_tools(
         arguments: dict,
         callable_,
         *,
-        transport: str | None = None,
+        transport: str | None = "rest",
     ):
         # 基础 Tool 统一完成：调用业务接口、规范化业务错误、写入执行轨迹。
         def execute() -> dict:
@@ -321,7 +321,12 @@ def build_tools(
             )
             return plan.model_dump(mode="json")
 
-        return execute_traced("plan_points_for_award", arguments, execute)
+        return execute_traced(
+            "plan_points_for_award",
+            arguments,
+            execute,
+            transport="rest",
+        )
 
     @tool(
         args_schema=PlanSavedGoalInput,
@@ -365,7 +370,12 @@ def build_tools(
             )
             return result.model_dump(mode="json")
 
-        return execute_traced("plan_points_for_saved_goal", arguments, execute)
+        return execute_traced(
+            "plan_points_for_saved_goal",
+            arguments,
+            execute,
+            transport="rest",
+        )
 
     @tool(
         args_schema=RecommendAwardsInput,
@@ -390,7 +400,12 @@ def build_tools(
             )
             return recommendation.model_dump(mode="json")
 
-        return execute_traced("recommend_awards", arguments, execute)
+        return execute_traced(
+            "recommend_awards",
+            arguments,
+            execute,
+            transport="rest",
+        )
 
     def exchange_context_error() -> dict | None:
         if current_thread_id() is not None:
@@ -437,7 +452,12 @@ def build_tools(
                 payload["data"].pop("confirmationId", None)
             return payload
 
-        return execute_traced("prepare_exchange", arguments, execute)
+        return execute_traced(
+            "prepare_exchange",
+            arguments,
+            execute,
+            transport="rest",
+        )
 
     @tool(
         description=(
@@ -565,7 +585,12 @@ def build_tools(
                 target_date=target_date,
             ).model_dump(mode="json")
 
-        return execute_traced("save_redemption_goal", arguments, execute)
+        return execute_traced(
+            "save_redemption_goal",
+            arguments,
+            execute,
+            transport="rest",
+        )
 
     @tool(
         args_schema=SaveUserPreferencesInput,

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable
 from dataclasses import dataclass
 from typing import Any, Callable, Sequence
 
-from langchain.agents.middleware import ModelRequest, ModelResponse, wrap_model_call
+from langchain.agents.middleware import AgentMiddleware, ModelRequest, ModelResponse
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.messages.utils import count_tokens_approximately
 
@@ -167,33 +168,65 @@ def _actual_usage(response: ModelResponse) -> tuple[int | None, int | None]:
     return input_tokens, output_tokens
 
 
-def build_context_window_middleware(
-    *,
-    policy: ContextWindowPolicy,
-    user_id: int,
-    confirmation_store: ConfirmationStoreBackend | None,
-):
-    """构建模型调用中间件；持久化历史不变，仅裁剪本次模型输入。"""
+class ContextWindowMiddleware(AgentMiddleware):
+    """同步与异步 Agent 共用同一套上下文裁剪规则。"""
 
-    @wrap_model_call(name="context_window")
-    def context_window(
+    def __init__(
+        self,
+        *,
+        policy: ContextWindowPolicy,
+        user_id: int,
+        confirmation_store: ConfirmationStoreBackend | None,
+    ) -> None:
+        self._policy = policy
+        self._user_id = user_id
+        self._confirmation_store = confirmation_store
+
+    def wrap_model_call(
+        self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelResponse:
-        pending_exchange = _pending_exchange_context(confirmation_store, user_id)
+        result, next_request = self._prepare(request)
+        response = handler(next_request)
+        self._log(result, response)
+        return response
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelResponse:
+        result, next_request = self._prepare(request)
+        response = await handler(next_request)
+        self._log(result, response)
+        return response
+
+    def _prepare(
+        self,
+        request: ModelRequest,
+    ) -> tuple[ContextWindowResult, ModelRequest]:
+        pending_exchange = _pending_exchange_context(
+            self._confirmation_store,
+            self._user_id,
+        )
         result = apply_context_window(
             messages=request.messages,
             system_message=request.system_message,
             tools=request.tools,
-            policy=policy,
+            policy=self._policy,
             pending_context=pending_exchange,
         )
-        response = handler(
-            request.override(
-                messages=result.messages,
-                system_message=result.system_message,
-            )
+        return result, request.override(
+            messages=result.messages,
+            system_message=result.system_message,
         )
+
+    def _log(
+        self,
+        result: ContextWindowResult,
+        response: ModelResponse,
+    ) -> None:
         actual_input_tokens, actual_output_tokens = _actual_usage(response)
         logger.info(
             "agent_context_window thread_id=%s max_tokens=%s "
@@ -202,7 +235,7 @@ def build_context_window_middleware(
             "trimmed_messages=%s pending_context=%s actual_input_tokens=%s "
             "actual_output_tokens=%s",
             current_thread_id() or "-",
-            policy.max_tokens,
+            self._policy.max_tokens,
             result.estimated_tokens_before,
             result.estimated_tokens_after,
             result.messages_before,
@@ -214,6 +247,17 @@ def build_context_window_middleware(
             actual_input_tokens if actual_input_tokens is not None else "-",
             actual_output_tokens if actual_output_tokens is not None else "-",
         )
-        return response
 
-    return context_window
+
+def build_context_window_middleware(
+    *,
+    policy: ContextWindowPolicy,
+    user_id: int,
+    confirmation_store: ConfirmationStoreBackend | None,
+):
+    """构建模型调用中间件；持久化历史不变，仅裁剪本次模型输入。"""
+    return ContextWindowMiddleware(
+        policy=policy,
+        user_id=user_id,
+        confirmation_store=confirmation_store,
+    )

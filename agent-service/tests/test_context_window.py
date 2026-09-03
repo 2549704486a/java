@@ -150,5 +150,36 @@ class ContextWindowTest(unittest.TestCase):
         self.assertIn("pending_context=True", logs.output[0])
         self.assertIn("actual_input_tokens=120", logs.output[0])
 
+
+class AsyncContextWindowTest(unittest.IsolatedAsyncioTestCase):
+    async def test_async_middleware_applies_same_context_window(self):
+        middleware = build_context_window_middleware(
+            policy=ContextWindowPolicy(max_tokens=256, max_turns=1),
+            user_id=10,
+            confirmation_store=None,
+        )
+        captured_requests = []
+
+        async def handler(request):
+            captured_requests.append(request)
+            return ModelResponse(result=[AIMessage(content="异步回答")])
+
+        request = ModelRequest(
+            model=object(),
+            messages=[
+                HumanMessage(content="旧问题"),
+                AIMessage(content="旧回答"),
+                HumanMessage(content="当前问题"),
+            ],
+            system_message=SystemMessage(content="系统提示"),
+            tools=[],
+        )
+
+        response = await middleware.awrap_model_call(request, handler)
+
+        self.assertEqual("异步回答", response.result[0].content)
+        self.assertEqual(1, len(captured_requests[0].messages))
+        self.assertEqual("当前问题", captured_requests[0].messages[0].content)
+
 if __name__ == "__main__":
     unittest.main()

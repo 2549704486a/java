@@ -8,7 +8,11 @@ from typing import Literal
 from langchain.tools import tool
 from pydantic import AwareDatetime, BaseModel, Field
 
-from app.operator.campaign_data import CampaignDataProvider, CampaignDataUnavailable
+from app.operator.campaign_data import (
+    CampaignDataProvider,
+    CampaignDataUnavailable,
+    HttpCampaignDataProvider,
+)
 from app.api_client import BusinessApiClient, BusinessApiError
 from app.knowledge.search import KnowledgeSearchError, KnowledgeSearchService
 from app.models import CampaignBrief
@@ -99,6 +103,9 @@ def build_operator_tools(
 
     _require_permissions(operator, CAMPAIGN_READ)
     registry = skill_registry or SkillRegistry()
+    data_provider_transport = (
+        "rest" if isinstance(data_provider, HttpCampaignDataProvider) else None
+    )
 
     @tool(args_schema=CampaignSnapshotInput)
     def get_campaign_planning_snapshot(target_segment_key: str) -> dict:
@@ -128,7 +135,12 @@ def build_operator_tools(
                 "retryable": False,
             }
 
-        return execute_traced("get_campaign_planning_snapshot", arguments, execute)
+        return execute_traced(
+            "get_campaign_planning_snapshot",
+            arguments,
+            execute,
+            transport=data_provider_transport,
+        )
 
     available_tools = [get_campaign_planning_snapshot]
 
@@ -173,7 +185,12 @@ def build_operator_tools(
                     ]
                 return result
 
-            return execute_traced("list_campaign_activities", arguments, execute)
+            return execute_traced(
+                "list_campaign_activities",
+                arguments,
+                execute,
+                transport="rest",
+            )
 
         available_tools.append(list_campaign_activities)
 
@@ -194,7 +211,12 @@ def build_operator_tools(
                 except BusinessApiError as exc:
                     return exc.as_envelope().model_dump(mode="json")
 
-            return execute_traced("get_campaign_funnel", arguments, execute)
+            return execute_traced(
+                "get_campaign_funnel",
+                arguments,
+                execute,
+                transport="rest",
+            )
 
         available_tools.append(get_campaign_funnel)
 
@@ -326,7 +348,12 @@ def build_operator_tools(
             except BusinessApiError as exc:
                 return exc.as_envelope().model_dump(mode="json")
 
-        return execute_traced("draft_campaign_plan", arguments, execute)
+        return execute_traced(
+            "draft_campaign_plan",
+            arguments,
+            execute,
+            transport="rest" if business_client is not None else data_provider_transport,
+        )
 
     available_tools.append(draft_campaign_plan)
     return available_tools

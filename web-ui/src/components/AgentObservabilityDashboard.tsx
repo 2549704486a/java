@@ -61,6 +61,10 @@ function businessLabel(value: boolean | null): string {
   return value ? "业务成功" : "业务拒绝";
 }
 
+function transportLabel(value: string | null): string {
+  return value ? value.toUpperCase() : "未标记";
+}
+
 export default function AgentObservabilityDashboard({ accessToken }: Props) {
   const [window, setWindow] = useState<ObservationWindow>("7d");
   const [agentType, setAgentType] = useState<AgentType | "ALL">("ALL");
@@ -296,7 +300,7 @@ export default function AgentObservabilityDashboard({ accessToken }: Props) {
                       {detail.tool_calls.map((tool) => (
                         <li key={tool.sequence}>
                           <i>{tool.sequence}</i>
-                          <div><strong>{tool.tool_name}</strong><small>{tool.transport ?? "本地"} · {tool.elapsed_ms} ms</small><span>{tool.completed ? businessLabel(tool.business_success) : `执行异常：${tool.error_type ?? "未知"}`}{tool.result_code ? ` · ${tool.result_code}` : ""}</span></div>
+                          <div><strong>{tool.tool_name}</strong><small>{transportLabel(tool.transport)} · {tool.elapsed_ms} ms</small><span>{tool.completed ? businessLabel(tool.business_success) : `执行异常：${tool.error_type ?? "未知"}`}{tool.result_code ? ` · ${tool.result_code}` : ""}</span></div>
                         </li>
                       ))}
                     </ol>
