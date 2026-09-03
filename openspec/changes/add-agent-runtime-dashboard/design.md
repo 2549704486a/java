@@ -110,27 +110,30 @@
 ```json
 {
   "window": "7d",
-  "generatedAt": "2026-09-03T02:20:00Z",
+  "started_at": "2026-08-27T02:20:00Z",
+  "ended_at": "2026-09-03T02:20:00Z",
   "requests": {
     "total": 120,
     "completed": 114,
     "failed": 6,
-    "completionRate": 0.95,
-    "averageElapsedMs": 1724,
-    "p95ElapsedMs": 3410
+    "completion": {"numerator": 114, "denominator": 120, "value": 0.95},
+    "latency": {"average_ms": 1724.0, "p95_ms": 3410}
   },
-  "modelUsage": {
-    "coveredRequests": 103,
-    "inputTokens": 80420,
-    "outputTokens": 12580
+  "model_usage": {
+    "model_call_count": 135,
+    "covered_requests": 103,
+    "coverage": {"numerator": 103, "denominator": 120, "value": 0.8583},
+    "input_tokens": 80420,
+    "output_tokens": 12580
   },
   "tools": {
-    "totalCalls": 86,
-    "completedCalls": 83,
-    "executionCompletionRate": 0.9651,
-    "businessResultKnownCalls": 80,
-    "businessSuccessfulCalls": 76,
-    "businessSuccessRate": 0.95
+    "total_calls": 86,
+    "completed_calls": 83,
+    "business_result_known_calls": 80,
+    "business_successful_calls": 76,
+    "execution_completion": {"numerator": 83, "denominator": 86, "value": 0.9651},
+    "business_success": {"numerator": 76, "denominator": 80, "value": 0.95},
+    "latency": {"average_ms": 68.2, "p95_ms": 145}
   }
 }
 ```
@@ -146,6 +149,8 @@
 - `GET /v1/operator/agent-observability/requests/{request_id}`
 
 三个接口先执行现有运营 Bearer 令牌认证，再要求 `agent:observe`。不存在的请求与无权访问使用不同的内部处理顺序：先鉴权、后查询，因此无权限调用者无法根据响应判断某个请求 ID是否存在。读取行为继续写入现有 HTTP 访问日志，形成最小审计证据。
+
+`campaign:read` 与 `agent:observe` 是两项独立权限。拥有活动读取权限不会自动获得 Agent 运行数据；本地默认配置显式列出 `agent:observe`，部署环境仍以 `OPERATOR_PERMISSIONS` 的实际配置为准。
 
 接口只返回观测 DTO，不返回数据库行的额外字段。最大窗口为 30 天，`page_size` 默认 20、上限 100。
 

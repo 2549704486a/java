@@ -71,6 +71,7 @@ class Settings:
             "campaign:review",
             "campaign:publish",
             "campaign:metric",
+            "agent:observe",
         }
     )
     exchange_confirmation_ttl_seconds: int = 120
@@ -253,7 +254,7 @@ class Settings:
                 item.strip()
                 for item in os.getenv(
                     "OPERATOR_PERMISSIONS",
-                    "campaign:read,campaign:draft,campaign:review,campaign:publish,campaign:metric",
+                    "campaign:read,campaign:draft,campaign:review,campaign:publish,campaign:metric,agent:observe",
                 ).split(",")
                 if item.strip()
             ),

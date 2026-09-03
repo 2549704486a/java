@@ -8,6 +8,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validato
 AgentType = Literal["USER", "OPERATOR"]
 AgentRunStatus = Literal["COMPLETED", "FAILED"]
 ObservationWindow = Literal["24h", "7d", "30d"]
+AGENT_OBSERVE_PERMISSION = "agent:observe"
 
 
 class AgentToolObservation(BaseModel):

@@ -80,7 +80,7 @@ GROWTH_MEMORY_MYSQL_PASSWORD=本地MySQL密码
 GROWTH_MEMORY_MYSQL_TABLE=agent_long_term_memory
 OPERATOR_ACCESS_TOKEN=独立于普通用户令牌的运营访问令牌
 OPERATOR_ID=local-operator
-OPERATOR_PERMISSIONS=campaign:read,campaign:draft,campaign:review,campaign:publish,campaign:metric
+OPERATOR_PERMISSIONS=campaign:read,campaign:draft,campaign:review,campaign:publish,campaign:metric,agent:observe
 ```
 
 运营接口不挂载到普通用户 Agent。配置完成后，可使用以下命令验证只读快照：

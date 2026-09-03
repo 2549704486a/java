@@ -1,4 +1,5 @@
 from app.observability.models import (
+    AGENT_OBSERVE_PERMISSION,
     AgentObservationSummary,
     AgentRequestDetail,
     AgentRequestObservation,
@@ -22,6 +23,7 @@ from app.observability.store import MysqlAgentObservationStore
 from app.observability.writer import AgentObservationWriter
 
 __all__ = [
+    "AGENT_OBSERVE_PERMISSION",
     "AgentObservationSummary",
     "AgentObservationContext",
     "AgentObservationWriter",

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, Request
+from fastapi import FastAPI, Header, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator
@@ -44,7 +44,16 @@ from app.observability.collector import (
     AgentObservationContext,
     capture_agent_observation,
 )
-from app.observability.models import AgentRunStatus
+from app.observability.models import (
+    AGENT_OBSERVE_PERMISSION,
+    AgentObservationSummary,
+    AgentRequestDetail,
+    AgentRequestPage,
+    AgentRunStatus,
+    AgentType,
+    ObservationWindow,
+)
+from app.observability.service import AgentObservabilityService
 from app.observability.store import MysqlAgentObservationStore
 from app.observability.writer import AgentObservationWriter
 from app.operator.tools import (
@@ -252,6 +261,7 @@ def create_app(
         authenticator = authenticator_factory()
         runtime = runtime_factory()
         application.state.agent_observation_store = None
+        application.state.agent_observability_service = None
         application.state.agent_observation_writer = None
         try:
             # MCP 模式必须在 ready 前完成 Tool 发现；失败会直接终止应用启动。
@@ -282,6 +292,9 @@ def create_app(
                     )
                     await observation_writer.start()
                     application.state.agent_observation_store = observation_store
+                    application.state.agent_observability_service = (
+                        AgentObservabilityService(observation_store)
+                    )
                     application.state.agent_observation_writer = observation_writer
                 except Exception as exc:
                     # 看板是旁路能力，初始化失败不能阻断 Agent 主业务启动。
@@ -712,6 +725,111 @@ def create_app(
             permissions=sorted(operator.permissions),
         )
 
+    @application.get(
+        "/v1/operator/agent-observability/summary",
+        response_model=AgentObservationSummary,
+        responses={
+            401: {"model": AuthenticationErrorResponse},
+            403: {"model": OperatorErrorResponse},
+            503: {"model": OperatorErrorResponse},
+        },
+    )
+    def agent_observation_summary(
+        request: Request,
+        window: ObservationWindow = "7d",
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, AGENT_OBSERVE_PERMISSION)
+        service = _agent_observability_service(request)
+        if service is None:
+            return _agent_observability_unavailable(request_id)
+        try:
+            result = service.summarize(window)
+        except Exception as exc:
+            return _agent_observability_query_failed(request_id, exc)
+        return JSONResponse(
+            content=result.model_dump(mode="json"),
+            headers={"X-Request-ID": request_id},
+        )
+
+    @application.get(
+        "/v1/operator/agent-observability/requests",
+        response_model=AgentRequestPage,
+        responses={
+            401: {"model": AuthenticationErrorResponse},
+            403: {"model": OperatorErrorResponse},
+            503: {"model": OperatorErrorResponse},
+        },
+    )
+    def agent_observation_requests(
+        request: Request,
+        window: ObservationWindow = "7d",
+        agent_type: AgentType | None = None,
+        status: AgentRunStatus | None = None,
+        page: int = Query(default=1, ge=1),
+        page_size: int = Query(default=20, ge=1, le=100),
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, AGENT_OBSERVE_PERMISSION)
+        service = _agent_observability_service(request)
+        if service is None:
+            return _agent_observability_unavailable(request_id)
+        try:
+            result = service.list_requests(
+                window=window,
+                page=page,
+                page_size=page_size,
+                agent_type=agent_type,
+                status=status,
+            )
+        except Exception as exc:
+            return _agent_observability_query_failed(request_id, exc)
+        return JSONResponse(
+            content=result.model_dump(mode="json"),
+            headers={"X-Request-ID": request_id},
+        )
+
+    @application.get(
+        "/v1/operator/agent-observability/requests/{observation_request_id}",
+        response_model=AgentRequestDetail,
+        responses={
+            401: {"model": AuthenticationErrorResponse},
+            403: {"model": OperatorErrorResponse},
+            404: {"model": OperatorErrorResponse},
+            503: {"model": OperatorErrorResponse},
+        },
+    )
+    def agent_observation_request_detail(
+        observation_request_id: str,
+        request: Request,
+        x_request_id: str | None = Header(default=None),
+        authorization: str | None = Header(default=None),
+    ):
+        request_id = normalize_request_id(x_request_id)
+        operator = authenticate_operator_request(request, authorization)
+        require_operator_permission(operator, AGENT_OBSERVE_PERMISSION)
+        if not REQUEST_ID_PATTERN.fullmatch(observation_request_id):
+            return _agent_observation_not_found(request_id)
+        service = _agent_observability_service(request)
+        if service is None:
+            return _agent_observability_unavailable(request_id)
+        try:
+            result = service.get_request(observation_request_id)
+        except Exception as exc:
+            return _agent_observability_query_failed(request_id, exc)
+        if result is None:
+            return _agent_observation_not_found(request_id)
+        return JSONResponse(
+            content=result.model_dump(mode="json"),
+            headers={"X-Request-ID": request_id},
+        )
+
     @application.post(
         "/v1/operator/chat",
         response_model=OperatorChatResponse,
@@ -1106,6 +1224,60 @@ def _submit_agent_observation(
             observation.request_id,
             exc.__class__.__name__,
         )
+
+
+def _agent_observability_service(
+    request: Request,
+) -> AgentObservabilityService | None:
+    return getattr(request.app.state, "agent_observability_service", None)
+
+
+def _agent_observability_unavailable(request_id: str) -> JSONResponse:
+    return _agent_observability_error(
+        request_id,
+        "AGENT_OBSERVABILITY_UNAVAILABLE",
+        "Agent 运行数据暂不可用",
+        503,
+    )
+
+
+def _agent_observability_query_failed(
+    request_id: str,
+    error: BaseException,
+) -> JSONResponse:
+    logger.warning(
+        "agent_observation_query_failed request_id=%s error_type=%s",
+        request_id,
+        error.__class__.__name__,
+    )
+    return _agent_observability_unavailable(request_id)
+
+
+def _agent_observation_not_found(request_id: str) -> JSONResponse:
+    return _agent_observability_error(
+        request_id,
+        "AGENT_OBSERVATION_NOT_FOUND",
+        "未找到对应的 Agent 请求记录",
+        404,
+    )
+
+
+def _agent_observability_error(
+    request_id: str,
+    code: str,
+    message: str,
+    status_code: int,
+) -> JSONResponse:
+    body = OperatorErrorResponse(
+        request_id=request_id,
+        code=code,
+        message=message,
+    )
+    return JSONResponse(
+        status_code=status_code,
+        content=body.model_dump(),
+        headers={"X-Request-ID": request_id},
+    )
 
 
 def authenticate_request(
