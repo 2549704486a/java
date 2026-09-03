@@ -26,6 +26,7 @@ from app.models import PendingExchangeData, ToolEnvelope
 from app.memory.mysql_store import MysqlGrowthMemoryStore
 from app.exchange.redis_store import RedisConfirmationStore
 from app.memory.redis_store import RedisGrowthMemoryStore
+from app.observability.collector import record_current_tool_traces
 from app.services.controlled_exchange import (
     ControlledExchangeService,
     explicit_exchange_action,
@@ -333,6 +334,7 @@ class AgentRuntime:
                         ),
                     )
             finally:
+                record_current_tool_traces(trace_session.snapshot())
                 logger.info(
                     "agent_tool_trace request_id=%s thread_id=%s events=%s",
                     request_id,

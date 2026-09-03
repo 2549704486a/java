@@ -6,7 +6,7 @@ import re
 import threading
 import uuid
 from collections.abc import Callable
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, nullcontext
 from pathlib import Path
 from typing import Any
 
@@ -40,6 +40,13 @@ from app.operator.auth import (
     operator_authenticator_from_settings,
 )
 from app.operator.agent import OperatorAgentRuntime
+from app.observability.collector import (
+    AgentObservationContext,
+    capture_agent_observation,
+)
+from app.observability.models import AgentRunStatus
+from app.observability.store import MysqlAgentObservationStore
+from app.observability.writer import AgentObservationWriter
 from app.operator.tools import (
     CAMPAIGN_DRAFT,
     CAMPAIGN_METRIC,
@@ -244,6 +251,8 @@ def create_app(
     async def lifespan(application: FastAPI):
         authenticator = authenticator_factory()
         runtime = runtime_factory()
+        application.state.agent_observation_store = None
+        application.state.agent_observation_writer = None
         try:
             # MCP 模式必须在 ready 前完成 Tool 发现；失败会直接终止应用启动。
             await runtime.initialize()
@@ -260,10 +269,43 @@ def create_app(
                 operator_agent_runtime_factory
             )
             application.state.operator_agent_runtime_lock = threading.Lock()
+            settings = getattr(runtime, "settings", None)
+            if settings is not None and settings.agent_observability_enabled:
+                try:
+                    observation_store = MysqlAgentObservationStore.from_settings(
+                        settings
+                    )
+                    observation_writer = AgentObservationWriter(
+                        observation_store,
+                        queue_capacity=settings.agent_observability_queue_capacity,
+                        retention_days=settings.agent_observability_retention_days,
+                    )
+                    await observation_writer.start()
+                    application.state.agent_observation_store = observation_store
+                    application.state.agent_observation_writer = observation_writer
+                except Exception as exc:
+                    # 看板是旁路能力，初始化失败不能阻断 Agent 主业务启动。
+                    logger.warning(
+                        "agent_observation_initialization_failed error_type=%s",
+                        exc.__class__.__name__,
+                    )
             logger.info("agent_http_started health=%s", runtime.health())
             yield
         finally:
             # 初始化失败发生在 yield 之前，也必须释放 Runtime 已装配的资源。
+            observation_writer = getattr(
+                application.state,
+                "agent_observation_writer",
+                None,
+            )
+            if observation_writer is not None:
+                try:
+                    await observation_writer.close()
+                except Exception as exc:
+                    logger.warning(
+                        "agent_observation_close_failed error_type=%s",
+                        exc.__class__.__name__,
+                    )
             operator_runtime = getattr(
                 application.state,
                 "operator_agent_runtime",
@@ -359,30 +401,51 @@ def create_app(
             user_id,
             len(payload.message),
         )
-        try:
-            answer, elapsed_ms = await request.app.state.runtime.answer(
-                user_id,
-                session_id,
-                payload.message,
-                request_id,
-            )
-        except Exception:
-            logger.exception(
-                "agent_request_failed request_id=%s user_id=%s",
-                request_id,
-                user_id,
-            )
-            error = ErrorResponse(
-                request_id=request_id,
-                session_id=session_id,
-                code="AGENT_SERVICE_UNAVAILABLE",
-                message="Agent 服务暂时不可用，请稍后重试",
-            )
-            return JSONResponse(
-                status_code=503,
-                content=error.model_dump(),
-                headers={"X-Request-ID": request_id},
-            )
+        writer = request.app.state.agent_observation_writer
+        scope = (
+            capture_agent_observation(request_id, "USER")
+            if writer is not None
+            else nullcontext(None)
+        )
+        with scope as observation:
+            try:
+                answer, elapsed_ms = await request.app.state.runtime.answer(
+                    user_id,
+                    session_id,
+                    payload.message,
+                    request_id,
+                )
+                response = ChatResponse(
+                    request_id=request_id,
+                    session_id=session_id,
+                    user_id=user_id,
+                    answer=answer,
+                    elapsed_ms=round(elapsed_ms, 2),
+                    pending_exchange=await asyncio.to_thread(
+                        request.app.state.runtime.pending_exchange,
+                        user_id,
+                        session_id,
+                    ),
+                )
+            except Exception as exc:
+                _submit_agent_observation(writer, observation, "FAILED", exc)
+                logger.exception(
+                    "agent_request_failed request_id=%s user_id=%s",
+                    request_id,
+                    user_id,
+                )
+                error = ErrorResponse(
+                    request_id=request_id,
+                    session_id=session_id,
+                    code="AGENT_SERVICE_UNAVAILABLE",
+                    message="Agent 服务暂时不可用，请稍后重试",
+                )
+                return JSONResponse(
+                    status_code=503,
+                    content=error.model_dump(),
+                    headers={"X-Request-ID": request_id},
+                )
+            _submit_agent_observation(writer, observation, "COMPLETED")
 
         logger.info(
             "agent_request_completed request_id=%s session_id=%s user_id=%s "
@@ -391,18 +454,6 @@ def create_app(
             session_id,
             user_id,
             elapsed_ms,
-        )
-        response = ChatResponse(
-            request_id=request_id,
-            session_id=session_id,
-            user_id=user_id,
-            answer=answer,
-            elapsed_ms=round(elapsed_ms, 2),
-            pending_exchange=await asyncio.to_thread(
-                request.app.state.runtime.pending_exchange,
-                user_id,
-                session_id,
-            ),
         )
         return JSONResponse(
             content=response.model_dump(mode="json", by_alias=True),
@@ -670,7 +721,7 @@ def create_app(
             503: {"model": ErrorResponse},
         },
     )
-    def operator_chat(
+    async def operator_chat(
         payload: ChatRequest,
         request: Request,
         x_request_id: str | None = Header(default=None),
@@ -687,37 +738,48 @@ def create_app(
             operator.operator_id,
             len(payload.message),
         )
-        try:
-            answer, elapsed_ms = get_operator_agent_runtime(request).answer(
-                operator=operator,
-                session_id=session_id,
-                message=payload.message,
-                request_id=request_id,
-            )
-        except Exception:
-            logger.exception(
-                "operator_agent_request_failed request_id=%s session_id=%s operator_id=%s",
-                request_id,
-                session_id,
-                operator.operator_id,
-            )
-            return JSONResponse(
-                status_code=503,
-                content=ErrorResponse(
+        writer = request.app.state.agent_observation_writer
+        scope = (
+            capture_agent_observation(request_id, "OPERATOR")
+            if writer is not None
+            else nullcontext(None)
+        )
+        with scope as observation:
+            try:
+                runtime = get_operator_agent_runtime(request)
+                answer, elapsed_ms = await asyncio.to_thread(
+                    runtime.answer,
+                    operator=operator,
+                    session_id=session_id,
+                    message=payload.message,
+                    request_id=request_id,
+                )
+                response = OperatorChatResponse(
                     request_id=request_id,
                     session_id=session_id,
-                    code="OPERATOR_AGENT_UNAVAILABLE",
-                    message="运营助手暂时不可用，请稍后再试",
-                ).model_dump(),
-                headers={"X-Request-ID": request_id},
-            )
-        response = OperatorChatResponse(
-            request_id=request_id,
-            session_id=session_id,
-            operator_id=operator.operator_id,
-            answer=answer,
-            elapsed_ms=elapsed_ms,
-        )
+                    operator_id=operator.operator_id,
+                    answer=answer,
+                    elapsed_ms=elapsed_ms,
+                )
+            except Exception as exc:
+                _submit_agent_observation(writer, observation, "FAILED", exc)
+                logger.exception(
+                    "operator_agent_request_failed request_id=%s session_id=%s operator_id=%s",
+                    request_id,
+                    session_id,
+                    operator.operator_id,
+                )
+                return JSONResponse(
+                    status_code=503,
+                    content=ErrorResponse(
+                        request_id=request_id,
+                        session_id=session_id,
+                        code="OPERATOR_AGENT_UNAVAILABLE",
+                        message="运营助手暂时不可用，请稍后再试",
+                    ).model_dump(),
+                    headers={"X-Request-ID": request_id},
+                )
+            _submit_agent_observation(writer, observation, "COMPLETED")
         return JSONResponse(
             content=response.model_dump(),
             headers={"X-Request-ID": request_id},
@@ -1025,6 +1087,25 @@ def normalize_request_id(candidate: str | None) -> str:
     if candidate and REQUEST_ID_PATTERN.fullmatch(candidate):
         return candidate
     return uuid.uuid4().hex
+
+
+def _submit_agent_observation(
+    writer: AgentObservationWriter | None,
+    observation: AgentObservationContext | None,
+    status: AgentRunStatus,
+    error: BaseException | None = None,
+) -> None:
+    if writer is None or observation is None:
+        return
+    try:
+        writer.submit(observation.finish(status, error=error))
+    except Exception as exc:
+        # 构造或提交观测快照也属于旁路逻辑，不能改变 HTTP 业务结果。
+        logger.warning(
+            "agent_observation_submission_failed request_id=%s error_type=%s",
+            observation.request_id,
+            exc.__class__.__name__,
+        )
 
 
 def authenticate_request(

@@ -187,6 +187,19 @@ class FakeRuntime:
     def pending_exchange(self, user_id: int, session_id: str):
         return self.pending
 
+
+class RecordingObservationWriter:
+    def __init__(self) -> None:
+        self.items = []
+
+    def submit(self, observation) -> bool:
+        self.items.append(observation)
+        return True
+
+    async def close(self) -> None:
+        return None
+
+
 class AgentWebTest(unittest.TestCase):
     def test_runtime_initialization_failure_prevents_application_readiness(self):
         runtime = FakeRuntime(
@@ -357,6 +370,35 @@ class AgentWebTest(unittest.TestCase):
             runtime.calls,
         )
         self.assertTrue(runtime.closed)
+
+    def test_chat_records_completed_and_failed_terminal_status(self):
+        success_runtime = FakeRuntime()
+        success_app = create_test_app(success_runtime)
+        success_writer = RecordingObservationWriter()
+        with TestClient(success_app) as client:
+            success_app.state.agent_observation_writer = success_writer
+            success = client.post(
+                "/v1/chat",
+                headers=auth_headers(request_id="observed-success"),
+                json={"message": "查询积分", "session_id": "observed-session"},
+            )
+
+        failed_runtime = FakeRuntime(should_fail=True)
+        failed_app = create_test_app(failed_runtime)
+        failed_writer = RecordingObservationWriter()
+        with TestClient(failed_app) as client:
+            failed_app.state.agent_observation_writer = failed_writer
+            failed = client.post(
+                "/v1/chat",
+                headers=auth_headers(request_id="observed-failed"),
+                json={"message": "查询积分", "session_id": "observed-session"},
+            )
+
+        self.assertEqual(200, success.status_code)
+        self.assertEqual("COMPLETED", success_writer.items[0].status)
+        self.assertEqual(503, failed.status_code)
+        self.assertEqual("FAILED", failed_writer.items[0].status)
+        self.assertEqual("RuntimeError", failed_writer.items[0].error_type)
 
     def test_rejects_invalid_request_before_runtime_call(self):
         runtime = FakeRuntime()

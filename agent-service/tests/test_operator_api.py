@@ -66,6 +66,18 @@ class FakeOperatorAgentRuntime:
         pass
 
 
+class RecordingObservationWriter:
+    def __init__(self) -> None:
+        self.items = []
+
+    def submit(self, observation) -> bool:
+        self.items.append(observation)
+        return True
+
+    async def close(self) -> None:
+        return None
+
+
 def snapshot() -> CampaignPlanningSnapshot:
     return CampaignPlanningSnapshot(
         snapshot_id="snapshot-001",
@@ -171,6 +183,29 @@ class OperatorApiTest(unittest.TestCase):
         self.assertEqual("campaign-session-01", chat.json()["session_id"])
         self.assertEqual(1, len(operator_runtime.calls))
         self.assertEqual("operator-chat-001", operator_runtime.calls[0]["request_id"])
+
+    def test_operator_chat_records_deterministic_no_tool_response(self):
+        app = create_operator_app(
+            frozenset({CAMPAIGN_READ}),
+            operator_agent_runtime=FakeOperatorAgentRuntime(),
+        )
+        writer = RecordingObservationWriter()
+
+        with TestClient(app) as client:
+            app.state.agent_observation_writer = writer
+            response = client.post(
+                "/v1/operator/chat",
+                headers={
+                    "Authorization": "Bearer operator-token",
+                    "X-Request-ID": "operator-observed-001",
+                },
+                json={"message": "当前不支持的确定性请求"},
+            )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("COMPLETED", writer.items[0].status)
+        self.assertEqual(0, writer.items[0].model_call_count)
+        self.assertEqual(0, writer.items[0].tool_call_count)
 
     def test_operator_knowledge_search_requires_operator_token(self):
         app = create_operator_app(

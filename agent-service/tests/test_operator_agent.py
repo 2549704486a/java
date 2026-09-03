@@ -12,6 +12,7 @@ from app.operator.agent import (
     run_operator_agent,
     select_operator_tools,
 )
+from app.observability.collector import capture_agent_observation
 from app.operator.auth import AuthenticatedOperator
 from app.operator.harness import (
     CUSTOM_ANALYTICS_BLOCKED_MESSAGE,
@@ -184,6 +185,38 @@ class OperatorAgentTest(unittest.TestCase):
         )
         self.assertEqual(0.96, decision.confidence)
         self.assertEqual("怎么触达用户？", runnable.messages[-1].content)
+
+    def test_operator_router_and_agent_share_observation_context(self):
+        class CallbackAwareRunnable:
+            def invoke(self, messages, config=None):
+                self.config = config
+                return {
+                    "intent": "KNOWLEDGE_QUERY",
+                    "capability": "GENERAL_KNOWLEDGE",
+                    "confidence": 0.9,
+                    "reason": "测试观测接线",
+                }
+
+        runnable = CallbackAwareRunnable()
+        with capture_agent_observation(
+            "request-observed-operator",
+            "OPERATOR",
+        ) as context:
+            OperatorIntentRouter(runnable).classify(
+                "查看活动历史",
+                "request-observed-operator",
+            )
+            run_operator_agent(
+                EvidenceAgent(),
+                "查看活动历史",
+                "operator:1:session:observed",
+                "request-observed-operator",
+            )
+            observation = context.finish("COMPLETED")
+
+        self.assertIs(context.model_usage_handler, runnable.config["callbacks"][0])
+        self.assertEqual(2, observation.tool_call_count)
+        self.assertEqual("list_campaign_activities", observation.tool_calls[0].tool_name)
 
     def test_fallback_only_treats_explicit_execution_as_action(self):
         self.assertEqual(

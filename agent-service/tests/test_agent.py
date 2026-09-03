@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 import unittest
+from types import SimpleNamespace
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from app.agent import ensure_knowledge_citations, run_agent
+from app.observability.collector import capture_agent_observation
+from app.trace import execute_traced
 
 
 class FakeAgent:
@@ -33,6 +36,58 @@ class RunAgentTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             "user:10:session:session-a",
             agent.config["configurable"]["thread_id"],
+        )
+
+    async def test_collects_model_usage_and_tool_trace_in_request_context(self):
+        class ObservedAgent:
+            async def ainvoke(self, payload, config):
+                callback = config["callbacks"][0]
+                callback.on_chat_model_start({}, [[]], run_id="model-run-1")
+                execute_traced(
+                    "get_user_points",
+                    {"user_id": 10},
+                    lambda: {"success": True, "code": "POINTS_FOUND"},
+                    transport="REST",
+                )
+                execute_traced(
+                    "check_exchange_eligibility",
+                    {"award_id": 6},
+                    lambda: {"success": False, "code": "INSUFFICIENT_POINTS"},
+                    transport="REST",
+                )
+                callback.on_llm_end(
+                    SimpleNamespace(
+                        generations=[],
+                        llm_output={
+                            "token_usage": {
+                                "prompt_tokens": 20,
+                                "completion_tokens": 8,
+                            }
+                        },
+                    ),
+                    run_id="model-run-1",
+                )
+                return {"messages": [AIMessage(content="当前积分为 900。")]}
+
+        with capture_agent_observation("request-observed-user", "USER") as context:
+            await run_agent(
+                ObservedAgent(),
+                "查询积分",
+                "user:10:session:session-observed",
+                "request-observed-user",
+            )
+            observation = context.finish("COMPLETED")
+
+        self.assertEqual(1, observation.model_call_count)
+        self.assertEqual(20, observation.input_tokens)
+        self.assertEqual(8, observation.output_tokens)
+        self.assertEqual("get_user_points", observation.tool_calls[0].tool_name)
+        self.assertTrue(observation.tool_calls[0].business_success)
+        self.assertTrue(observation.tool_calls[1].completed)
+        self.assertFalse(observation.tool_calls[1].business_success)
+        self.assertEqual(
+            "INSUFFICIENT_POINTS",
+            observation.tool_calls[1].result_code,
         )
 
     def test_appends_real_tool_citations_when_model_omits_them(self):

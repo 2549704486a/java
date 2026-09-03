@@ -10,6 +10,7 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field, model_validator
 
 from app.config import Settings
+from app.observability.collector import current_model_usage_handler
 
 
 logger = logging.getLogger(__name__)
@@ -121,12 +122,19 @@ class OperatorIntentRouter:
         started = time.perf_counter()
         fallback = False
         try:
-            raw_decision = self._runnable.invoke(
-                [
-                    SystemMessage(content=INTENT_CLASSIFIER_PROMPT),
-                    HumanMessage(content=message),
-                ]
-            )
+            messages = [
+                SystemMessage(content=INTENT_CLASSIFIER_PROMPT),
+                HumanMessage(content=message),
+            ]
+            usage_handler = current_model_usage_handler()
+            if usage_handler is None:
+                raw_decision = self._runnable.invoke(messages)
+            else:
+                # 意图识别也是本次运营请求的一次模型调用，必须纳入同一口径。
+                raw_decision = self._runnable.invoke(
+                    messages,
+                    config={"callbacks": [usage_handler]},
+                )
             decision = OperatorIntentDecision.model_validate(raw_decision)
         except Exception as exc:
             fallback = True

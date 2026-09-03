@@ -14,6 +14,10 @@ from app.config import Settings
 from app.context_window import ContextWindowPolicy, build_context_window_middleware
 from app.execution_context import bind_execution_context
 from app.memory.store import GrowthMemoryStoreBackend
+from app.observability.collector import (
+    current_model_usage_handler,
+    record_current_tool_traces,
+)
 from app.knowledge.search import KnowledgeSearchService
 from app.prompt import build_system_prompt
 from app.skills.registry import SkillRegistry
@@ -188,6 +192,10 @@ async def run_agent(
     request_id: str | None = None,
 ) -> str:
     config = {"recursion_limit": 12}
+    usage_handler = current_model_usage_handler()
+    if usage_handler is not None:
+        # 同一个回调覆盖本次 invoke 内可能发生的多轮模型调用。
+        config["callbacks"] = [usage_handler]
     if thread_id is not None:
         config["configurable"] = {"thread_id": thread_id}
     correlation_id = request_id or thread_id or "cli"
@@ -202,6 +210,7 @@ async def run_agent(
             )
         finally:
             # 即使模型或工具抛出异常，也保留已经发生的调用，便于还原失败现场。
+            record_current_tool_traces(trace_session.snapshot())
             logger.info(
                 "agent_tool_trace request_id=%s thread_id=%s events=%s",
                 request_id or "-",

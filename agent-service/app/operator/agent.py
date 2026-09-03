@@ -24,6 +24,10 @@ from app.operator.intent import (
     OperatorTaskSpec,
 )
 from app.operator.harness import OperatorHarness
+from app.observability.collector import (
+    current_model_usage_handler,
+    record_current_tool_traces,
+)
 from app.operator.tools import build_operator_tools
 from app.skills.loader import OPERATOR_SKILL_NAMES
 from app.skills.registry import SkillRegistry
@@ -190,16 +194,21 @@ def run_operator_agent(
     task_spec: OperatorTaskSpec | None = None,
     harness: OperatorHarness | None = None,
 ) -> str:
+    config = {
+        "recursion_limit": 12,
+        "configurable": {"thread_id": thread_id},
+    }
+    usage_handler = current_model_usage_handler()
+    if usage_handler is not None:
+        config["callbacks"] = [usage_handler]
     with capture_tool_trace(request_id) as trace_session:
         try:
             result = agent.invoke(
                 {"messages": [{"role": "user", "content": message}]},
-                config={
-                    "recursion_limit": 12,
-                    "configurable": {"thread_id": thread_id},
-                },
+                config=config,
             )
         finally:
+            record_current_tool_traces(trace_session.snapshot())
             logger.info(
                 "operator_agent_tool_trace request_id=%s thread_id=%s events=%s",
                 request_id,
