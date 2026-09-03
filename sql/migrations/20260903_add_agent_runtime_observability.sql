@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `agent_tool_observation` (
   `tool_name` varchar(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   `transport` varchar(32) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
   `completed` tinyint(1) NOT NULL,
-  `business_success` tinyint(1) NOT NULL,
+  `business_success` tinyint(1) DEFAULT NULL COMMENT 'NULL 表示该 Tool 没有可判断的业务成功语义',
   `result_code` varchar(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
   `elapsed_ms` bigint unsigned NOT NULL,
   `error_type` varchar(128) DEFAULT NULL COMMENT '脱敏后的错误类型',

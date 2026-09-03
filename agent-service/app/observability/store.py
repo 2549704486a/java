@@ -319,7 +319,11 @@ class MysqlAgentObservationStore:
             tool_name=row["tool_name"],
             transport=row["transport"],
             completed=bool(row["completed"]),
-            business_success=bool(row["business_success"]),
+            business_success=(
+                bool(row["business_success"])
+                if row["business_success"] is not None
+                else None
+            ),
             result_code=row["result_code"],
             elapsed_ms=int(row["elapsed_ms"]),
             error_type=row["error_type"],

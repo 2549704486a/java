@@ -113,8 +113,16 @@ class AgentObservabilityServiceTest(unittest.TestCase):
                 sequence=1,
                 tool_name="list_awards",
                 completed=False,
-                business_success=False,
+                business_success=None,
                 elapsed_ms=30,
+            ),
+            AgentToolObservation(
+                request_id="req-3",
+                sequence=1,
+                tool_name="load_skill",
+                completed=True,
+                business_success=None,
+                elapsed_ms=40,
             ),
         ]
 
@@ -131,7 +139,7 @@ class AgentObservabilityServiceTest(unittest.TestCase):
         self.assertEqual(1900, summary.requests.latency.p95_ms)
         self.assertEqual(19, summary.model_usage.covered_requests)
         self.assertEqual(190, summary.model_usage.input_tokens)
-        self.assertEqual((2, 3), (
+        self.assertEqual((3, 4), (
             summary.tools.execution_completion.numerator,
             summary.tools.execution_completion.denominator,
         ))
@@ -140,7 +148,8 @@ class AgentObservabilityServiceTest(unittest.TestCase):
             summary.tools.business_success.denominator,
             summary.tools.business_success.value,
         ))
-        self.assertEqual(2, len(summary.tools_by_name))
+        self.assertEqual(2, summary.tools.business_result_known_calls)
+        self.assertEqual(3, len(summary.tools_by_name))
 
     def test_list_validation_rejects_unbounded_page(self):
         service = AgentObservabilityService(StubObservationStore())

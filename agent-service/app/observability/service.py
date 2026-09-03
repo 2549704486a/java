@@ -156,14 +156,18 @@ def _tool_metric(
     tool_name: str | None = None,
 ) -> ToolMetric:
     completed = [item for item in items if item.completed]
-    business_successful = sum(item.business_success for item in completed)
+    business_known = [
+        item for item in completed if item.business_success is not None
+    ]
+    business_successful = sum(item.business_success is True for item in business_known)
     return ToolMetric(
         tool_name=tool_name,
         total_calls=len(items),
         completed_calls=len(completed),
+        business_result_known_calls=len(business_known),
         business_successful_calls=business_successful,
         execution_completion=_ratio(len(completed), len(items)),
-        business_success=_ratio(business_successful, len(completed)),
+        business_success=_ratio(business_successful, len(business_known)),
         latency=_latency([item.elapsed_ms for item in items]),
     )
 

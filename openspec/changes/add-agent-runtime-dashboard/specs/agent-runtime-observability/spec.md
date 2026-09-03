@@ -45,7 +45,7 @@
 - **THEN** 看板显示“暂无用量数据”或等价表达，不将其显示为 `0`
 
 ### Requirement: 保留有明确语义的 Tool 轨迹
-系统 SHALL 按调用顺序记录每次 Tool 调用的 Tool 名称、传输方式、耗时、是否执行完成、业务结果、结果码和可归类错误类型。系统 SHALL 分别计算 Tool 执行完成率与业务成功率，不得将两者合并为一个含义模糊的“成功率”。
+系统 SHALL 按调用顺序记录每次 Tool 调用的 Tool 名称、传输方式、耗时、是否执行完成、可选业务结果、结果码和可归类错误类型。没有统一业务状态的 Tool SHALL 将业务结果记录为未知，不得伪造成业务失败。系统 SHALL 分别计算 Tool 执行完成率与业务成功率，不得将两者合并为一个含义模糊的“成功率”。
 
 #### Scenario: Tool 完成但业务拒绝
 - **WHEN** Tool 正常完成调用但返回库存不足、条件不满足或其他业务失败
@@ -57,10 +57,15 @@
 - **THEN** 轨迹显示 `completed=false`
 - **THEN** 轨迹只暴露可归类错误类型，不暴露异常正文和调用参数
 
+#### Scenario: Tool 完成但没有业务状态
+- **WHEN** Tool 正常完成但返回结果没有可解释的业务成功字段
+- **THEN** 轨迹显示该 Tool 已执行完成且业务结果未知
+- **THEN** 该调用不进入 Tool 业务成功率的分子或分母
+
 ### Requirement: 提供口径固定的运行汇总
 系统 SHALL 支持 `24h`、`7d` 和 `30d` 三个固定时间窗口，并按请求开始时间统计请求总数、完成数、失败数、完成率、平均端到端耗时、P95 端到端耗时、Token 汇总及覆盖请求数、Tool 调用汇总和时间趋势。
 
-完成率 SHALL 使用 `COMPLETED 请求数 / 请求总数`；Tool 执行完成率 SHALL 使用 `completed=true 的调用数 / Tool 调用总数`；Tool 业务成功率 SHALL 使用 `business_success=true 的调用数 / completed=true 的调用数`。P95 SHALL 使用按耗时升序排列后的最近秩方法计算。所有比率响应 SHALL 同时返回分子和分母。
+完成率 SHALL 使用 `COMPLETED 请求数 / 请求总数`；Tool 执行完成率 SHALL 使用 `completed=true 的调用数 / Tool 调用总数`；Tool 业务成功率 SHALL 使用 `business_success=true 的调用数 / completed=true 且业务结果已知的调用数`。P95 SHALL 使用按耗时升序排列后的最近秩方法计算。所有比率响应 SHALL 同时返回分子和分母。
 
 #### Scenario: 查询最近七天汇总
 - **WHEN** 有权限的运营人员选择 `7d`
@@ -129,4 +134,3 @@
 #### Scenario: 数据超过留存期
 - **WHEN** 请求摘要和关联 Tool 轨迹超过配置的留存天数
 - **THEN** 系统在清理周期内删除请求摘要及其关联 Tool 轨迹
-

@@ -33,7 +33,7 @@
 | 表 | 作用 | 关键字段 |
 | --- | --- | --- |
 | `agent_request_observation` | 一次 Agent 请求的终态摘要 | `request_id`、`agent_type`、`started_at`、`completed_at`、`status`、`elapsed_ms`、`model_call_count`、`input_tokens`、`output_tokens`、`tool_call_count`、`error_type` |
-| `agent_tool_observation` | 请求内每次 Tool 调用的摘要 | `request_id`、`sequence`、`tool_name`、`transport`、`completed`、`business_success`、`result_code`、`elapsed_ms`、`error_type` |
+| `agent_tool_observation` | 请求内每次 Tool 调用的摘要 | `request_id`、`sequence`、`tool_name`、`transport`、`completed`、可空的 `business_success`、`result_code`、`elapsed_ms`、`error_type` |
 
 `request_id` 是请求表主键，`request_id + sequence` 是 Tool 表唯一键。一次请求及其 Tool 轨迹在同一事务中幂等写入；Tool 表通过外键随请求记录一起清理。时间统一以 UTC 写入，API 返回带时区时间，浏览器按本地时区显示。
 
@@ -61,11 +61,11 @@
 {
   "requestId": "req-20260903-00017",
   "sequence": 1,
-  "toolName": "get_campaign_funnel",
-  "transport": "REST",
+  "toolName": "load_skill",
+  "transport": null,
   "completed": true,
-  "businessSuccess": true,
-  "resultCode": "CAMPAIGN_FUNNEL_READY",
+  "businessSuccess": null,
+  "resultCode": null,
   "elapsedMs": 74,
   "errorType": null
 }
@@ -128,13 +128,14 @@
     "totalCalls": 86,
     "completedCalls": 83,
     "executionCompletionRate": 0.9651,
+    "businessResultKnownCalls": 80,
     "businessSuccessfulCalls": 76,
-    "businessSuccessRate": 0.9157
+    "businessSuccessRate": 0.95
   }
 }
 ```
 
-当分母为零时，比率和 P95 返回 `null`，而不是 `0`。趋势在 `24h` 使用小时桶，在 `7d` 和 `30d` 使用日桶；响应同时返回区间起止时间，前端不猜测统计边界。
+当分母为零时，比率和 P95 返回 `null`，而不是 `0`。没有统一业务状态的已完成 Tool 不进入业务成功率的分子或分母。趋势在 `24h` 使用小时桶，在 `7d` 和 `30d` 使用日桶；响应同时返回区间起止时间，前端不猜测统计边界。
 
 ### 5. 三个只读接口共用专用权限
 
@@ -186,4 +187,3 @@ Agent 数据视图包含：
 3. 开启观测采集，执行一条用户请求和一条运营请求，核对请求记录、Tool 顺序及 Token 缺失语义。
 4. 部署前端并给目标运营身份增加 `agent:observe`，验证汇总、筛选和下钻。
 5. 观察写入告警和接口耗时后完成验收；如异常，关闭开关并按上述回滚边界处理。
-

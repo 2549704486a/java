@@ -20,7 +20,7 @@ class AgentToolObservation(BaseModel):
     tool_name: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9_.:-]+$")
     transport: str | None = Field(default=None, max_length=32)
     completed: bool
-    business_success: bool
+    business_success: bool | None
     result_code: str | None = Field(default=None, max_length=64)
     elapsed_ms: int = Field(ge=0)
     error_type: str | None = Field(default=None, max_length=128)
@@ -126,6 +126,7 @@ class ToolMetric(BaseModel):
     tool_name: str | None = None
     total_calls: int = Field(ge=0)
     completed_calls: int = Field(ge=0)
+    business_result_known_calls: int = Field(ge=0)
     business_successful_calls: int = Field(ge=0)
     execution_completion: RatioMetric
     business_success: RatioMetric
