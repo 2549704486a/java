@@ -89,7 +89,7 @@ class WebLimits:
     timeout_seconds: float = 12.0
     max_redirects: int = 4
     max_response_bytes: int = 2_000_000
-    max_text_chars: int = 200_000
+    max_text_chars: int = 30_000
 
 
 AddressResolver = Callable[[str, int], Iterable[str]]
@@ -392,15 +392,17 @@ def build_source_evidence(
     *,
     source_id: str,
     discovered_by: SourceDiscoveryMethod,
-    excerpt: str,
+    excerpt: str | list[str],
+    excerpt_ids: list[str] | None = None,
     retrieved_at: datetime | None = None,
 ) -> SourceEvidence:
     if not isinstance(page, FetchedPage):
         raise TypeError("只有实际读取成功的页面才能生成来源证据")
-    normalized_excerpt = " ".join(excerpt.split())
-    if not normalized_excerpt:
+    raw_excerpts = [excerpt] if isinstance(excerpt, str) else excerpt
+    normalized_excerpts = [" ".join(item.split()) for item in raw_excerpts]
+    if not normalized_excerpts or any(not item for item in normalized_excerpts):
         raise ValueError("证据摘录不能为空")
-    if normalized_excerpt.casefold() not in page.text.casefold():
+    if any(item.casefold() not in page.text.casefold() for item in normalized_excerpts):
         raise ValueError("证据摘录必须来自实际读取的页面正文")
     return SourceEvidence(
         source_id=source_id,
@@ -409,7 +411,8 @@ def build_source_evidence(
         publisher=page.publisher,
         retrieved_at=retrieved_at or datetime.now(timezone.utc),
         discovered_by=discovered_by,
-        excerpt=normalized_excerpt,
+        excerpt="\n...\n".join(normalized_excerpts),
+        excerpt_ids=excerpt_ids or [],
         read_status=SourceReadStatus.READABLE,
     )
 
@@ -444,10 +447,11 @@ def as_untrusted_source_material(
     page: FetchedPage,
     *,
     source_id: str,
+    text: str | None = None,
 ) -> UntrustedSourceMaterial:
     return UntrustedSourceMaterial(
         source_id=source_id,
         url=page.final_url,
         title=page.title,
-        text=page.text,
+        text=page.text if text is None else text,
     )

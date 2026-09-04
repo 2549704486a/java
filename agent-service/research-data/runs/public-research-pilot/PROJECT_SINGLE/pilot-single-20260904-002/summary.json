@@ -1,0 +1,31 @@
+{
+  "experiment_id": "public-research-pilot",
+  "run_id": "pilot-single-20260904-002",
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "run_kind": "PILOT",
+  "arm": "PROJECT_SINGLE",
+  "status": "COMPLETED",
+  "started_at": "2026-09-04T06:29:31.912472Z",
+  "completed_at": "2026-09-04T06:30:12.725959Z",
+  "stages": [
+    {
+      "stage": "single-research-agent",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T06:29:31.912472Z",
+      "completed_at": "2026-09-04T06:30:12.725959Z",
+      "model_call_count": 6,
+      "tool_call_count": 13,
+      "input_tokens": 56049,
+      "output_tokens": 2573,
+      "retry_count": 0,
+      "output_candidate_ids": [
+        "award-jd-jingdou",
+        "campaign-capitaland-tourist",
+        "segment-rfm-template"
+      ],
+      "error_category": null
+    }
+  ],
+  "failure_stage": null
+}

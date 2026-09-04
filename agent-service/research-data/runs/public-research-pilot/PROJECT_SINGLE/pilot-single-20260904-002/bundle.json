@@ -1,0 +1,180 @@
+{
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "sources": [
+    {
+      "source_id": "source-page-003",
+      "url": "https://blog.csdn.net/qq_35164554/article/details/123760839",
+      "title": null,
+      "publisher": null,
+      "published_at": null,
+      "retrieved_at": "2026-09-04T06:29:51.763803Z",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": null,
+      "read_status": "NETWORK_ERROR",
+      "error_category": "HTTP_ERROR"
+    },
+    {
+      "source_id": "source-page-004",
+      "url": "https://blog.csdn.net/zhaolinsen/article/details/135377568",
+      "title": null,
+      "publisher": null,
+      "published_at": null,
+      "retrieved_at": "2026-09-04T06:29:54.628812Z",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": null,
+      "read_status": "NETWORK_ERROR",
+      "error_category": "HTTP_ERROR"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "award-jd-jingdou",
+      "brief_id": "pilot-mixed",
+      "brief_version": "v1",
+      "asset_type": "AWARD_CANDIDATE",
+      "name": "京东京豆（积分抵扣权益）",
+      "summary": "京东官方帮助中心公开的京豆积分体系，明确京豆与现金抵扣比例为100:1，按京享值等级设定实物订单最高抵扣比例（50%-90%），每单使用京豆需大于500个，可用于支付订单、兑换优惠券及生活福利。",
+      "project_fit": "可作为积分激励项目中'积分抵扣现金'类权益的公开参照案例。其'按会员等级设定不同抵扣上限'的分层设计、'每单最低使用门槛'等机制可被借鉴。但本项目若采用类似京豆抵扣，需内部确认自身积分与现金的汇率、会员等级划分及抵扣上限等参数，外部案例不构成本项目已发生事实。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "京豆与现金抵扣的比例为100:1，即100京豆可抵扣1元。",
+          "source_ids": [
+            "source-page-001"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "京东官方帮助中心页面直接写明'京豆和现金抵扣的比例为100:1'。"
+        },
+        {
+          "text": "京豆支付比例根据用户京享值等级不同而不同，实物订单最高抵扣比例从50%（京享值0-5999）到90%（京享值9000以上）不等。",
+          "source_ids": [
+            "source-page-001"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "京东官方帮助中心页面列出京享值阶梯与实物订单用豆最高抵扣比例的对应表。"
+        },
+        {
+          "text": "用户每单可使用的京豆数量需大于500个，账户内京豆少于500个则不可在订单页面使用京豆支付。",
+          "source_ids": [
+            "source-page-001"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "京东官方帮助中心页面明确'用户每单可使用的京豆数量需大于500个'。"
+        },
+        {
+          "text": "京豆可用于支付京东网站订单、兑换指定优惠券及生活福利等权益。",
+          "source_ids": [
+            "source-page-006"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "京东官方帮助中心页面明确京豆用途。"
+        },
+        {
+          "text": "京豆支付功能仅限实名认证用户使用。",
+          "source_ids": [
+            "source-page-001"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "京东官方帮助中心页面明确'京豆支付功能仅限实名认证用户使用'。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "campaign-capitaland-tourist",
+      "brief_id": "pilot-mixed",
+      "brief_version": "v1",
+      "asset_type": "CAMPAIGN_PATTERN",
+      "name": "凯德购物商场游客积分兑换活动机制",
+      "summary": "凯德集团官网公开的游客专属促销活动，通过微信支付消费累计积分（每消费1元人民币累计1积分），累计400积分可兑换60元人民币代金券，每月限量100张先到先得；另有Mastercard消费满额兑换eCapitaVoucher的机制。",
+      "project_fit": "可作为'消费积分-兑换代金券'类会员活动机制的公开参照。其'消费即积分、积分兑换券、限量先到先得'的链路清晰，且区分了自动发放（绑定支付方式）与人工核销（出示收据）两种兑换路径。本项目若借鉴此机制，需内部确认积分汇率、兑换门槛、每月限量额度及核销方式等参数。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "微信支付用户在凯德购物商场每消费1元人民币即可累计1积分。",
+          "source_ids": [
+            "source-page-002"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "凯德官网条款页面写明'微信支付用户在微信支付新加坡区域指定线下商家凯德购物商场里每消费1元人民币，即可累计1积分'。"
+        },
+        {
+          "text": "用户累计400积分可兑换新加坡凯德购物商场60元人民币代金券，每月限量100张，先到先得。",
+          "source_ids": [
+            "source-page-002"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "凯德官网条款页面写明'用户累计400积分，可兑换新加坡凯德购物商场60元人民币代金券'及'每个月限量100张，先到先得'。"
+        },
+        {
+          "text": "绑定Mastercard的CapitaStar会员在消费满额后，奖励可自动发放至其CapitaStar应用程序，最多可能需7个工作日到账。",
+          "source_ids": [
+            "source-page-002"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "凯德官网条款页面写明'若为已绑定 Mastercard 的 CapitaStar 会员，奖励将于使用 Mastercard 完成符合条件的交易后自动发放至其 CapitaStar 应用程序'。"
+        },
+        {
+          "text": "未绑定支付方式的游客可通过出示当日原始消费收据、签账单及原始信用卡在礼宾服务台完成奖励兑换。",
+          "source_ids": [
+            "source-page-002"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "凯德官网条款页面写明可'出示当日的原始消费收据、签账单及原始 Mastercard 信用卡或借记卡，完成奖励兑换'。"
+        },
+        {
+          "text": "该促销活动仅限非新加坡居民的外国游客参与，需出示护照原件登记。",
+          "source_ids": [
+            "source-page-002"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "凯德官网条款页面写明'符合资格的游客必须出示其护照原件'且'本促销活动专为非新加坡居民的外国游客而设'。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "segment-rfm-template",
+      "brief_id": "pilot-mixed",
+      "brief_version": "v1",
+      "asset_type": "SEGMENT_RULE_TEMPLATE",
+      "name": "RFM用户价值分层规则模板",
+      "summary": "GrowingIO客户数据平台公开的RFM标签能力文档，说明通过最近一次消费（Recency）、消费频次（Frequency）、消费金额（Monetary）三个指标计算用户价值，可将用户分为从一般挽留到高价值不等的8个层级，用于精准分群营销。",
+      "project_fit": "可作为积分激励项目中'高价值客群圈选'的规则模板。RFM需要内部事件字段：最近一次消费时间、统计周期内消费次数、统计周期内消费金额。GrowingIO文档说明业务人员可自定义R/F/M的等式和层级名称。本项目若采用RFM分层，需内部确认统计周期、阈值设定方式（如均值或分位数）及层级命名等参数。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "RFM模型通过对最近一次消费（Recency）、消费频次（Frequency）、消费金额（Monetary）三个指标的计算，可将用户分为从一般挽留到高价值不等的8个层级。",
+          "source_ids": [
+            "source-page-005"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "GrowingIO官方博客页面明确描述RFM模型的三要素及8个层级划分。"
+        },
+        {
+          "text": "RFM标签设置需要先对R、F、M三个指标进行定义，后台才能计算平均值，业务人员可自定义R、F、M的等式和层级名称。",
+          "source_ids": [
+            "source-page-005"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "GrowingIO官方博客页面写明'用户需要先对R、F、M三个指标进行定义，这样后台才能计算平均值'及'业务人员可根据实际需求设置R、F、M的等式和更改层级名称'。"
+        },
+        {
+          "text": "RFM模型需要基于客户的交易、账单等维度数据来计算。",
+          "source_ids": [
+            "source-page-005"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "GrowingIO官方博客页面写明'通过收集并计算客户的交易、账单等维度的数据'。"
+        },
+        {
+          "text": "RFM标签从打标签到圈群整个过程不到5分钟即可完成，无需分析师和开发人员写SQL调取数据。",
+          "source_ids": [
+            "source-page-005"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "GrowingIO官方博客页面写明'从打标签到圈群，整个过程不到5分钟就能完成，完全不需要分析师和开发人员写SQL调取数据、搭建模型'。"
+        }
+      ]
+    }
+  ]
+}

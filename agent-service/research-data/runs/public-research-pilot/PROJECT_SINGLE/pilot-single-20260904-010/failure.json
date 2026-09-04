@@ -1,0 +1,13 @@
+{
+  "experiment_id": "public-research-pilot",
+  "run_id": "pilot-single-20260904-010",
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "arm": "PROJECT_SINGLE",
+  "status": "FAILED",
+  "failure_stage": "PROJECT_SINGLE_RUN",
+  "error_category": "GraphRecursionError",
+  "message": "Recursion limit of 30 reached without hitting a stop condition. You can increase the limit by setting the `recursion_limit` config key.\nFor troubleshooting, visit: https://docs.langchain.com/oss/python/langgraph/errors/GRAPH_RECURSION_LIMIT",
+  "started_at": "2026-09-04T07:41:21.494576+00:00",
+  "completed_at": "2026-09-04T07:41:44.548867+00:00"
+}

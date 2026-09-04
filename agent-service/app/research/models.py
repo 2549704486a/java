@@ -147,7 +147,8 @@ class SourceEvidence(StrictModel):
     published_at: datetime | None = None
     retrieved_at: AwareDatetime
     discovered_by: SourceDiscoveryMethod
-    excerpt: str | None = Field(default=None, max_length=1200)
+    excerpt: str | None = Field(default=None, max_length=5000)
+    excerpt_ids: list[str] = Field(default_factory=list, max_length=4)
     read_status: SourceReadStatus
     error_category: str | None = Field(default=None, max_length=80)
 
@@ -158,8 +159,15 @@ class SourceEvidence(StrictModel):
                 raise ValueError("可读来源必须包含标题、发布者和证据摘录")
             if self.error_category is not None:
                 raise ValueError("可读来源不能包含错误类别")
-        elif self.excerpt is not None:
-            raise ValueError("读取失败的来源不能携带事实证据摘录")
+        elif self.excerpt is not None or self.excerpt_ids:
+            raise ValueError("读取失败的来源不能携带事实证据摘录或片段 ID")
+        if len(self.excerpt_ids) != len(set(self.excerpt_ids)):
+            raise ValueError("来源证据片段 ID 不能重复")
+        if any(
+            not excerpt_id.startswith(f"{self.source_id}-excerpt-")
+            for excerpt_id in self.excerpt_ids
+        ):
+            raise ValueError("证据片段 ID 必须属于当前来源")
         return self
 
 
@@ -200,6 +208,52 @@ class CandidateBundle(StrictModel):
     brief_version: str = Field(pattern=r"^v[1-9][0-9]*$")
     sources: list[SourceEvidence] = Field(default_factory=list, max_length=30)
     candidates: list[CandidateAsset] = Field(default_factory=list, max_length=30)
+
+
+class SourceExcerptSelection(StrictModel):
+    source_id: str = Field(pattern=r"^source-[a-z0-9-]{3,64}$")
+    excerpt_id: str = Field(
+        pattern=r"^source-[a-z0-9-]{3,64}-excerpt-[0-9]{3}$"
+    )
+
+    @model_validator(mode="after")
+    def validate_excerpt_source(self) -> "SourceExcerptSelection":
+        if not self.excerpt_id.startswith(f"{self.source_id}-excerpt-"):
+            raise ValueError("证据片段 ID 必须属于所选来源")
+        return self
+
+
+class ResearchAgentOutput(StrictModel):
+    brief_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
+    brief_version: str = Field(pattern=r"^v[1-9][0-9]*$")
+    source_selections: list[SourceExcerptSelection] = Field(max_length=30)
+    candidates: list[CandidateAsset] = Field(default_factory=list, max_length=30)
+
+    @model_validator(mode="after")
+    def validate_unique_source_selections(self) -> "ResearchAgentOutput":
+        selection_keys = [
+            (selection.source_id, selection.excerpt_id)
+            for selection in self.source_selections
+        ]
+        if len(selection_keys) != len(set(selection_keys)):
+            raise ValueError("同一证据片段只能选择一次")
+        source_ids = [selection.source_id for selection in self.source_selections]
+        if any(source_ids.count(source_id) > 4 for source_id in set(source_ids)):
+            raise ValueError("同一来源最多选择四段短证据")
+        referenced_source_ids = {
+            source_id
+            for candidate in self.candidates
+            for claim in candidate.claims
+            for source_id in claim.source_ids
+        }
+        selected_source_ids = set(source_ids)
+        if not referenced_source_ids.issubset(selected_source_ids):
+            missing = sorted(referenced_source_ids - selected_source_ids)
+            raise ValueError(
+                "所有结论引用都必须提供来源摘录；缺少摘录："
+                + ", ".join(missing)
+            )
+        return self
 
 
 class StageObservation(StrictModel):

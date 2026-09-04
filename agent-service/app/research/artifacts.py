@@ -8,7 +8,7 @@ from typing import Any
 from pydantic import BaseModel
 
 
-_SAFE_COMPONENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]{1,95}$")
+_SAFE_COMPONENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{1,95}$")
 _SAFE_FILENAME = re.compile(r"^[a-z0-9][a-z0-9-]{1,63}\.json$")
 
 

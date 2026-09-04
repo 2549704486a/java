@@ -1,0 +1,13 @@
+{
+  "experiment_id": "public-research-pilot",
+  "run_id": "pilot-single-20260904-011",
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "arm": "PROJECT_SINGLE",
+  "status": "FAILED",
+  "failure_stage": "PROJECT_SINGLE_RUN",
+  "error_category": "StructuredOutputValidationError",
+  "message": "Failed to parse structured output for tool 'ResearchAgentOutput': Failed to parse data to ResearchAgentOutput: 1 validation error for ResearchAgentOutput\n  Value error, 同一来源只能选择一段最终证据摘录 [type=value_error, input_value={'brief_id': 'pilot-mixed...['source-page-003']}]}]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error.",
+  "started_at": "2026-09-04T07:55:21.448825+00:00",
+  "completed_at": "2026-09-04T07:55:49.935996+00:00"
+}

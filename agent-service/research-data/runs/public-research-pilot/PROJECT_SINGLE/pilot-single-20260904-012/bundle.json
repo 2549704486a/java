@@ -1,0 +1,176 @@
+{
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "sources": [
+    {
+      "source_id": "source-page-001",
+      "url": "https://www.mi.com/global/product/xiaomi-smart-band-9/specs/",
+      "title": "Xiaomi Smart Band 9 Specs",
+      "publisher": "www.mi.com",
+      "published_at": null,
+      "retrieved_at": "2026-09-04T08:01:29.753512Z",
+      "discovered_by": "BRIEF_URL",
+      "excerpt": "Xiaomi Smart Band 9 Specs Xiaomi Smart Band 9 Specs Overview Specs Dimensions 46.53 x 21.63 x 10.95 mm *Height, width and thickness dimensions exclude the strap and protrusions Weight: 15.8g (without strap) Band Strap Size: 135–210 mm Material: TPU Color: Midnight Black | Glacier Silver | Mystic Rose | Arctic Blue | Titan Gray Display 1.62-inch AMOLED Touch Display Resolution: 192 x 490 pixels Brightness: Up to 1200 nits, adjustable Battery Charging type: Magnetic charging Charging time: Approx. 1 hour Typical usage time: Up to 21 days Nominal Capacity: 233mAh Sensors Accelerometer sensor / Gyroscope sensor / Optical heart rate sensor / Ambient light sensor Specifications 5ATM water resistant App: Mi Fitness Motor: Linear motor Compatibility: Supports smartphones with Android 8.0 or iOS 12.0 and above Package contents Xiaomi Smart Band 9 / Magnetic charging cable / User manual",
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-page-002",
+      "url": "https://www.starbucks.com/rewards/terms/",
+      "title": "Starbucks® Rewards Terms of Use: Starbucks Coffee Company",
+      "publisher": "www.starbucks.com",
+      "published_at": null,
+      "retrieved_at": "2026-09-04T08:01:29.758514Z",
+      "discovered_by": "BRIEF_URL",
+      "excerpt": "STARBUCKS REWARDS LEVELS There are three (3) levels of Starbucks Rewards benefits: Green, Gold and Reserve levels (“ Level(s) ”). Your Level is determined by the number of Stars that you accumulate in your account over a twelve (12) month period. Once you reach a specific Level within Starbucks Rewards, for the following twelve (12) months, you will receive the benefits applicable to that Level at that time. However, you must continue to earn and accumulate the required number of Stars in order to maintain your benefit Level for the following year. By opening an account, you will be automatically enrolled in Starbucks Rewards at the Green Level. If you do not earn at least five hundred (500) Stars within the twelve-month period following your enrollment, your level Star balance, which is the Star balance amount that determines your Level (“ Level Star Balance ”), will automatically",
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-page-003",
+      "url": "https://documentation.bloomreach.com/engagement/docs/rfm-segmentation",
+      "title": "RFM customer segmentation",
+      "publisher": "documentation.bloomreach.com",
+      "published_at": null,
+      "retrieved_at": "2026-09-04T08:01:29.760515Z",
+      "discovered_by": "BRIEF_URL",
+      "excerpt": "case, follow these steps. Meet the requirements Check if the data in your project meets the requirements . The Use Case Center lists requirements for each use case during the deployment process. 🚧 Important This RFM scenario requires 18 available customer attributes to function properly. Ensure your project has sufficient attribute capacity before deployment, as insufficient attributes can cause implementation issues. Understand the use case logic All customers with at least one purchase are segmented based on the Recency, Frequency, and Monetary value of their purchases. The RFM segmentation allows for better targeting of campaigns based on how loyal the customers are to the brand and hence increases upsell, CLTV, and RVP. The scenario runs 2 times per month for all customers with at least one purchase. The 'Initial flow' ensures the first data load on all customers, and the 'Repeat",
+      "read_status": "READABLE",
+      "error_category": null
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "xiaomi-smart-band-9-specs-candidate",
+      "brief_id": "pilot-mixed",
+      "brief_version": "v1",
+      "asset_type": "AWARD_CANDIDATE",
+      "name": "小米手环9（Xiaomi Smart Band 9）",
+      "summary": "小米手环9是一款公开规格完整的可穿戴设备，官方页面披露了尺寸、重量、屏幕、电池、传感器、防水等级、兼容性等公开规格参数，可作为积分兑换或激励项目的公开商品候选。",
+      "project_fit": "该商品在品牌官网公开页面提供了完整的规格参数，包括46.53×21.63×10.95mm尺寸、15.8g重量（不含表带）、1.62英寸AMOLED触控屏（192×490像素、最高1200尼特亮度）、233mAh标称容量、约1小时磁吸充电、典型使用最长21天、5ATM防水、线性马达、兼容Android 8.0/iOS 12.0及以上等。这些规格均可由公开页面直接证实，适合作为积分激励项目的公开商品候选，便于后续进行规格核对与公开价格口径比对。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "小米手环9官方规格页面公开披露了产品尺寸为46.53×21.63×10.95mm（不含表带和凸起），重量为15.8g（不含表带）。",
+          "source_ids": [
+            "source-page-001"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "source-page-001-excerpt-001 明确列出Dimensions和Weight字段，可直接证实。"
+        },
+        {
+          "text": "小米手环9配备1.62英寸AMOLED触控屏，分辨率192×490像素，亮度最高1200尼特可调节。",
+          "source_ids": [
+            "source-page-001"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "source-page-001-excerpt-001 的Display部分明确列出屏幕尺寸、分辨率和亮度参数。"
+        },
+        {
+          "text": "小米手环9采用磁吸充电，充电时间约1小时，典型使用时间最长21天，标称容量233mAh。",
+          "source_ids": [
+            "source-page-001"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "source-page-001-excerpt-001 的Battery部分明确列出充电方式、充电时间、使用时间和容量。"
+        },
+        {
+          "text": "小米手环9具备5ATM防水等级，内置加速度计、陀螺仪、光学心率传感器和环境光传感器，兼容Android 8.0或iOS 12.0及以上系统。",
+          "source_ids": [
+            "source-page-001"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "source-page-001-excerpt-001 的Sensors和Specifications部分明确列出防水等级、传感器类型和系统兼容性。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "starbucks-rewards-tier-redemption-pattern",
+      "brief_id": "pilot-mixed",
+      "brief_version": "v1",
+      "asset_type": "CAMPAIGN_PATTERN",
+      "name": "星巴克Rewards星级分层与兑换机制",
+      "summary": "星巴克Rewards会员计划通过消费累积Stars（星级），按12个月周期内累积的Stars数量划分Green/Gold/Reserve三个等级，不同等级享有不同赚取速率，Stars可在参与门店按多个兑换档位兑换免费商品。",
+      "project_fit": "该机制展示了完整的会员积分获取与兑换闭环：用户通过注册账户自动进入Green等级，按等级不同赚取速率（Green每$1得1星、Gold每$1得1.2星、Reserve每$1得1.7星）累积Stars；12个月周期内累积500星升Gold、2500星升Reserve；Stars可按25/60/100/200/300/400星多个档位兑换不同价值的免费商品。该模式可作为积分激励项目中会员等级分层与积分兑换机制的参考模板，其等级门槛、赚取速率差异和兑换档位设计均可在公开条款中直接证实。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "星巴克Rewards设有Green、Gold、Reserve三个会员等级，等级由12个月周期内累积的Stars数量决定，注册即自动进入Green等级。",
+          "source_ids": [
+            "source-page-002"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "source-page-002-excerpt-008 明确说明三个等级及等级判定规则。"
+        },
+        {
+          "text": "会员等级决定Stars赚取速率：Green每消费$1得1星，Gold每消费$1得1.2星，Reserve每消费$1得1.7星。",
+          "source_ids": [
+            "source-page-002"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "source-page-002-excerpt-014 明确列出各等级对应的赚取速率。"
+        },
+        {
+          "text": "Stars可在参与门店按多个兑换档位兑换免费商品，包括25星抵$1、60星抵$2、100星兑换最高$6商品、200星兑换最高$10商品、300星兑换最高$16商品、400星兑换最高$20商品。",
+          "source_ids": [
+            "source-page-002"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "source-page-002-excerpt-019 至 excerpt-021 详细列出各兑换档位及对应商品价值上限。"
+        },
+        {
+          "text": "会员可通过在App中扫描会员条码、使用注册星巴克卡或关联支付方式完成消费来赚取Stars，Stars通常在消费后约24小时内自动入账。",
+          "source_ids": [
+            "source-page-002"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "source-page-002-excerpt-011 和 excerpt-016 分别说明赚取方式和入账时间。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "rfm-segmentation-internal-fields-template",
+      "brief_id": "pilot-mixed",
+      "brief_version": "v1",
+      "asset_type": "SEGMENT_RULE_TEMPLATE",
+      "name": "RFM客户分层规则模板（Recency/Frequency/Monetary）",
+      "summary": "Bloomreach Engagement提供的RFM客户分层方法，基于Recency（最近购买时间）、Frequency（购买频率）和Monetary（消费金额）三个维度对客户打分并归入Champions、Loyal、At Risk等细分客群，需要内部购买事件字段来计算。",
+      "project_fit": "该RFM分层模板需要以下内部行为字段才能计算：客户购买事件（含purchase_status=success和total_price>0条件）、Recency Aggregate（最近购买时间）、Frequency Aggregate（购买频率）、Monetary Aggregate（消费金额/CLTV，从purchase事件的total_price属性计算）。系统将每个维度按分位数切分为1-5分，拼接为rfm_score（如321），再映射到Champions、Loyal、Potential loyalist、New customers、Promising、Need attention、About to sleep、At risk、Hibernating、Lost等细分客群。该模板可作为积分激励项目中由内部事件数据计算客群分层的规则参考。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "RFM分层方法基于Recency（最近购买）、Frequency（购买频率）和Monetary（消费金额）三个维度对客户进行评分和分层。",
+          "source_ids": [
+            "source-page-003"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "source-page-003-excerpt-026 明确说明所有至少有一次购买的客户按Recency、Frequency、Monetary三个维度进行分层。"
+        },
+        {
+          "text": "RFM计算需要内部购买事件字段，包括purchase_status=success、total_price>0，CLTV从purchase事件的total_price属性计算。",
+          "source_ids": [
+            "source-page-003"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "source-page-003-excerpt-031 明确列出计算所需的条件和字段来源。"
+        },
+        {
+          "text": "系统将每个维度按分位数切分为1-5分，拼接为rfm_score（如recency=3、frequency=2、monetary=1则rfm_score=321），再映射到Champions、Loyal、At Risk等细分客群。",
+          "source_ids": [
+            "source-page-003"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "source-page-003-excerpt-028 和 excerpt-029 详细说明打分逻辑和客群映射表。"
+        },
+        {
+          "text": "RFM分层需要18个可用的客户属性才能正常运行，且场景默认每月运行两次以跟踪客户分层变化。",
+          "source_ids": [
+            "source-page-003"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "source-page-003-excerpt-026 明确说明需要18个客户属性容量，并说明场景每月运行两次。"
+        }
+      ]
+    }
+  ]
+}

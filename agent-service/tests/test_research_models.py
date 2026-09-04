@@ -96,6 +96,17 @@ class ResearchModelsTest(unittest.TestCase):
                 read_status=SourceReadStatus.READABLE,
             )
 
+    def test_failed_source_cannot_carry_excerpt_ids(self):
+        with self.assertRaisesRegex(ValidationError, "片段 ID"):
+            SourceEvidence(
+                source_id="source-demo-001",
+                url="https://example.com/product",
+                retrieved_at=datetime.now(timezone.utc),
+                discovered_by=SourceDiscoveryMethod.AGENT_SEARCH,
+                excerpt_ids=["source-demo-001-excerpt-001"],
+                read_status=SourceReadStatus.NETWORK_ERROR,
+            )
+
     def test_supported_and_conflicting_claims_require_sources(self):
         with self.assertRaisesRegex(ValidationError, "必须引用来源"):
             EvidenceClaim(

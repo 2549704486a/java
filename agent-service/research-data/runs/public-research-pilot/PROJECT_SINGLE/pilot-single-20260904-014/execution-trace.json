@@ -1,0 +1,92 @@
+[
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T08:12:04.334832+00:00",
+    "requested_tools": [
+      "read_public_page",
+      "read_public_page",
+      "read_public_page"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T08:12:04.339063+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T08:12:04.344029+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T08:12:04.345545+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T08:12:05.355725+00:00",
+    "ok": true,
+    "source_id": "source-page-001"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T08:12:05.506230+00:00",
+    "ok": true,
+    "source_id": "source-page-002"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T08:12:07.500734+00:00",
+    "ok": true,
+    "source_id": "source-page-003"
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T08:12:13.063052+00:00",
+    "requested_tools": [
+      "search_public_web"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T08:12:13.065567+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T08:12:17.731268+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T08:12:19.574021+00:00",
+    "requested_tools": [
+      "read_public_page"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T08:12:19.576041+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T08:12:22.062435+00:00",
+    "ok": true,
+    "source_id": "source-page-004"
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T08:12:27.387485+00:00",
+    "requested_tools": []
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T08:12:43.551846+00:00",
+    "requested_tools": [
+      "ResearchAgentOutput"
+    ]
+  }
+]

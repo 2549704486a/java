@@ -1,0 +1,67 @@
+{
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "run_issues": [
+    {
+      "code": "NO_READABLE_SOURCE",
+      "message": "本次运行没有实际读取成功的公网来源",
+      "candidate_id": null
+    }
+  ],
+  "decisions": [
+    {
+      "candidate_id": "award-jd-jingdou",
+      "approvable": false,
+      "issues": [
+        {
+          "code": "UNKNOWN_SOURCE_REFERENCE",
+          "message": "引用了不存在的来源：source-page-001, source-page-006",
+          "candidate_id": "award-jd-jingdou"
+        },
+        {
+          "code": "SOURCE_NOT_READABLE",
+          "message": "引用了未成功读取的来源：source-page-001, source-page-006",
+          "candidate_id": "award-jd-jingdou"
+        }
+      ]
+    },
+    {
+      "candidate_id": "campaign-capitaland-tourist",
+      "approvable": false,
+      "issues": [
+        {
+          "code": "UNKNOWN_SOURCE_REFERENCE",
+          "message": "引用了不存在的来源：source-page-002",
+          "candidate_id": "campaign-capitaland-tourist"
+        },
+        {
+          "code": "SOURCE_NOT_READABLE",
+          "message": "引用了未成功读取的来源：source-page-002",
+          "candidate_id": "campaign-capitaland-tourist"
+        }
+      ]
+    },
+    {
+      "candidate_id": "segment-rfm-template",
+      "approvable": false,
+      "issues": [
+        {
+          "code": "UNKNOWN_SOURCE_REFERENCE",
+          "message": "引用了不存在的来源：source-page-005",
+          "candidate_id": "segment-rfm-template"
+        },
+        {
+          "code": "SOURCE_NOT_READABLE",
+          "message": "引用了未成功读取的来源：source-page-005",
+          "candidate_id": "segment-rfm-template"
+        }
+      ]
+    }
+  ],
+  "approvable_candidate_ids": [],
+  "rejected_candidate_ids": [
+    "award-jd-jingdou",
+    "campaign-capitaland-tourist",
+    "segment-rfm-template"
+  ]
+}

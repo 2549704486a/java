@@ -1,0 +1,204 @@
+{
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "sources": [
+    {
+      "source_id": "source-page-001",
+      "url": "https://www.mi.com/global/product/xiaomi-smart-band-9/specs/",
+      "title": "Xiaomi Smart Band 9 Specs",
+      "publisher": "www.mi.com",
+      "published_at": null,
+      "retrieved_at": "2026-09-04T08:07:18.603543Z",
+      "discovered_by": "BRIEF_URL",
+      "excerpt": "Xiaomi Smart Band 9 Specs Xiaomi Smart Band 9 Specs Overview Specs Dimensions 46.53 x 21.63 x 10.95 mm *Height, width and thickness dimensions exclude the strap and protrusions Weight: 15.8g (without strap) Band Strap Size: 135–210 mm Material: TPU Color: Midnight Black | Glacier Silver | Mystic Rose | Arctic Blue | Titan Gray Display 1.62-inch AMOLED Touch Display Resolution: 192 x 490 pixels Brightness: Up to 1200 nits, adjustable Battery Charging type: Magnetic charging Charging time: Approx. 1 hour Typical usage time: Up to 21 days Nominal Capacity: 233mAh Sensors Accelerometer sensor / Gyroscope sensor / Optical heart rate sensor / Ambient light sensor Specifications 5ATM water resistant App: Mi Fitness Motor: Linear motor Compatibility: Supports smartphones with Android 8.0 or iOS 12.0 and above Package contents Xiaomi Smart Band 9 / Magnetic charging cable / User manual",
+      "excerpt_ids": [
+        "source-page-001-excerpt-001"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-page-002",
+      "url": "https://www.starbucks.com/rewards/terms/",
+      "title": "Starbucks® Rewards Terms of Use: Starbucks Coffee Company",
+      "publisher": "www.starbucks.com",
+      "published_at": null,
+      "retrieved_at": "2026-09-04T08:07:18.608963Z",
+      "discovered_by": "BRIEF_URL",
+      "excerpt": "STARBUCKS REWARDS LEVELS There are three (3) levels of Starbucks Rewards benefits: Green, Gold and Reserve levels (“ Level(s) ”). Your Level is determined by the number of Stars that you accumulate in your account over a twelve (12) month period. Once you reach a specific Level within Starbucks Rewards, for the following twelve (12) months, you will receive the benefits applicable to that Level at that time. However, you must continue to earn and accumulate the required number of Stars in order to maintain your benefit Level for the following year. By opening an account, you will be automatically enrolled in Starbucks Rewards at the Green Level. If you do not earn at least five hundred (500) Stars within the twelve-month period following your enrollment, your level Star balance, which is the Star balance amount that determines your Level (“ Level Star Balance ”), will automatically\n...\nor on Starbucks Cards (such as activations, reloads, transfers, and other card-to-card transactions, except as noted otherwise in these Terms and Conditions). Taxes, tips, donations, and fees, including without limitation, shipping and handling fees, gift wrapping fees, delivery fees, and bag fees, also may be excluded and ineligible for Star accrual. EARN RATES Star earn rates are based on the Starbucks Rewards membership Level you currently maintain as follows: Green Level members earn 1 Star for each One Dollar ($1.00) spent; Gold Level members earn 1.2 Stars for each One Dollar ($1.00) spent; and Reserve Level members earn 1.7 Stars for each One Dollar ($1.00) spent. CURRENCY EXCHANGE If the address associated with your account is located in the United States, any qualifying purchase you make using the payment methods described previously at participating Starbucks stores in Canada\n...\nlocation. The Star redemption tiers for redeeming Stars at participating Starbucks stores in the United States are as follows: 25 Stars may be redeemed for $1 off (pre-tax) one (1) of the following beverage modifiers): an added espresso shot or added syrup or sauce (such as caramel syrup). The beverage modifiers in this redemption tier are only available as a customization to your base beverage order and cannot be redeemed as a standalone beverage. 60 Stars may be redeemed for $2 off (pre-tax) a qualifying item in your order. 100 Stars may be redeemed for one (1) of the following items, up to a maximum value of $6 (pre-tax): hot brewed coffee, hot steeped tea, iced brewed coffee or iced brewed tea, OR a bakery item (such as a cake pop or cookie), OR a packaged snack (such as popcorn or potato chips), OR one (1) Cold Siren Logo Plastic To-Go Cup (24 oz only) or one (1) Siren Logo Plastic\n...\nTo find the location nearest you that participates in Starbucks Rewards, visit the Starbucks Store Locator at https://www.starbucks.com/store-locator . JOINING STARBUCKS REWARDS To join Starbucks Rewards, go to www.starbucks.com/rewards (“ Websites ”), or to the Starbucks mobile or web app (“ App ”) and follow the prompts to create an account. You will be asked for relevant information, which may include: First and last name, email address, phone number and/or password. Birthday (month, day) is optional to receive birthday offers. If you do not provide birthday information you will not receive your Birthday Reward. When you join Starbucks Rewards, you automatically are provided with a digital Starbucks Card with a zero dollar ($0.00) balance. You can add funds to your digital Starbucks Card either online at https://www.starbucks.com/account/cards through the App, or in-person at a",
+      "excerpt_ids": [
+        "source-page-002-excerpt-008",
+        "source-page-002-excerpt-014",
+        "source-page-002-excerpt-019",
+        "source-page-002-excerpt-006"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-page-004",
+      "url": "https://documentation.bloomreach.com/engagement/docs/rfm-segmentation",
+      "title": "RFM customer segmentation",
+      "publisher": "documentation.bloomreach.com",
+      "published_at": null,
+      "retrieved_at": "2026-09-04T08:07:22.334787Z",
+      "discovered_by": "BRIEF_URL",
+      "excerpt": "case, follow these steps. Meet the requirements Check if the data in your project meets the requirements . The Use Case Center lists requirements for each use case during the deployment process. 🚧 Important This RFM scenario requires 18 available customer attributes to function properly. Ensure your project has sufficient attribute capacity before deployment, as insufficient attributes can cause implementation issues. Understand the use case logic All customers with at least one purchase are segmented based on the Recency, Frequency, and Monetary value of their purchases. The RFM segmentation allows for better targeting of campaigns based on how loyal the customers are to the brand and hence increases upsell, CLTV, and RVP. The scenario runs 2 times per month for all customers with at least one purchase. The 'Initial flow' ensures the first data load on all customers, and the 'Repeat\n...\nflow' tracks incremental changes. The RFM segment is tracked under customer property rfm_segment . If the customer changed the segment, the previous value would be tracked under the customer property previous_rfm_segment allowing us to see the movements between segments. Going more in-depth, the Initial flow assigns recency_score, frequency_score, and monetary_score as customer properties based on their positioning in recency, frequency, and monetary reports per the Jinja below. Jinja {# Calculating the RFM segments #} {% set recency_score = 1 if r_value < r_report.rows [3][3] else (2 if r_value < r_report.rows [2][3] else (3 if r_value < r_report.rows [1][3] else (4 if r_value < r_report.rows [0][3] else (5 if r_value > r_report.rows [1][3] ))))%} {% set frequency_score = 1 if f_value < f_report.rows [1][3] else (2 if f_value < f_report.rows [2][3] else (3 if f_value < f_report.rows\n...\n454, 455, 445 Loyal 543, 444, 435, 355, 354, 345, 344, 335 Potential loyalist 553, 551, 552, 541, 542, 533, 532, 531, 452, 451, 442, 441, 431, 453, 433, 432, 423, 353, 352, 351, 342, 341, 333, 323 New customers 512, 511, 422, 421, 412, 411, 311 Promising 525, 524, 523, 522, 521, 515, 514, 513, 425, 424, 413, 414, 415, 315, 314, 313 Need attention 535, 534, 443, 434, 343, 334, 325, 324 About to sleep 331, 321, 312, 221, 213, 231, 241, 251 Cannot lose them but losing 155, 154, 144, 214, 215, 115, 114, 113 At risk 255, 254, 245, 244, 253, 252, 243, 242, 235, 234, 225, 224, 153, 152, 145, 143, 142, 135, 134, 133, 125, 124 Hibernating customers 332, 322, 233, 232, 223, 222, 132, 123, 122, 212, 211 Losing but engaged (last email campaign clicked in the last 180 days or last session_start in the last 90 days) 111, 112, 121, 131, 141, 151 Lost customers 111, 112, 121, 131, 141, 151 How scenario\n...\nimpact. After this initial period, use the prebuilt evaluation dashboard to measure and analyze relevant data. Calculate key metrics Customers that made a purchase where the following conditions are matched: purchase_status = success total_price > 0 CLTV is calculated from the total_price attribute of the purchase event The RFM segmentation works by dividing the customers based on their Recency, Frequency, and Monetary (RFM) scores. It does so in relative terms, creating percentual parts of your customer base. Through this, you will be able to see how different customers fall within different R F M values, and these then get calculated into overall RFM segments. The segmentation can be used for marketing campaigns to drive Customer Loyalty and RPV. Find more information and related action steps regarding different segments of your customers calculated based on the RFM score in the RFM",
+      "excerpt_ids": [
+        "source-page-004-excerpt-026",
+        "source-page-004-excerpt-027",
+        "source-page-004-excerpt-029",
+        "source-page-004-excerpt-031"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-page-003",
+      "url": "https://documentation.bloomreach.com/engagement/docs/rfm-segmentation",
+      "title": null,
+      "publisher": null,
+      "published_at": null,
+      "retrieved_at": "2026-09-04T08:07:18.610559Z",
+      "discovered_by": "BRIEF_URL",
+      "excerpt": null,
+      "excerpt_ids": [],
+      "read_status": "NETWORK_ERROR",
+      "error_category": "NETWORK_ERROR"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "xiaomi-smart-band-9-specs-candidate",
+      "brief_id": "pilot-mixed",
+      "brief_version": "v1",
+      "asset_type": "AWARD_CANDIDATE",
+      "name": "小米手环9（Xiaomi Smart Band 9）公开规格商品候选",
+      "summary": "基于小米官网公开规格页整理的小米手环9商品候选，包含尺寸、重量、屏幕、电池、传感器、防水等级、兼容性等可由公开页面直接证实的规格信息。",
+      "project_fit": "该商品候选符合简报中 AWARD_CANDIDATE 目标，即寻找一个可由公开页面直接证实的商品规格候选。小米手环9的规格信息（尺寸、重量、屏幕、电池、传感器、防水等级、兼容性）均来自品牌官网 specs 页面，可作为积分激励项目中公开商品候选的参考样例，用于验证来源发现与正文读取流程。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "小米手环9的公开规格包括：尺寸46.53×21.63×10.95mm（不含表带和凸起）、重量15.8g（不含表带）、表带尺寸135–210mm、材质TPU。",
+          "source_ids": [
+            "source-page-001"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "规格数据直接来自小米官网 specs 页面正文，可逐项核对。"
+        },
+        {
+          "text": "小米手环9配备1.62英寸AMOLED触控屏，分辨率192×490像素，亮度最高1200尼特可调节。",
+          "source_ids": [
+            "source-page-001"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "屏幕规格在官网 specs 页面明确列出。"
+        },
+        {
+          "text": "小米手环9电池为233mAh标称容量，磁吸充电约1小时，典型使用时间最长21天。",
+          "source_ids": [
+            "source-page-001"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "电池与充电信息在官网 specs 页面明确列出。"
+        },
+        {
+          "text": "小米手环9内置加速度计、陀螺仪、光学心率传感器和环境光传感器，支持5ATM防水，兼容Android 8.0及以上或iOS 12.0及以上系统。",
+          "source_ids": [
+            "source-page-001"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "传感器、防水等级与兼容性信息在官网 specs 页面明确列出。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "starbucks-rewards-tier-redemption-pattern",
+      "brief_id": "pilot-mixed",
+      "brief_version": "v1",
+      "asset_type": "CAMPAIGN_PATTERN",
+      "name": "星巴克会员等级与积分兑换机制模式",
+      "summary": "基于星巴克官方 Rewards 条款整理的会员活动机制模式，涵盖等级体系（Green/Gold/Reserve）、积分获取方式、积分兑换层级与会员附加权益，可作为积分激励项目中会员活动机制的参考模式。",
+      "project_fit": "该机制模式符合简报中 CAMPAIGN_PATTERN 目标，即寻找一个会员或积分机制如何获取权益并完成兑换的公开参考。星巴克 Rewards 条款来自品牌官网，详细说明了等级划分、积分获取途径、兑换层级与附加权益，可作为积分激励项目设计会员活动机制的公开参考样例。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "星巴克 Rewards 设有 Green、Gold、Reserve 三个等级，等级由12个月内累计的 Stars 数量决定；注册即自动进入 Green 等级，12个月内累计500 Stars 升入 Gold，达到Gold后12个月内再累计2500 Stars 升入 Reserve。",
+          "source_ids": [
+            "source-page-002"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "等级体系与升级门槛在官方条款正文中明确描述。"
+        },
+        {
+          "text": "积分获取方式包括：使用星巴克卡或关联支付方式在参与门店消费、扫描会员条码后以现金/信用卡/借记卡/移动钱包支付、促销 Bonus Stars、合作项目等；积分按等级差异化累积（Green每$1得1 Star，Gold每$1得1.2 Stars，Reserve每$1得1.7 Stars）。",
+          "source_ids": [
+            "source-page-002"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "积分获取途径与等级差异化累积率在官方条款正文中明确描述。"
+        },
+        {
+          "text": "积分兑换采用分层机制：25 Stars 可兑换$1减免（饮品附加项）、60 Stars 兑换$2减免、100 Stars 兑换最高$6商品、200 Stars 兑换最高$10商品、300 Stars 兑换最高$16商品、400 Stars 兑换最高$20商品；兑换仅限参与门店且各门店可用层级可能不同。",
+          "source_ids": [
+            "source-page-002"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "兑换层级与金额上限在官方条款正文中逐层列出。"
+        },
+        {
+          "text": "会员加入需在官网或App创建账户并提供姓名、邮箱、电话和/或密码等信息；生日（月/日）为可选信息，用于获取生日奖励。",
+          "source_ids": [
+            "source-page-002"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "加入流程与所需信息在官方条款正文中明确描述。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "rfm-segmentation-internal-fields-template",
+      "brief_id": "pilot-mixed",
+      "brief_version": "v1",
+      "asset_type": "SEGMENT_RULE_TEMPLATE",
+      "name": "RFM 客群划分规则模板（Recency/Frequency/Monetary）",
+      "summary": "基于 Bloomreach 官方文档整理的 RFM 客群划分规则模板，说明如何依据 Recency、Frequency、Monetary 三个维度将客户划分为 Champions、Loyal、At risk 等客群，并列出计算所需的内部行为字段。",
+      "project_fit": "该规则模板符合简报中 SEGMENT_RULE_TEMPLATE 目标，即寻找一个可由内部事件计算的客群规则模板。Bloomreach 官方文档详细说明了 RFM 客群划分所需的内部字段（购买事件、购买状态、总价、最近购买时间等）与计算逻辑，可作为积分激励项目设计内部事件驱动客群规则的参考模板。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "RFM 客群划分基于客户购买行为，将客户按 Recency（最近购买时间）、Frequency（购买频率）、Monetary（购买金额）三个维度打分，每个维度1–5分，组合成 rfm_score（如321），再映射到 Champions、Loyal、Potential loyalist、New customers、At risk、Lost customers 等客群。",
+          "source_ids": [
+            "source-page-004"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "RFM 打分逻辑与客群映射表在官方文档正文中完整给出。"
+        },
+        {
+          "text": "计算 RFM 客群需要内部购买事件字段，包括 purchase_status（须为 success）、total_price（须大于0）以及用于计算 CLTV 的 total_price 属性；同时需要 recency、frequency、monetary 三个聚合值作为客户属性。",
+          "source_ids": [
+            "source-page-004"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "所需内部字段与条件在官方文档正文中明确列出。"
+        },
+        {
+          "text": "RFM 场景默认每月运行两次，对所有至少有一次购买的客户进行分段；分段结果存储在客户属性 rfm_segment 中，若客户分段发生变化，原值记录在 previous_rfm_segment 属性中以便观察客群迁移。",
+          "source_ids": [
+            "source-page-004"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "运行频率与分段存储逻辑在官方文档正文中明确描述。"
+        },
+        {
+          "text": "RFM 场景部署需要项目具备18个可用客户属性容量，属性不足可能导致实施问题。",
+          "source_ids": [
+            "source-page-004"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "属性容量要求为官方文档中的明确提示。"
+        }
+      ]
+    }
+  ]
+}

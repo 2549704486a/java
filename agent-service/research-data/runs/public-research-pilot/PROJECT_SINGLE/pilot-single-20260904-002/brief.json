@@ -9,17 +9,23 @@
     {
       "asset_type": "AWARD_CANDIDATE",
       "target_count": 1,
-      "research_questions": ["该商品有哪些可由公开页面直接证实的规格或公开价格口径？"]
+      "research_questions": [
+        "该商品有哪些可由公开页面直接证实的规格或公开价格口径？"
+      ]
     },
     {
       "asset_type": "CAMPAIGN_PATTERN",
       "target_count": 1,
-      "research_questions": ["该会员或积分机制如何获取权益并完成兑换？"]
+      "research_questions": [
+        "该会员或积分机制如何获取权益并完成兑换？"
+      ]
     },
     {
       "asset_type": "SEGMENT_RULE_TEMPLATE",
       "target_count": 1,
-      "research_questions": ["该客群方法需要哪些内部行为字段才能计算？"]
+      "research_questions": [
+        "该客群方法需要哪些内部行为字段才能计算？"
+      ]
     }
   ],
   "source_requirements": [
@@ -32,11 +38,7 @@
     "本项目库存、兑换积分、内部成本或预算",
     "本项目转化率、收益或已发生效果"
   ],
-  "explicit_source_urls": [
-    "https://www.mi.com/global/product/xiaomi-smart-band-9/specs/",
-    "https://www.starbucks.com/rewards/terms/",
-    "https://documentation.bloomreach.com/engagement/docs/rfm-segmentation"
-  ],
+  "explicit_source_urls": [],
   "budget": {
     "max_search_queries": 6,
     "max_search_results_per_query": 5,

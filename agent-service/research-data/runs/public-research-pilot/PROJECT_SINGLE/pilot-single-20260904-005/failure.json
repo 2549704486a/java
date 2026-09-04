@@ -1,0 +1,13 @@
+{
+  "experiment_id": "public-research-pilot",
+  "run_id": "pilot-single-20260904-005",
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "arm": "PROJECT_SINGLE",
+  "status": "FAILED",
+  "failure_stage": "PROJECT_SINGLE_RUN",
+  "error_category": "ValueError",
+  "message": "证据摘录必须来自实际读取的页面正文",
+  "started_at": "2026-09-04T06:41:36.297843+00:00",
+  "completed_at": "2026-09-04T06:42:03.529747+00:00"
+}

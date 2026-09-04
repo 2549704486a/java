@@ -89,9 +89,13 @@ research-data/
   "retrieved_at": "2026-09-04T10:30:00+08:00",
   "discovered_by": "AGENT_SEARCH",
   "excerpt": "能够直接支持本条结论的短摘录",
+  "excerpt_ids": ["source-001-excerpt-002"],
   "read_status": "READABLE"
 }
 ```
+
+页面读取时，系统会先把正文切成带 `excerpt_id` 的短片段，模型只负责选择片段编号，最终 `excerpt` 由 Harness 按编号回填。例如模型输出
+`{"source_id":"source-001","excerpt_id":"source-001-excerpt-002"}`。同一来源可选择最多四个不同片段，以覆盖多条结论，Harness 会逐段验证后合并保存并保留 `excerpt_ids`。这样既保留逐字原文证据，也避免模型复制时改写标点或空格导致真实来源无法组装；重复或不存在的片段编号会被确定性拒绝。
 
 客群研究只输出可计算规则模板及其业务解释，例如“最近 30 天未登录且历史有兑换行为”，不会输出人数；奖品研究只输出公开商品信息和价格口径，不会填写 `award_id`、`required_points`、`unit_cost_cents` 或库存；活动研究只输出外部机制与适配建议，不会生成本项目效果数据。
 

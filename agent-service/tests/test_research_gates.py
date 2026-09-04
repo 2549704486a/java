@@ -134,7 +134,7 @@ class ResearchGatesTest(unittest.TestCase):
             with patch("pymysql.connect") as mysql_connect:
                 run_dir = store.create_run_directory(
                     experiment_id="experiment-v1",
-                    arm="PROJECT-SINGLE",
+                    arm="PROJECT_SINGLE",
                     run_id="run-001",
                 )
                 output = store.write_json_once(run_dir, "bundle.json", {"ok": True})
@@ -143,7 +143,7 @@ class ResearchGatesTest(unittest.TestCase):
                 with self.assertRaises(FileExistsError):
                     store.create_run_directory(
                         experiment_id="experiment-v1",
-                        arm="PROJECT-SINGLE",
+                        arm="PROJECT_SINGLE",
                         run_id="run-001",
                     )
 
@@ -165,7 +165,7 @@ class ResearchGatesTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "安全的运行目录名"):
                 store.create_run_directory(
                     experiment_id="../outside",
-                    arm="PROJECT-SINGLE",
+                    arm="PROJECT_SINGLE",
                     run_id="run-001",
                 )
 

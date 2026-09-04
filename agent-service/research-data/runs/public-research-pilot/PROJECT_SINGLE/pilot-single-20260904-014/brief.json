@@ -9,17 +9,23 @@
     {
       "asset_type": "AWARD_CANDIDATE",
       "target_count": 1,
-      "research_questions": ["该商品有哪些可由公开页面直接证实的规格或公开价格口径？"]
+      "research_questions": [
+        "该商品有哪些可由公开页面直接证实的规格或公开价格口径？"
+      ]
     },
     {
       "asset_type": "CAMPAIGN_PATTERN",
       "target_count": 1,
-      "research_questions": ["该会员或积分机制如何获取权益并完成兑换？"]
+      "research_questions": [
+        "该会员或积分机制如何获取权益并完成兑换？"
+      ]
     },
     {
       "asset_type": "SEGMENT_RULE_TEMPLATE",
       "target_count": 1,
-      "research_questions": ["该客群方法需要哪些内部行为字段才能计算？"]
+      "research_questions": [
+        "该客群方法需要哪些内部行为字段才能计算？"
+      ]
     }
   ],
   "source_requirements": [

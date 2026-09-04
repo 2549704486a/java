@@ -1,0 +1,31 @@
+{
+  "experiment_id": "public-research-pilot",
+  "run_id": "pilot-single-20260904-014",
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "run_kind": "PILOT",
+  "arm": "PROJECT_SINGLE",
+  "status": "COMPLETED",
+  "started_at": "2026-09-04T08:12:01.798894Z",
+  "completed_at": "2026-09-04T08:12:43.558186Z",
+  "stages": [
+    {
+      "stage": "single-research-agent",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T08:12:01.798894Z",
+      "completed_at": "2026-09-04T08:12:43.558186Z",
+      "model_call_count": 5,
+      "tool_call_count": 5,
+      "input_tokens": 71698,
+      "output_tokens": 3940,
+      "retry_count": 0,
+      "output_candidate_ids": [
+        "xiaomi-smart-band-9-award-candidate",
+        "starbucks-rewards-tier-redemption-pattern",
+        "rfm-segmentation-internal-event-rule-template"
+      ],
+      "error_category": null
+    }
+  ],
+  "failure_stage": null
+}

@@ -1,0 +1,28 @@
+{
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "run_issues": [],
+  "decisions": [
+    {
+      "candidate_id": "xiaomi-smart-band-9-award-candidate",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "starbucks-rewards-tier-redemption-pattern",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "rfm-segmentation-internal-event-rule-template",
+      "approvable": true,
+      "issues": []
+    }
+  ],
+  "approvable_candidate_ids": [
+    "xiaomi-smart-band-9-award-candidate",
+    "starbucks-rewards-tier-redemption-pattern",
+    "rfm-segmentation-internal-event-rule-template"
+  ],
+  "rejected_candidate_ids": []
+}

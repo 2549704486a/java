@@ -1,0 +1,13 @@
+{
+  "experiment_id": "public-research-pilot",
+  "run_id": "pilot-single-20260904-004",
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "arm": "PROJECT_SINGLE",
+  "status": "FAILED",
+  "failure_stage": "PROJECT_SINGLE_RUN",
+  "error_category": "ToolCallLimitExceededError",
+  "message": "'search_public_web' tool call limit reached: run limit exceeded (7/6 calls).",
+  "started_at": "2026-09-04T06:40:11.153209+00:00",
+  "completed_at": "2026-09-04T06:40:51.239006+00:00"
+}
