@@ -458,7 +458,7 @@ class RunEvaluationMetrics(StrictModel):
     duplicate_candidate_count: int = Field(ge=0)
     run_issue_count: int = Field(ge=0)
     gate_failed_candidate_count: int = Field(ge=0)
-    elapsed_seconds: float = Field(ge=0)
+    elapsed_seconds: float | None = Field(default=None, ge=0)
     model_call_count: int | None = Field(default=None, ge=0)
     tool_call_count: int = Field(ge=0)
     input_tokens: int | None = Field(default=None, ge=0)

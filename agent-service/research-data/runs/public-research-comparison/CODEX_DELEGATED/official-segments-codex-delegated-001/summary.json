@@ -1,0 +1,33 @@
+{
+  "experiment_id": "public-research-comparison",
+  "run_id": "official-segments-codex-delegated-001",
+  "brief_id": "official-segments",
+  "brief_version": "v1",
+  "run_kind": "OFFICIAL",
+  "arm": "CODEX_DELEGATED",
+  "status": "COMPLETED",
+  "started_at": "2026-09-05T01:00:00+08:00",
+  "completed_at": "2026-09-05T01:06:09.645000+08:00",
+  "stages": [
+    {
+      "stage": "public_research_and_payload_generation",
+      "status": "COMPLETED",
+      "started_at": "2026-09-05T01:00:00+08:00",
+      "completed_at": "2026-09-05T01:06:09.645000+08:00",
+      "model_call_count": null,
+      "tool_call_count": 14,
+      "input_tokens": null,
+      "output_tokens": null,
+      "retry_count": 0,
+      "output_candidate_ids": [
+        "segment-rfm-value-tier",
+        "segment-disengaged-purchasers",
+        "segment-cart-abandoners",
+        "segment-checkout-abandoners",
+        "segment-item-viewers-without-purchase"
+      ],
+      "error_category": null
+    }
+  ],
+  "failure_stage": null
+}

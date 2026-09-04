@@ -22,6 +22,7 @@ from app.research.models import (
     ExperimentPolicy,
     ExternalRunPayload,
     LockedScoreSet,
+    ResearchBrief,
     RetentionRecommendation,
     RevealedRunResult,
     RunEvaluationMetrics,
@@ -37,6 +38,7 @@ _OFFICIAL_BRIEF_FILE = re.compile(r"^(?P<brief_id>[a-z0-9-]+)-(?P<version>v[1-9]
 def import_external_run(
     payload: ExternalRunPayload,
     store: ResearchRunStore,
+    expected_brief: ResearchBrief,
 ) -> EvaluationRunRecord:
     if payload.summary.arm not in {
         ExperimentArm.CODEX_DIRECT,
@@ -45,6 +47,8 @@ def import_external_run(
         raise ValueError("外部导入只接受两个 Codex 执行臂")
     if payload.summary.run_kind != RunKind.OFFICIAL:
         raise ValueError("外部执行臂只能导入正式运行")
+    if payload.brief != expected_brief:
+        raise ValueError("外部结果携带的简报与仓库冻结正式简报不一致")
 
     gate_report = evaluate_candidate_bundle(payload.brief, payload.bundle)
     record = EvaluationRunRecord(
@@ -176,9 +180,10 @@ def calculate_run_metrics(record: EvaluationRunRecord) -> RunEvaluationMetrics:
     stages = record.summary.stages
     input_tokens = _sum_known(stage.input_tokens for stage in stages)
     output_tokens = _sum_known(stage.output_tokens for stage in stages)
-    elapsed_seconds = (
+    elapsed_delta = (
         record.summary.completed_at - record.summary.started_at
     ).total_seconds()
+    elapsed_seconds = elapsed_delta if elapsed_delta > 0 else None
 
     return RunEvaluationMetrics(
         brief_id=record.brief.brief_id,

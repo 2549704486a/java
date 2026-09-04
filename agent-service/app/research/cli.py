@@ -75,7 +75,18 @@ def import_external_result(args: argparse.Namespace) -> int:
     payload = ExternalRunPayload.model_validate_json(
         args.input.read_text(encoding="utf-8")
     )
-    record = import_external_run(payload, ResearchRunStore(args.runs_root))
+    expected_brief_path = (
+        AGENT_SERVICE_ROOT
+        / "research-data"
+        / "briefs"
+        / f"{payload.brief.brief_id}-{payload.brief.version}.json"
+    )
+    expected_brief = load_research_brief(expected_brief_path)
+    record = import_external_run(
+        payload,
+        ResearchRunStore(args.runs_root),
+        expected_brief,
+    )
     metrics = calculate_run_metrics(record)
     run_directory = (
         Path(args.runs_root)

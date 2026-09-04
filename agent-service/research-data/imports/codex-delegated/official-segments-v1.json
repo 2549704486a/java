@@ -1,0 +1,278 @@
+{
+  "brief": {
+    "brief_id": "official-segments",
+    "version": "v1",
+    "run_kind": "OFFICIAL",
+    "title": "可计算客群规则公开模板",
+    "objective": "研究五个能由项目内部事件和用户属性计算的客群规则模板，说明规则含义、所需字段、适用运营目标和不能从公网得到的内部参数。",
+    "language": "zh-CN",
+    "targets": [
+      {
+        "asset_type": "SEGMENT_RULE_TEMPLATE",
+        "target_count": 5,
+        "research_questions": [
+          "该客群方法使用哪些时间、频次、金额或行为条件？",
+          "项目需要哪些内部事件字段才能确定性计算？",
+          "阈值应如何作为待运营确认参数而不是公网事实？"
+        ]
+      }
+    ],
+    "source_requirements": [
+      "优先使用分析产品文档、公开方法文档或权威实践指南",
+      "规则模板必须能映射为内部数据条件而不是仅有营销标签",
+      "每条方法结论必须引用实际读取成功的页面正文"
+    ],
+    "forbidden_outputs": [
+      "真实用户或个人数据",
+      "本项目客群人数",
+      "模型猜测的固定阈值",
+      "预测转化率或活动收益"
+    ],
+    "explicit_source_urls": [],
+    "budget": {
+      "max_search_queries": 8,
+      "max_search_results_per_query": 5,
+      "max_pages_to_read": 10,
+      "max_parallel_tasks": 3,
+      "max_revision_rounds": 1
+    },
+    "output_label": "official-segments-v1"
+  },
+  "bundle": {
+    "brief_id": "official-segments",
+    "brief_version": "v1",
+    "sources": [
+      {
+        "source_id": "source-google-analytics-suggested-audiences",
+        "url": "https://support.google.com/analytics/answer/10427338?hl=en",
+        "title": "Suggested audiences - Analytics Help",
+        "publisher": "Google Analytics Help",
+        "published_at": null,
+        "retrieved_at": "2026-09-05T01:06:09.645+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "页面说明建议受众依赖已采集的事件和参数；其在线销售模板把加购未购定义为包含 add_to_cart 并排除 purchase，把开始结账未购定义为包含 begin_checkout 并排除 purchase。页面还将沉睡购买者定义为曾购买、但在可指定的最近时段内购买事件计数为零，并以 view_item 与 item_id 配置特定商品浏览者。",
+        "excerpt_ids": [
+          "source-google-analytics-suggested-audiences-excerpt-001"
+        ],
+        "read_status": "READABLE",
+        "error_category": null
+      },
+      {
+        "source_id": "source-bloomreach-rfm-segmentation",
+        "url": "https://documentation.bloomreach.com/engagement/docs/rfm-segmentation",
+        "title": "RFM customer segmentation",
+        "publisher": "Bloomreach Documentation",
+        "published_at": null,
+        "retrieved_at": "2026-09-05T01:06:09.645+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "页面说明至少有一次购买的客户可按购买的新近度、频次和金额分层；示例从成功且金额大于零的购买事件计算金额指标，并按客户群的相对分位生成动态 RFM 分数。文档同时说明阈值会随客户购买行为变化。",
+        "excerpt_ids": [
+          "source-bloomreach-rfm-segmentation-excerpt-001"
+        ],
+        "read_status": "READABLE",
+        "error_category": null
+      },
+      {
+        "source_id": "source-google-analytics-audience-examples",
+        "url": "https://support.google.com/analytics/answer/12799863?hl=en",
+        "title": "[GA4] Examples of audiences in Google Analytics and how to create them - Analytics Help",
+        "publisher": "Google Analytics Help",
+        "published_at": null,
+        "retrieved_at": "2026-09-05T01:06:09.645+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "read_status": "NETWORK_ERROR",
+        "error_category": "HTTP_429"
+      },
+      {
+        "source_id": "source-google-analytics-audience-introduction",
+        "url": "https://support.google.com/analytics/answer/12799087?hl=en",
+        "title": "Introduction to audiences in Google Analytics",
+        "publisher": "Google Analytics Help",
+        "published_at": null,
+        "retrieved_at": "2026-09-05T01:06:09.645+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "页面将受众描述为共享行为数据或描述属性的一组用户，说明可围绕已采集数据建立宽窄不同的条件；在广告用途示例中，页面明确提到向浏览过商品但尚未购买的用户进行再营销。",
+        "excerpt_ids": [
+          "source-google-analytics-audience-introduction-excerpt-001"
+        ],
+        "read_status": "READABLE",
+        "error_category": null
+      }
+    ],
+    "candidates": [
+      {
+        "candidate_id": "segment-rfm-value-tier",
+        "brief_id": "official-segments",
+        "brief_version": "v1",
+        "asset_type": "SEGMENT_RULE_TEMPLATE",
+        "name": "RFM 价值分层客群",
+        "summary": "对至少有一次有效购买的用户，分别计算距最近购买的时间、分析窗口内有效购买次数和有效实付金额，再按运营批准的分位或边界组合成可复算客群；不预设任何本项目分数或阈值。",
+        "project_fit": "外部规则依据：公开文档证明 RFM 使用新近度、频次和金额，并可基于相对分位形成动态分层。内部确定性计算所需字段：user_id、order_id、purchase_at、purchase_status、paid_amount、currency，以及退款或撤销关联标识。适用目标：忠诚度运营、复购培育和流失预防。项目待确认参数：分析窗口、有效订单状态、退款抵扣口径、币种换算口径、分位切点或业务边界、刷新频率及各 RFM 组合对应的运营动作；这些都不是公网可得的本项目事实。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "Bloomreach 文档说明，至少有一次购买的客户可依据购买的新近度、频次和金额进行 RFM 分层。",
+            "source_ids": [
+              "source-bloomreach-rfm-segmentation"
+            ],
+            "support_status": "SUPPORTED",
+            "review_note": "页面正文在用例逻辑部分直接给出适用人群和三个计算维度。"
+          },
+          {
+            "text": "Bloomreach 的动态 RFM 示例按客户群相对分位赋分，阈值可随客户购买行为变化，而不是一个跨项目固定常数。",
+            "source_ids": [
+              "source-bloomreach-rfm-segmentation"
+            ],
+            "support_status": "SUPPORTED",
+            "review_note": "页面正文明确描述相对分位、动态切片和随群体行为变化的阈值。"
+          }
+        ]
+      },
+      {
+        "candidate_id": "segment-disengaged-purchasers",
+        "brief_id": "official-segments",
+        "brief_version": "v1",
+        "asset_type": "SEGMENT_RULE_TEMPLATE",
+        "name": "已购后沉睡客群",
+        "summary": "包含历史上至少有一次有效购买、且在最近可配置窗口内有效购买事件数为零的用户；窗口长度只作为运营待确认变量，不沿用公开示例中的固定天数。",
+        "project_fit": "外部规则依据：Google Analytics 将沉睡购买者描述为曾经购买、但在指定天数内没有再购买的人群，并允许使用自定义时段。内部确定性计算所需字段：user_id、order_id、purchase_at、purchase_status，以及用于去重和识别退款撤销的关联字段。适用目标：召回、复购提醒和关系维护。项目待确认参数：历史购买回溯范围、沉睡窗口、有效购买状态、退款或取消后的资格、是否要求近期活跃、刷新频率和退出规则；公网不能确定这些项目参数。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "Google Analytics 将沉睡购买者定义为过去购买过、但在指定天数内未再次购买的用户。",
+            "source_ids": [
+              "source-google-analytics-suggested-audiences"
+            ],
+            "support_status": "SUPPORTED",
+            "review_note": "建议受众表格的 Disengaged purchasers 行直接给出该定义。"
+          },
+          {
+            "text": "该公开配置使用购买事件与最近时段内购买事件计数为零的条件，并明确允许改用自己的时间段。",
+            "source_ids": [
+              "source-google-analytics-suggested-audiences"
+            ],
+            "support_status": "SUPPORTED",
+            "review_note": "页面配置列列出 purchase 类事件、event_count 为零和可自定义时段。"
+          }
+        ]
+      },
+      {
+        "candidate_id": "segment-cart-abandoners",
+        "brief_id": "official-segments",
+        "brief_version": "v1",
+        "asset_type": "SEGMENT_RULE_TEMPLATE",
+        "name": "加购未购客群",
+        "summary": "包含发生加购行为、且在相关购物车或订单归因范围内没有后续有效购买的用户；需在可配置等待期后判定，并在购买、购物车过期或不再满足条件时退出。",
+        "project_fit": "外部规则依据：Google Analytics 的加购未购模板包含 add_to_cart 并排除 purchase。内部确定性计算所需字段：user_id、event_name、event_at、cart_id、item_id、quantity，以及 purchase 事件的 order_id、cart_id、item_id 和有效状态。适用目标：购物流程提醒和障碍排查。项目待确认参数：等待期、回溯窗口、按用户或购物车或商品匹配购买、跨设备身份合并、有效购买状态、购物车过期规则、刷新频率和触达抑制；公网无法提供本项目取值。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "Google Analytics 把加购未购受众描述为已把商品加入购物车但没有购买的用户。",
+            "source_ids": [
+              "source-google-analytics-suggested-audiences"
+            ],
+            "support_status": "SUPPORTED",
+            "review_note": "页面 Cart abandoners 行直接给出该受众定义。"
+          },
+          {
+            "text": "Google Analytics 给出的公开配置是包含 add_to_cart 事件并排除 purchase 事件。",
+            "source_ids": [
+              "source-google-analytics-suggested-audiences"
+            ],
+            "support_status": "SUPPORTED",
+            "review_note": "页面配置列明确列出包含和排除事件。"
+          }
+        ]
+      },
+      {
+        "candidate_id": "segment-checkout-abandoners",
+        "brief_id": "official-segments",
+        "brief_version": "v1",
+        "asset_type": "SEGMENT_RULE_TEMPLATE",
+        "name": "结账启动未购客群",
+        "summary": "包含已经开始结账、但在相关结账流程的可配置完成窗口内没有有效购买的用户；它比加购未购更靠近交易完成阶段，应单独计算且不假定固定等待时长。",
+        "project_fit": "外部规则依据：Google Analytics 的结账启动者模板包含 begin_checkout 并排除 purchase。内部确定性计算所需字段：user_id、event_name、event_at、checkout_id、cart_id，以及 purchase 的 order_id、checkout_id、purchase_at 和有效状态；若没有共享流程标识，必须先确定替代归因规则。适用目标：结账流程提醒和失败环节分析。项目待确认参数：完成窗口、流程关联键、有效购买状态、重复启动去重、跨设备身份规则、退出和触达抑制规则；这些都属于内部决策。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "Google Analytics 将结账启动未购受众描述为已开始结账但未完成购买的用户。",
+            "source_ids": [
+              "source-google-analytics-suggested-audiences"
+            ],
+            "support_status": "SUPPORTED",
+            "review_note": "页面 Checkout starters 行直接给出该受众定义。"
+          },
+          {
+            "text": "Google Analytics 给出的公开配置是包含 begin_checkout 事件并排除 purchase 事件。",
+            "source_ids": [
+              "source-google-analytics-suggested-audiences"
+            ],
+            "support_status": "SUPPORTED",
+            "review_note": "页面配置列明确列出 begin_checkout 与 purchase 的包含排除关系。"
+          }
+        ]
+      },
+      {
+        "candidate_id": "segment-item-viewers-without-purchase",
+        "brief_id": "official-segments",
+        "brief_version": "v1",
+        "asset_type": "SEGMENT_RULE_TEMPLATE",
+        "name": "特定商品浏览未购客群",
+        "summary": "包含在可配置窗口内浏览过指定商品、且没有购买同一商品或运营定义替代范围的用户；商品范围、浏览次数、购买匹配和排除窗口均保留为内部变量。",
+        "project_fit": "外部规则依据：Google Analytics 用 view_item 加 item_id 配置特定商品浏览者，并举例将浏览商品但尚未购买者用于再营销。内部确定性计算所需字段：user_id、event_name、event_at、item_id，以及 purchase 事件中的 order_id、item_id、purchase_at 和有效状态。适用目标：商品兴趣培育、内容个性化和商品提醒。项目待确认参数：商品集合、最少浏览次数、浏览与购买窗口、同商品或同类商品的匹配层级、有效购买状态、身份合并、退出及频控规则；公网不能给出这些项目取值。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "Google Analytics 的特定商品浏览者配置使用 view_item 事件，并以 item_id 精确匹配指定商品。",
+            "source_ids": [
+              "source-google-analytics-suggested-audiences"
+            ],
+            "support_status": "SUPPORTED",
+            "review_note": "建议受众表格的 Item viewers 行明确列出事件、参数和匹配方式。"
+          },
+          {
+            "text": "Google Analytics 的受众介绍页面明确把浏览过商品但尚未购买的用户作为基于行为进行再营销的例子。",
+            "source_ids": [
+              "source-google-analytics-audience-introduction"
+            ],
+            "support_status": "SUPPORTED",
+            "review_note": "页面广告用途部分直接给出浏览商品但未购买的再营销场景。"
+          }
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "experiment_id": "public-research-comparison",
+    "run_id": "official-segments-codex-delegated-001",
+    "brief_id": "official-segments",
+    "brief_version": "v1",
+    "run_kind": "OFFICIAL",
+    "arm": "CODEX_DELEGATED",
+    "status": "COMPLETED",
+    "started_at": "2026-09-05T01:00:00.000+08:00",
+    "completed_at": "2026-09-05T01:06:09.645+08:00",
+    "stages": [
+      {
+        "stage": "public_research_and_payload_generation",
+        "status": "COMPLETED",
+        "started_at": "2026-09-05T01:00:00.000+08:00",
+        "completed_at": "2026-09-05T01:06:09.645+08:00",
+        "model_call_count": null,
+        "tool_call_count": 14,
+        "input_tokens": null,
+        "output_tokens": null,
+        "retry_count": 0,
+        "output_candidate_ids": [
+          "segment-rfm-value-tier",
+          "segment-disengaged-purchasers",
+          "segment-cart-abandoners",
+          "segment-checkout-abandoners",
+          "segment-item-viewers-without-purchase"
+        ],
+        "error_category": null
+      }
+    ],
+    "failure_stage": null
+  }
+}

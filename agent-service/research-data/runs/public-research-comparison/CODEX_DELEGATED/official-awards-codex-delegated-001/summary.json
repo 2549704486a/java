@@ -1,0 +1,33 @@
+{
+  "experiment_id": "public-research-comparison",
+  "run_id": "official-awards-codex-delegated-001",
+  "brief_id": "official-awards",
+  "brief_version": "v1",
+  "run_kind": "OFFICIAL",
+  "arm": "CODEX_DELEGATED",
+  "status": "COMPLETED",
+  "started_at": "2026-09-05T00:55:00+08:00",
+  "completed_at": "2026-09-05T01:07:00+08:00",
+  "stages": [
+    {
+      "stage": "codex-delegated-public-research",
+      "status": "COMPLETED",
+      "started_at": "2026-09-05T00:55:00+08:00",
+      "completed_at": "2026-09-05T01:07:00+08:00",
+      "model_call_count": null,
+      "tool_call_count": 14,
+      "input_tokens": null,
+      "output_tokens": null,
+      "retry_count": 0,
+      "output_candidate_ids": [
+        "apple-airtag-single-pack-public-candidate",
+        "apple-airpods4-standard-public-candidate",
+        "apple-watch-se3-public-candidate",
+        "lego-mini-orchid-10343-public-candidate",
+        "xiaomi-router-ax3000t-public-candidate"
+      ],
+      "error_category": null
+    }
+  ],
+  "failure_stage": null
+}

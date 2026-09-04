@@ -179,6 +179,7 @@ class ResearchEvaluationTest(unittest.TestCase):
             imported = import_external_run(
                 payload,
                 ResearchRunStore(temp_dir),
+                record.brief,
             )
             run_dir = (
                 Path(temp_dir)
@@ -205,6 +206,26 @@ class ResearchEvaluationTest(unittest.TestCase):
                     summary=project_record.summary,
                 ),
                 ResearchRunStore(temp_dir),
+                project_record.brief,
+            )
+
+    def test_external_import_rejects_modified_copy_of_frozen_brief(self):
+        record = self.make_record(self.briefs[0], ExperimentArm.CODEX_DIRECT)
+        modified_brief = record.brief.model_copy(
+            update={"title": "被外部执行臂修改的简报"}
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir, self.assertRaisesRegex(
+            ValueError, "冻结正式简报"
+        ):
+            import_external_run(
+                ExternalRunPayload(
+                    brief=modified_brief,
+                    bundle=record.bundle,
+                    summary=record.summary,
+                ),
+                ResearchRunStore(temp_dir),
+                record.brief,
             )
 
     def test_unknown_token_usage_remains_unknown(self):
@@ -219,6 +240,7 @@ class ResearchEvaluationTest(unittest.TestCase):
         self.assertIsNone(metrics.input_tokens)
         self.assertIsNone(metrics.output_tokens)
         self.assertIsNone(metrics.model_call_count)
+        self.assertIsNone(metrics.elapsed_seconds)
         self.assertEqual(1.0, metrics.traceable_claim_rate)
 
     def test_blind_package_does_not_expose_arm_or_run_identity(self):

@@ -1,0 +1,40 @@
+{
+  "brief_id": "official-campaigns",
+  "brief_version": "v1",
+  "run_issues": [],
+  "decisions": [
+    {
+      "candidate_id": "ihg-new-member-first-stay-window",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "sephora-opt-in-task-challenge",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "amex-enroll-then-transact-offer",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "ihg-second-stay-multiplier",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "hilton-automatic-milestone-rewards",
+      "approvable": true,
+      "issues": []
+    }
+  ],
+  "approvable_candidate_ids": [
+    "ihg-new-member-first-stay-window",
+    "sephora-opt-in-task-challenge",
+    "amex-enroll-then-transact-offer",
+    "ihg-second-stay-multiplier",
+    "hilton-automatic-milestone-rewards"
+  ],
+  "rejected_candidate_ids": []
+}

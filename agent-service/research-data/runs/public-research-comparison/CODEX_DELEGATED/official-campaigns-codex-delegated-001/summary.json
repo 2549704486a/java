@@ -1,0 +1,33 @@
+{
+  "experiment_id": "public-research-comparison",
+  "run_id": "official-campaigns-codex-delegated-001",
+  "brief_id": "official-campaigns",
+  "brief_version": "v1",
+  "run_kind": "OFFICIAL",
+  "arm": "CODEX_DELEGATED",
+  "status": "COMPLETED",
+  "started_at": "2026-09-05T01:07:07.635973+08:00",
+  "completed_at": "2026-09-05T01:07:07.635973+08:00",
+  "stages": [
+    {
+      "stage": "independent-public-research",
+      "status": "COMPLETED",
+      "started_at": "2026-09-05T01:07:07.635973+08:00",
+      "completed_at": "2026-09-05T01:07:07.635973+08:00",
+      "model_call_count": null,
+      "tool_call_count": 10,
+      "input_tokens": null,
+      "output_tokens": null,
+      "retry_count": 0,
+      "output_candidate_ids": [
+        "ihg-new-member-first-stay-window",
+        "sephora-opt-in-task-challenge",
+        "amex-enroll-then-transact-offer",
+        "ihg-second-stay-multiplier",
+        "hilton-automatic-milestone-rewards"
+      ],
+      "error_category": null
+    }
+  ],
+  "failure_stage": null
+}

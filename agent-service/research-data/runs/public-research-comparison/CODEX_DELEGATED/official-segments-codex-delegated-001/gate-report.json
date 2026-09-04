@@ -1,0 +1,40 @@
+{
+  "brief_id": "official-segments",
+  "brief_version": "v1",
+  "run_issues": [],
+  "decisions": [
+    {
+      "candidate_id": "segment-rfm-value-tier",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "segment-disengaged-purchasers",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "segment-cart-abandoners",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "segment-checkout-abandoners",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "segment-item-viewers-without-purchase",
+      "approvable": true,
+      "issues": []
+    }
+  ],
+  "approvable_candidate_ids": [
+    "segment-rfm-value-tier",
+    "segment-disengaged-purchasers",
+    "segment-cart-abandoners",
+    "segment-checkout-abandoners",
+    "segment-item-viewers-without-purchase"
+  ],
+  "rejected_candidate_ids": []
+}

@@ -1,0 +1,328 @@
+{
+  "brief_id": "official-campaigns",
+  "brief_version": "v1",
+  "sources": [
+    {
+      "source_id": "source-ihg-new-member-first-stay",
+      "url": "https://www.ihg.com/content/gb/en/deals/member-offers/new-member-3k-bonus?offerId=DE029",
+      "title": "IHG One Rewards | Join now and earn big on your first stay",
+      "publisher": "IHG Hotels & Resorts",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T01:07:07.635973+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "证据摘录（中文转述）：新会员必须通过指定活动页加入；加入后须在21天内用会员号直接向IHG预订并完成一次活动合格住宿，方可获得3,000 IHG One Rewards奖励积分。合格住宿至少一晚、每晚合格房价总支出至少30美元或当地等值货币；奖励房晚及Points & Cash不合格。优惠每位已加入会员只能使用一次，奖励积分不计入精英会籍资格，可按计划规则用于奖励房晚、商品或其他兑换；错误入账、滥用或欺诈可导致撤回积分或取消账户。",
+      "excerpt_ids": [
+        "source-ihg-new-member-first-stay-excerpt-001",
+        "source-ihg-new-member-first-stay-excerpt-002"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-sephora-beauty-challenges",
+      "url": "https://www.sephora.com/beauty/challenge-faq",
+      "title": "Beauty Challenges FAQ",
+      "publisher": "Sephora",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T01:07:07.635973+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "证据摘录（中文转述）：参与者须先是Beauty Insider会员并主动加入可用挑战；完成各任务可获积分，完成全部任务额外获得100积分，积分通常在任务完成后24小时内入账。若挑战未另作规定，任务可按任意顺序完成；线上须登录会员账户，门店须向收银员提供会员信息。挑战仅适用于美国和加拿大的指定Sephora渠道，每个挑战只能完成一次；加入挑战前完成的行为不计奖励。积分可用于Beauty Insider Cash或Rewards Bazaar，后者为限时、库存有限且先到先得。",
+      "excerpt_ids": [
+        "source-sephora-beauty-challenges-excerpt-001",
+        "source-sephora-beauty-challenges-excerpt-002",
+        "source-sephora-beauty-challenges-excerpt-003"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-sephora-beauty-insider-terms",
+      "url": "https://www.sephora.com/beauty/terms-conditions-beauty-insider?+conditions=",
+      "title": "Beauty Insider Terms & Conditions",
+      "publisher": "Sephora",
+      "published_at": "2025-02-14T00:00:00",
+      "retrieved_at": "2026-09-05T01:07:07.635973+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "证据摘录（中文转述）：会员有足够积分时可兑换Sephora不时提供的奖励；积分本身无现金价值。未发生购买或兑换积分活动达到12个月时，未兑换积分会到期。Rewards Bazaar的奖励限时、数量有限、先到先得；每笔交易同一种奖励限兑一个，每年同一种奖励最多兑十个，兑换时立即扣分。奖励不可转让、出售、退货或换回积分、现金及其他商品；条款还说明会利用信息识别操纵积分或权益等欺诈、欺骗或非法活动。",
+      "excerpt_ids": [
+        "source-sephora-beauty-insider-terms-excerpt-001",
+        "source-sephora-beauty-insider-terms-excerpt-002"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-ihg-2x-unlimited-2026",
+      "url": "https://www.ihg.com/content/gb/en/deals/member-offers/x2",
+      "title": "2X Unlimited Double Points",
+      "publisher": "IHG Hotels & Resorts",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T01:07:07.635973+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "证据摘录（中文转述）：该活动适用于持有效账户并完成注册的IHG One Rewards会员；2026年活动期为5月20日至8月31日，注册前完成的住宿不计。自第二次合格住宿起，每次的基础积分加活动奖励积分合计为通常基础积分的两倍；活动奖励积分仅按基础积分计算，不含精英加成或其他奖励，且不计入精英会籍资格。合格住宿至少一晚、每晚支出超过30美元或当地等值货币；奖励房晚、Points + Cash及第三方渠道预订不合格。所得积分可按计划规则兑换奖励房晚、商品或其他权益。",
+      "excerpt_ids": [
+        "source-ihg-2x-unlimited-2026-excerpt-001",
+        "source-ihg-2x-unlimited-2026-excerpt-002",
+        "source-ihg-2x-unlimited-2026-excerpt-003"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-hilton-honors-milestones",
+      "url": "https://www.hilton.com/en/hilton-honors/terms/?msockid=0f601d4defad6168347d0b83eede6087",
+      "title": "Terms and Conditions for Hilton Honors Member Rewards",
+      "publisher": "Hilton Honors",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T01:07:07.635973+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "证据摘录（中文转述）：Hilton Honors会员在每个日历年达到合格房晚门槛时自动获得里程碑奖励，无需报名。达到40个合格房晚获10,000奖励积分，此后每增加10个合格房晚再获10,000，60晚时另加30,000；120晚时可在确认升级奖励和30,000积分之间选择。每年最多计至180晚和210,000里程碑奖励积分；同一时段无论订几间房只计一间。积分兑换要求账户有足够积分，奖励受各自限制；违规使用积分可导致没收积分或终止会籍。",
+      "excerpt_ids": [
+        "source-hilton-honors-milestones-excerpt-001",
+        "source-hilton-honors-milestones-excerpt-002",
+        "source-hilton-honors-milestones-excerpt-003"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-amex-offers-program-terms",
+      "url": "https://www.americanexpress.com/en-us/benefits/offers/partner-terms/?solid=SEARCH",
+      "title": "Terms & Conditions | Amex Offers",
+      "publisher": "American Express",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T01:07:07.635973+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "证据摘录（中文转述）：合资格持卡会员须先通过American Express应用、在线账户等指定渠道把优惠加入某一张合资格卡，再用同一张卡完成符合具体优惠条款的交易；交易前未加入、换卡或使用其他卡均不合格。退款、退货或取消交易不计最低消费，已发奖励可撤回；现金等价物、费用、预借现金等交易排除。奖励可为账单抵扣、Membership Rewards积分、航空里程、酒店积分或其他形式；优惠可能限量、限时并因持卡人或账户资格而异，疑似欺诈或滥用可导致延迟、拒发或撤回奖励。",
+      "excerpt_ids": [
+        "source-amex-offers-program-terms-excerpt-001",
+        "source-amex-offers-program-terms-excerpt-002",
+        "source-amex-offers-program-terms-excerpt-003"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-marriott-refer-a-friend-unreadable",
+      "url": "https://help.marriott.com/s/article/marriott-bonvoy-refer-a-friend",
+      "title": "Marriott Bonvoy Customer Service and Online Help",
+      "publisher": "Marriott International",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T01:07:07.635973+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": null,
+      "excerpt_ids": [],
+      "read_status": "EMPTY_CONTENT",
+      "error_category": "DYNAMIC_PAGE_EMPTY"
+    },
+    {
+      "source_id": "source-marriott-points-work-unreadable",
+      "url": "https://help.marriott.com/s/article/how-marriott-bonvoy-points-work",
+      "title": "Marriott Bonvoy Customer Service and Online Help",
+      "publisher": "Marriott International",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T01:07:07.635973+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": null,
+      "excerpt_ids": [],
+      "read_status": "EMPTY_CONTENT",
+      "error_category": "DYNAMIC_PAGE_EMPTY"
+    },
+    {
+      "source_id": "source-marriott-moments-unreadable",
+      "url": "https://help.marriott.com/s/article/marriott-bonvoy-moments",
+      "title": "Marriott Bonvoy Customer Service and Online Help",
+      "publisher": "Marriott International",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T01:07:07.635973+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": null,
+      "excerpt_ids": [],
+      "read_status": "EMPTY_CONTENT",
+      "error_category": "DYNAMIC_PAGE_EMPTY"
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "ihg-new-member-first-stay-window",
+      "brief_id": "official-campaigns",
+      "brief_version": "v1",
+      "asset_type": "CAMPAIGN_PATTERN",
+      "name": "新会员限时首单任务",
+      "summary": "外部机制：IHG以指定活动页加入会员为起点，为新会员设置21天完成首次合格住宿的窗口；满足直接预订、会员号绑定、最低住宿与消费条件后一次性发放3,000奖励积分。积分进入既有会员账户，可按计划规则兑换奖励房晚、商品等，但不计入精英会籍资格。该公开案例的具体积分、金额、地域和期限仅属于IHG规则，不是本项目参数。",
+      "project_fit": "适用目标：拉新并推动新会员完成首个核心行为。外部已核验规则包括先加入、限时完成、合格行为、一次性奖励、兑换去向和反滥用处置。项目待确认参数：新会员定义及回溯期、获客渠道白名单、完成窗口、合格事件与取消状态、奖励类型和数量、到账时限、单账户次数、活动总量上限、设备/手机号/支付标识去重、退款撤回及申诉流程；未确认前不得上线或承诺奖励。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "IHG该新会员优惠要求从指定页面加入，并在加入后21天内使用会员号直接预订、完成一次活动合格住宿，满足条件后获得3,000奖励积分。",
+          "source_ids": [
+            "source-ihg-new-member-first-stay"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方活动条款直接说明加入路径、21天窗口、预订要求与奖励。"
+        },
+        {
+          "text": "该优惠的合格住宿至少一晚且每晚合格房价总支出至少30美元或当地等值货币；奖励房晚和Points & Cash不合格，每位已加入会员最多获得一次奖励。",
+          "source_ids": [
+            "source-ihg-new-member-first-stay"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方条款列明住宿、金额、排除项和单次上限；这些数字仅适用于IHG案例。"
+        },
+        {
+          "text": "活动奖励积分不计入IHG精英会籍资格，但可依计划规则用于奖励房晚、商品或其他兑换；错误入账、滥用或欺诈可触发撤回积分或账户处置。",
+          "source_ids": [
+            "source-ihg-new-member-first-stay"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方条款同时覆盖兑换边界与风险处置。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "sephora-opt-in-task-challenge",
+      "brief_id": "official-campaigns",
+      "brief_version": "v1",
+      "asset_type": "CAMPAIGN_PATTERN",
+      "name": "主动加入的组合任务挑战",
+      "summary": "外部机制：Sephora要求Beauty Insider会员先主动加入可用挑战，再按任务完成行为；每个任务分别奖励积分，全部完成再加100积分，未特别规定时任务次序自由。参与前置、进度查看、到账时限、渠道范围、单挑战次数及积分兑换路径均在官方FAQ中明确。公开数字与地域范围只描述Sephora案例。",
+      "project_fit": "适用目标：促活，也可用于引导会员探索多个功能或品类。外部已核验规则包括明确选择加入、逐任务记账、全完成加奖、先加入后计数、任务状态可查询、一次完成限制及积分兑换。项目待确认参数：目标客群资格、任务清单和事件口径、任务顺序、活动周期、分步与完赛奖励、跨端身份合并、进度延迟、取消/退款处理、重复事件幂等、奖励上限、通知同意与异常补发审核；不得沿用Sephora的积分数或地域条件。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "Sephora Beauty Insider会员须先主动加入挑战；完成各任务可获积分，完成全部任务另获100积分，未另作规定时任务可以任意顺序完成。",
+          "source_ids": [
+            "source-sephora-beauty-challenges"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方挑战FAQ直接说明参与、逐任务奖励、完赛加奖与顺序规则。"
+        },
+        {
+          "text": "加入挑战前完成的行为不计奖励；每个挑战只能完成一次，积分通常在完成任务后24小时内出现，参与者可在挑战页查看进度。",
+          "source_ids": [
+            "source-sephora-beauty-challenges"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方FAQ明确前置加入、次数、到账时限和状态查询。"
+        },
+        {
+          "text": "挑战所得积分可用于Beauty Insider Cash或Rewards Bazaar；Rewards Bazaar奖励限时、数量有限、先到先得，并在兑换时扣除积分。",
+          "source_ids": [
+            "source-sephora-beauty-challenges",
+            "source-sephora-beauty-insider-terms"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "挑战FAQ和会员条款共同支持兑换路径、库存属性与扣分时点。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "amex-enroll-then-transact-offer",
+      "brief_id": "official-campaigns",
+      "brief_version": "v1",
+      "asset_type": "CAMPAIGN_PATTERN",
+      "name": "先激活后交易的定向优惠",
+      "summary": "外部机制：Amex Offers把资格、选择加入和交易核验串成闭环。合资格持卡会员先将优惠加入指定卡，再在截止时间前用同一卡完成符合具体条款的交易；奖励可采用账单抵扣、积分或里程等形式。退款、退货、取消、现金等价交易及无法识别的中间渠道交易有明确排除或撤回规则，具体优惠门槛并非统一固定值。",
+      "project_fit": "适用目标：促活或召回，尤其适合仅向合资格账户展示、需要用户明确接受的活动。外部已核验规则包括优惠与账户绑定、先激活后行动、同一身份完成、具体条款控制资格、退货撤回和异常交易排除。项目待确认参数：入选规则、展示与同意留痕、合格事件/商户/渠道、有效期、累计或单笔口径、奖励形式和数量、到账时限、名额与并发锁定、撤销状态同步、第三方数据缺失处理、欺诈审核及申诉；不预设客群规模或转化效果。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "Amex Offers要求合资格持卡会员先把优惠加入某张合资格卡，并用同一张卡完成合格交易；交易前未加入或使用其他卡不会获得优惠。",
+          "source_ids": [
+            "source-amex-offers-program-terms"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方通用条款明确先加入、绑定具体卡和同卡交易条件。"
+        },
+        {
+          "text": "Amex Offers奖励可为账单抵扣、Membership Rewards积分、航空里程、酒店积分或其他奖励，具体资格、门槛和截止时间由通用条款及每项优惠的具体条款共同决定。",
+          "source_ids": [
+            "source-amex-offers-program-terms"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方条款明确奖励类型及具体优惠条款的控制作用，未虚构任何活动金额。"
+        },
+        {
+          "text": "退款、退货或取消的交易不计入优惠最低消费且已发奖励可撤回；现金等价物等交易被排除，疑似欺诈或滥用也可触发延迟、拒发或撤回奖励。",
+          "source_ids": [
+            "source-amex-offers-program-terms"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方条款直接列出交易排除、奖励冲正和风控处置。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "ihg-second-stay-multiplier",
+      "brief_id": "official-campaigns",
+      "brief_version": "v1",
+      "asset_type": "CAMPAIGN_PATTERN",
+      "name": "第二次起生效的复购倍增",
+      "summary": "外部机制：IHG 2026年2X Unlimited案例要求会员先注册，第一次合格住宿充当启动行为，从活动期内第二次合格住宿起，将基础积分与活动奖励积分合计提高到通常基础积分的两倍。官方规则明确活动日期、合格住宿、排除渠道、倍数计算基数、会籍资格边界和兑换方向；该案例已于2026年8月31日结束，仅作为历史机制证据。",
+      "project_fit": "适用目标：促活、复购和阶段性留存；通过把加速奖励放在第二次及后续合格行为，避免首个行为即完成全部激励。外部已核验规则包括先注册、首次不加速、第二次起倍增、按基础积分计算、活动期与排除项。项目待确认参数：第一次和后续行为的归并周期、合格状态、倍数或固定奖励、奖励基数、封顶、活动有效期、延迟入账、退款回滚、重复订单合并、渠道白名单、与其他活动叠加及风控；不得照搬IHG的消费门槛或倍数。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "IHG 2X Unlimited的2026年活动期为5月20日至8月31日，会员须注册；注册前完成的住宿不计入活动。",
+          "source_ids": [
+            "source-ihg-2x-unlimited-2026"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方活动FAQ明确注册要求、活动时间及注册前行为排除。"
+        },
+        {
+          "text": "该活动从第二次合格住宿起，使基础积分与活动奖励积分合计达到通常基础积分的两倍；活动奖励仅按基础积分计算，不含精英加成或其他奖励，且不计入精英会籍资格。",
+          "source_ids": [
+            "source-ihg-2x-unlimited-2026"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方条款直接定义生效序次、倍数基数和会籍资格边界。"
+        },
+        {
+          "text": "该活动的合格住宿至少一晚且每晚支出超过30美元或当地等值货币；奖励房晚、Points + Cash及第三方渠道预订不合格，所得积分可按计划规则兑换奖励房晚、商品或其他权益。",
+          "source_ids": [
+            "source-ihg-2x-unlimited-2026"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方FAQ列明合格条件、排除渠道与积分使用方向；数字仅适用于该IHG活动。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "hilton-automatic-milestone-rewards",
+      "brief_id": "official-campaigns",
+      "brief_version": "v1",
+      "asset_type": "CAMPAIGN_PATTERN",
+      "name": "自动累计的阶梯里程碑奖励",
+      "summary": "外部机制：Hilton Honors按日历年自动累计合格房晚，无需报名，在40晚、其后每10晚及若干关键门槛发放积分或选择型权益。规则同时限定同一时段只计一间房、年度累计上限，并要求兑换时账户积分足够。该案例的房晚、积分与年度上限只适用于Hilton Honors，不代表本项目应采用相同阈值。",
+      "project_fit": "适用目标：长期留存与高频会员进阶，减少逐次报名摩擦，并用连续阶梯维持下一目标的可见性。外部已核验规则包括自动参与、日历年累计、多级阈值、关键节点加奖或二选一、计数去重、年度上限和兑换余额要求。项目待确认参数：累计周期、合格事件、阶梯数量与阈值、各阶奖励类型和数量、是否允许选择、封顶、跨周期清零或结转、同源并发事件去重、退款回退、账户合并及异常累计审核；不得据此推断收益或会员人数。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "Hilton Honors里程碑奖励按每个日历年的合格房晚自动计算，无需报名，达到门槛后奖励积分自动入账。",
+          "source_ids": [
+            "source-hilton-honors-milestones"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方会员条款明确按日历年累计、自动获得且无需注册。"
+        },
+        {
+          "text": "Hilton Honors会员达到40个合格房晚获10,000奖励积分，此后每增加10晚再获10,000，60晚时另加30,000；120晚时可在确认升级奖励和30,000积分之间选择。",
+          "source_ids": [
+            "source-hilton-honors-milestones"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方条款逐项列出阶梯、额外节点和选择型权益；数字仅属于Hilton案例。"
+        },
+        {
+          "text": "该机制每年最多计至180个合格房晚和210,000里程碑奖励积分，同一时段预订多间房只计一间；兑换奖励时账户须有足够积分。",
+          "source_ids": [
+            "source-hilton-honors-milestones"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方条款直接支持年度封顶、重复计数限制和兑换余额要求。"
+        }
+      ]
+    }
+  ]
+}

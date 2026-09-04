@@ -1,0 +1,40 @@
+{
+  "brief_id": "official-awards",
+  "brief_version": "v1",
+  "run_issues": [],
+  "decisions": [
+    {
+      "candidate_id": "xiaomi-router-ax3000t-public-candidate",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "apple-airtag-single-pack-public-candidate",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "lego-mini-orchid-10343-public-candidate",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "apple-airpods4-standard-public-candidate",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "apple-watch-se3-public-candidate",
+      "approvable": true,
+      "issues": []
+    }
+  ],
+  "approvable_candidate_ids": [
+    "xiaomi-router-ax3000t-public-candidate",
+    "apple-airtag-single-pack-public-candidate",
+    "lego-mini-orchid-10343-public-candidate",
+    "apple-airpods4-standard-public-candidate",
+    "apple-watch-se3-public-candidate"
+  ],
+  "rejected_candidate_ids": []
+}

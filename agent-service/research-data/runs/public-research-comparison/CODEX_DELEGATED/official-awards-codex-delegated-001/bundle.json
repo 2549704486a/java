@@ -1,0 +1,247 @@
+{
+  "brief_id": "official-awards",
+  "brief_version": "v1",
+  "sources": [
+    {
+      "source_id": "source-xiaomi-shop-home-20260905",
+      "url": "https://www.mi.com/shop",
+      "title": "Xiaomi官方网站 | 以人为中心，构建‘人车家全生态’",
+      "publisher": "小米商城",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T01:07:00+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "小米商城首页的‘路由器’区域列出‘Xiaomi路由器AX3000T 159元’，并与 BE3600、BE6500 Pro 等其他型号分列。页面同时标明站点为小米官网/小米商城。",
+      "excerpt_ids": [
+        "source-xiaomi-shop-home-20260905-excerpt-001"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-apple-airtag-shop-20260905",
+      "url": "https://www.apple.com.cn/shop/buy-airtag/airtag",
+      "title": "购买 AirTag - Apple（中国大陆）",
+      "publisher": "Apple（中国大陆）",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T01:07:00+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "Apple 中国大陆购买页展示 AirTag 1 件装 RMB 249、4 件装 RMB 849。页面说明新一代 AirTag 可挂在钥匙串或背包上，并可通过 iPhone 或 Apple Watch 的‘查找’App 追踪物品；页面还提供免费镌刻服务。",
+      "excerpt_ids": [
+        "source-apple-airtag-shop-20260905-excerpt-001"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-lego-mini-orchid-us-20260905",
+      "url": "https://www.lego.com/en-us/product/mini-orchid-10343?opt-out-modal=show",
+      "title": "Mini Orchid 10343 | Botanicals | Buy online at the Official LEGO Shop US",
+      "publisher": "LEGO System A/S（美国官网）",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T01:07:00+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "LEGO 美国官方商品页显示 Mini Orchid（10343）价格为 USD 29.99。规格区说明套装含 274 块组件，完成后高度超过 10 英寸（25 厘米），包括 5 朵盛开的兰花、花苞、叶片、浅赤褐色花盆和木质效果底座，定位为成人拼搭及家居或办公室装饰礼物。",
+      "excerpt_ids": [
+        "source-lego-mini-orchid-us-20260905-excerpt-001"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-apple-airpods4-shop-20260905",
+      "url": "https://www.apple.com.cn/shop/buy-airpods/airpods-4",
+      "title": "购买 AirPods 4 - Apple（中国大陆）",
+      "publisher": "Apple（中国大陆）",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T01:07:00+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "Apple 中国大陆购买页展示标准版 AirPods 4 为 RMB 999，支持主动降噪版为 RMB 1,399。标准版搭载 H2 芯片，支持动态头部追踪的个性化空间音频、IP54 级防尘抗水抗汗、USB-C 充电，配合充电盒聆听时间最长 30 小时；页面注明不随附 USB-C 充电线和电源适配器。",
+      "excerpt_ids": [
+        "source-apple-airpods4-shop-20260905-excerpt-001"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-apple-watch-se3-shop-20260905",
+      "url": "https://www.apple.com.cn/shop/buy-watch/apple-watch-se",
+      "title": "购买 Apple Watch SE - Apple（中国大陆）",
+      "publisher": "Apple（中国大陆）",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T01:07:00+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "Apple 中国大陆购买页的对比区显示 Apple Watch SE 3 为 RMB 1,999 起，提供 44 毫米或 40 毫米铝金属表壳、最高 1000 尼特 OLED 全天候视网膜显示屏、50 米防水、GPS、可选蜂窝网络表款、S10 芯片，续航最长 18 小时，低电量模式最长 32 小时。",
+      "excerpt_ids": [
+        "source-apple-watch-se3-shop-20260905-excerpt-001"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "xiaomi-router-ax3000t-public-candidate",
+      "brief_id": "official-awards",
+      "brief_version": "v1",
+      "asset_type": "AWARD_CANDIDATE",
+      "name": "Xiaomi 路由器 AX3000T",
+      "summary": "公开事实：小米商城在 2026-09-05 读取时将 Xiaomi 路由器 AX3000T 列为 159 元；本次可读页面只足以确认公开型号名与零售价，不补写页面未展示的无线协议、端口或覆盖参数。",
+      "project_fit": "适配判断：较低公开价位且属于家庭网络设备，可作为偏实用型的日常奖品候选，与娱乐或穿戴类候选形成场景差异。项目待确认参数：实际采购型号与版本、批量含税到仓报价、供货与售后主体、包装及配送限制、兑换所需积分、目标用户兼容需求均须由内部确认；不把商城零售价当作采购成本。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "小米商城首页于 2026-09-05 将商品公开列名为 Xiaomi路由器AX3000T，并展示价格 159 元。",
+          "source_ids": [
+            "source-xiaomi-shop-home-20260905"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "品牌官方商城可读页面直接支持型号名和当时展示的人民币零售价；未从型号名外推技术规格。"
+        },
+        {
+          "text": "该商品在小米商城中归入路由器商品区域，因此可据其公开品类属性评估家庭网络使用场景。",
+          "source_ids": [
+            "source-xiaomi-shop-home-20260905"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "页面的栏目和商品列名支持品类判断；项目适配性属于基于公开品类的研究判断。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "apple-airtag-single-pack-public-candidate",
+      "brief_id": "official-awards",
+      "brief_version": "v1",
+      "asset_type": "AWARD_CANDIDATE",
+      "name": "Apple AirTag 1 件装",
+      "summary": "公开事实：Apple 中国大陆在线商店在 2026-09-05 读取时展示 AirTag 1 件装 RMB 249、4 件装 RMB 849，并说明其可配合 iPhone 或 Apple Watch 的‘查找’App 追踪钥匙串、背包等物品；此候选采用 1 件装口径，不与历史价格合并。",
+      "project_fit": "适配判断：单件装体积小、物品查找用途明确，适合偏好出行、数码配件或个性化镌刻体验的用户。项目待确认参数：采购渠道、到仓报价、当前批次与交付、镌刻是否纳入履约、附件需求、Apple 生态兼容条件、兑换所需积分和售后流程均须内部确认；官网零售价不是内部采购成本或库存证明。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "Apple 中国大陆购买页于 2026-09-05 展示 AirTag 1 件装 RMB 249、4 件装 RMB 849，并提供免费镌刻服务。",
+          "source_ids": [
+            "source-apple-airtag-shop-20260905"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "当前品牌官方购买页直接支持包装规格与价格；候选明确采用 1 件装口径。"
+        },
+        {
+          "text": "Apple 将 AirTag 描述为可挂在钥匙串或背包上，并通过 iPhone 或 Apple Watch 的‘查找’App 追踪物品。",
+          "source_ids": [
+            "source-apple-airtag-shop-20260905"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方页面直接描述使用载体、兼容设备类别和物品查找场景。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "lego-mini-orchid-10343-public-candidate",
+      "brief_id": "official-awards",
+      "brief_version": "v1",
+      "asset_type": "AWARD_CANDIDATE",
+      "name": "LEGO Botanicals Mini Orchid 10343（美国官网口径）",
+      "summary": "公开事实：LEGO 美国官网在 2026-09-05 读取时展示 Mini Orchid 10343 售价 USD 29.99；套装含 274 块组件，完成后高约 25 厘米，并含 5 朵盛开兰花、花苞、叶片、花盆和木质效果底座。该美元价格仅代表美国官网口径，不换算、不视为中国采购价。",
+      "project_fit": "适配判断：成人拼搭过程与完成后的桌面装饰兼具体验性和展示性，适合兴趣、创意、乔迁或节日关怀场景，可补充纯数码奖品之外的选择。项目待确认参数：中国大陆可采购的同型号版本、人民币含税到仓报价、跨区域销售与保修条件、包装完好标准、配送方式、兑换所需积分和适用人群均须内部确认；美国官网的限购或可售状态不代表项目库存。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "LEGO 美国官方商品页于 2026-09-05 展示 Mini Orchid 10343 的美国官网价格为 USD 29.99。",
+          "source_ids": [
+            "source-lego-mini-orchid-us-20260905"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方页面直接支持美元价格；已明确限定为美国官网口径，未换算或静默并入中国价格。"
+        },
+        {
+          "text": "Mini Orchid 10343 含 274 块组件，完成后高度超过 10 英寸（25 厘米），包含 5 朵盛开兰花及花苞、叶片、花盆和木质效果底座。",
+          "source_ids": [
+            "source-lego-mini-orchid-us-20260905"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "组件数、尺寸和构成均来自官方商品页规格区。"
+        },
+        {
+          "text": "LEGO 官方将该套装定位为成人拼搭、家居或办公室装饰，以及乔迁、生日等场合的礼物。",
+          "source_ids": [
+            "source-lego-mini-orchid-us-20260905"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方页面的产品说明直接列出成人、装饰及送礼场景。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "apple-airpods4-standard-public-candidate",
+      "brief_id": "official-awards",
+      "brief_version": "v1",
+      "asset_type": "AWARD_CANDIDATE",
+      "name": "Apple AirPods 4 标准版",
+      "summary": "公开事实：Apple 中国大陆在线商店在 2026-09-05 读取时展示 AirPods 4 标准版 RMB 999；其搭载 H2 芯片，支持个性化空间音频、IP54 防尘抗水抗汗和 USB-C 充电，配合充电盒最长聆听 30 小时。标准版不含主动降噪，且页面注明不随附 USB-C 充电线和电源适配器。",
+      "project_fit": "适配判断：覆盖通勤、学习、会议和娱乐等高频个人音频场景，可作为中高价位数码激励候选；标准版与主动降噪版必须作为不同配置管理。项目待确认参数：采购配置、到仓报价、兼容设备要求、是否另配充电线或适配器、交付批次、兑换所需积分及售后责任均须内部确认；不得将 RMB 1,399 的主动降噪版规格或价格合并到本候选。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "Apple 中国大陆购买页于 2026-09-05 展示 AirPods 4 标准版 RMB 999，支持主动降噪版 RMB 1,399；本候选采用标准版口径。",
+          "source_ids": [
+            "source-apple-airpods4-shop-20260905"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方购买页直接并列两种配置及价格，候选未静默合并配置。"
+        },
+        {
+          "text": "AirPods 4 标准版搭载 H2 芯片，支持个性化空间音频、IP54 防尘抗水抗汗和 USB-C 充电，配合充电盒聆听时间最长 30 小时。",
+          "source_ids": [
+            "source-apple-airpods4-shop-20260905"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "功能、防护等级、接口和续航均由官方产品信息直接支持。"
+        },
+        {
+          "text": "Apple 页面注明 AirPods 4 不再随附 USB-C 充电线和电源适配器。",
+          "source_ids": [
+            "source-apple-airpods4-shop-20260905"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "该包装注意事项由官方页面明确给出，可用于后续履约配置核对。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "apple-watch-se3-public-candidate",
+      "brief_id": "official-awards",
+      "brief_version": "v1",
+      "asset_type": "AWARD_CANDIDATE",
+      "name": "Apple Watch SE 3",
+      "summary": "公开事实：Apple 中国大陆在线商店在 2026-09-05 读取时展示 Apple Watch SE 3 为 RMB 1,999 起；提供 44 毫米或 40 毫米铝金属表壳、OLED 全天候视网膜显示屏、50 米防水、GPS、S10 芯片和可选蜂窝网络表款，标准续航最长 18 小时。‘起’价随尺寸、网络版本和表带组合变化，不展开为单一固定配置价。",
+      "project_fit": "适配判断：健康记录、运动和通知场景兼具，适合作为高价值里程碑、长期贡献或健康主题激励候选。项目待确认参数：具体表壳尺寸、GPS 或蜂窝网络版本、表带组合、兼容 iPhone 条件、运营商要求、含税到仓报价、交付与售后、兑换所需积分及适用人群均须内部确认；公开起售价不等于任意配置的采购成本。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "Apple 中国大陆购买页于 2026-09-05 展示 Apple Watch SE 3 为 RMB 1,999 起，并提供 44 毫米或 40 毫米铝金属表壳。",
+          "source_ids": [
+            "source-apple-watch-se3-shop-20260905"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "官方页面直接支持起售价与尺寸选项；未将起售价表述为全部配置固定价。"
+        },
+        {
+          "text": "Apple Watch SE 3 配有最高 1000 尼特 OLED 全天候视网膜显示屏、50 米防水、GPS、S10 芯片，并可选蜂窝网络表款。",
+          "source_ids": [
+            "source-apple-watch-se3-shop-20260905"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "显示、防水、定位、芯片与网络版本信息均来自官方对比区。"
+        },
+        {
+          "text": "Apple 页面给出的 Apple Watch SE 3 续航为最长 18 小时，低电量模式下最长 32 小时。",
+          "source_ids": [
+            "source-apple-watch-se3-shop-20260905"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "两个续航口径均由官方页面直接展示，并保留‘最长’限定。"
+        }
+      ]
+    }
+  ]
+}
