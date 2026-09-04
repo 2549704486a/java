@@ -458,3 +458,40 @@ CLI 已支持以下调用，输出仍进入按实验、执行臂和运行编号�
 最终报告分别保留每个执行臂的原始指标和评分，并按预声明规则计算建议。缺少任一执行臂或正式简报时，结论强制为 `INCONCLUSIVE`。只有完整十二份结果中，多 Agent 没有逐简报新增门禁失败、至少赢两份简报且比单 Agent 总计多至少两条可批准候选，才可能输出 `KEEP_MULTI_AGENT`；否则输出 `KEEP_SINGLE_AGENT`。项目对 Codex 的比较仍明确包含模型、搜索工具和运行环境差异。
 
 本阶段只完成评估基础设施和固定数据验证，尚未生成任何正式四臂胜负结论。正式运行、用户盲评和保留决策分别属于后续 5.2 至 6.1。
+
+### 8.4 CODEX_DIRECT 正式运行
+
+`CODEX_DIRECT` 已使用三份冻结简报完成正式研究。执行过程中没有显式委派子 Agent；公网资料由当前 Codex 会话直接搜索、读取和整理。每份结果先写成统一的 `ExternalRunPayload`，再通过新增命令导入：
+
+```powershell
+.\.venv\Scripts\python.exe -m app.research.cli import-external `
+  --input research-data\imports\codex-direct\official-awards-v1.json
+```
+
+命令不会信任输入中预先计算的门禁结果，而是重新调用 `evaluate_candidate_bundle()`，并将 `brief.json`、`bundle.json`、`summary.json` 和 `gate-report.json` 写入不可覆盖目录：
+
+```text
+research-data/runs/public-research-comparison/
+└── CODEX_DIRECT/
+    ├── official-awards-codex-direct-001/
+    ├── official-campaigns-codex-direct-001/
+    └── official-segments-codex-direct-001/
+```
+
+正式结果如下：
+
+| 简报 | 搜索查询 | 读取页面 | 候选 | 证据完整候选 | 可批准候选 | 门禁失败 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 奖品 | 8 | 6 | 5 | 5 | 5 | 0 |
+| 活动机制 | 8 | 5 | 5 | 5 | 5 | 0 |
+| 客群规则 | 8 | 4 | 5 | 5 | 5 | 0 |
+
+奖品候选使用 JBL、Apple、Anker、小米和罗技公开页面。AirTag 的 2021 技术规格页与当前商店的新一代价格页被明确分开，候选要求采购时先锁定代际，未把两页静默合并。小米规格页没有价格，结果明确保留“需要另行取得目标地区报价”，没有猜测采购成本。罗技来源是 2024 年价目表，因此只作为带日期的历史 MSRP 证据，不能直接当作当前采购报价。
+
+活动机制候选来自 Starbucks、Sephora、Microsoft、LEGO 和 Marriott 官方规则，分别整理为加倍积分、限量奖励市集、多行为任务、消费与非消费混合赚分、多品类权益与可用性校验五种模式。外部倍率、门槛和兑换规则只作为案例事实，迁移到项目时仍要求内部配置成本、风控、库存和审批参数。
+
+客群候选使用 Bloomreach 的 RFM 文档、Google Analytics 常见受众以及 Amplitude 的行为客群与计算属性文档，形成 RFM、开始兑换但未完成、近期兑换、多次兑换、活跃未兑换五种可计算模板。每个模板都列出所需内部字段，但时间窗口、次数和金额条件保持为运营待确认参数。
+
+Codex 环境没有提供可验证的模型调用次数与 Token 用量。为避免把“未知”误写成 `0`，`StageObservation.model_call_count` 和汇总指标均改为可空字段，三个正式结果保持 `null`。网页工具调用数按可观察调用记录保存；时间是该简报在会话中的墙钟研究窗口，不等同于纯模型计算时间。
+
+本阶段的 `5/5` 只表示 Schema、来源引用、数量和内部事实门禁通过，不代表人工质量得分，也不能据此得出任何执行臂胜负。三份结果将在四臂齐备后与执行身份分离，再进入统一匿名评分。

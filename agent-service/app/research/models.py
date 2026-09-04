@@ -290,7 +290,7 @@ class StageObservation(StrictModel):
     status: StageStatus
     started_at: AwareDatetime
     completed_at: AwareDatetime
-    model_call_count: int = Field(default=0, ge=0)
+    model_call_count: int | None = Field(default=None, ge=0)
     tool_call_count: int = Field(default=0, ge=0)
     input_tokens: int | None = Field(default=None, ge=0)
     output_tokens: int | None = Field(default=None, ge=0)
@@ -459,7 +459,7 @@ class RunEvaluationMetrics(StrictModel):
     run_issue_count: int = Field(ge=0)
     gate_failed_candidate_count: int = Field(ge=0)
     elapsed_seconds: float = Field(ge=0)
-    model_call_count: int = Field(ge=0)
+    model_call_count: int | None = Field(default=None, ge=0)
     tool_call_count: int = Field(ge=0)
     input_tokens: int | None = Field(default=None, ge=0)
     output_tokens: int | None = Field(default=None, ge=0)

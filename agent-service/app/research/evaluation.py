@@ -202,7 +202,7 @@ def calculate_run_metrics(record: EvaluationRunRecord) -> RunEvaluationMetrics:
         run_issue_count=len(record.gate_report.run_issues),
         gate_failed_candidate_count=len(record.gate_report.rejected_candidate_ids),
         elapsed_seconds=elapsed_seconds,
-        model_call_count=sum(stage.model_call_count for stage in stages),
+        model_call_count=_sum_known(stage.model_call_count for stage in stages),
         tool_call_count=sum(stage.tool_call_count for stage in stages),
         input_tokens=input_tokens,
         output_tokens=output_tokens,

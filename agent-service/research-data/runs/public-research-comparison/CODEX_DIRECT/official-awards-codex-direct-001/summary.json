@@ -1,0 +1,33 @@
+{
+  "experiment_id": "public-research-comparison",
+  "run_id": "official-awards-codex-direct-001",
+  "brief_id": "official-awards",
+  "brief_version": "v1",
+  "run_kind": "OFFICIAL",
+  "arm": "CODEX_DIRECT",
+  "status": "COMPLETED",
+  "started_at": "2026-09-04T23:30:00+08:00",
+  "completed_at": "2026-09-05T00:40:00+08:00",
+  "stages": [
+    {
+      "stage": "codex-direct-research",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T23:30:00+08:00",
+      "completed_at": "2026-09-05T00:40:00+08:00",
+      "model_call_count": null,
+      "tool_call_count": 4,
+      "input_tokens": null,
+      "output_tokens": null,
+      "retry_count": 0,
+      "output_candidate_ids": [
+        "candidate-codex-direct-jbl-go4",
+        "candidate-codex-direct-apple-airtag",
+        "candidate-codex-direct-anker-nano",
+        "candidate-codex-direct-mi-band9",
+        "candidate-codex-direct-logitech-m350s"
+      ],
+      "error_category": null
+    }
+  ],
+  "failure_stage": null
+}

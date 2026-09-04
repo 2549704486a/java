@@ -112,7 +112,7 @@ class ResearchEvaluationTest(unittest.TestCase):
             status=StageStatus.COMPLETED,
             started_at=NOW,
             completed_at=NOW,
-            model_call_count=1,
+            model_call_count=1 if known_tokens else None,
             tool_call_count=1,
             input_tokens=100 if known_tokens else None,
             output_tokens=20 if known_tokens else None,
@@ -218,6 +218,7 @@ class ResearchEvaluationTest(unittest.TestCase):
 
         self.assertIsNone(metrics.input_tokens)
         self.assertIsNone(metrics.output_tokens)
+        self.assertIsNone(metrics.model_call_count)
         self.assertEqual(1.0, metrics.traceable_claim_rate)
 
     def test_blind_package_does_not_expose_arm_or_run_identity(self):

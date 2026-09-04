@@ -1,0 +1,40 @@
+{
+  "brief_id": "official-campaigns",
+  "brief_version": "v1",
+  "run_issues": [],
+  "decisions": [
+    {
+      "candidate_id": "candidate-codex-direct-starbucks-bonus",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "candidate-codex-direct-sephora-bazaar",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "candidate-codex-direct-microsoft-missions",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "candidate-codex-direct-lego-engagement",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "candidate-codex-direct-marriott-flexible",
+      "approvable": true,
+      "issues": []
+    }
+  ],
+  "approvable_candidate_ids": [
+    "candidate-codex-direct-starbucks-bonus",
+    "candidate-codex-direct-sephora-bazaar",
+    "candidate-codex-direct-microsoft-missions",
+    "candidate-codex-direct-lego-engagement",
+    "candidate-codex-direct-marriott-flexible"
+  ],
+  "rejected_candidate_ids": []
+}

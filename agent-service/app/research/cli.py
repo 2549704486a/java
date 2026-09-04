@@ -19,8 +19,9 @@ from app.research.agents import (
     build_single_research_agents,
 )
 from app.research.artifacts import ResearchRunStore
+from app.research.evaluation import calculate_run_metrics, import_external_run
 from app.research.gates import evaluate_candidate_bundle
-from app.research.models import ExperimentArm, load_research_brief
+from app.research.models import ExternalRunPayload, ExperimentArm, load_research_brief
 from app.research.web import PublicWebClient
 from app.research.workflow import IndependentResearcherRunner, MultiResearchWorkflow
 
@@ -48,6 +49,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run_parser.add_argument("--run-id")
     run_parser.add_argument("--runs-root", type=Path, default=DEFAULT_RUNS_ROOT)
+    import_parser = subparsers.add_parser(
+        "import-external",
+        help="导入 Codex 正式研究结果并重新执行统一门禁",
+    )
+    import_parser.add_argument("--input", required=True, type=Path)
+    import_parser.add_argument(
+        "--runs-root",
+        type=Path,
+        default=DEFAULT_RUNS_ROOT,
+    )
     return parser
 
 
@@ -55,7 +66,43 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "run":
         return run_research(args)
+    if args.command == "import-external":
+        return import_external_result(args)
     raise RuntimeError(f"未知命令：{args.command}")
+
+
+def import_external_result(args: argparse.Namespace) -> int:
+    payload = ExternalRunPayload.model_validate_json(
+        args.input.read_text(encoding="utf-8")
+    )
+    record = import_external_run(payload, ResearchRunStore(args.runs_root))
+    metrics = calculate_run_metrics(record)
+    run_directory = (
+        Path(args.runs_root)
+        / record.summary.experiment_id
+        / record.summary.arm.value
+        / record.summary.run_id
+    )
+    print(
+        json.dumps(
+            {
+                "status": record.summary.status.value,
+                "run_directory": str(run_directory.resolve()),
+                "candidate_count": metrics.candidate_count,
+                "approvable_count": metrics.approvable_candidate_count,
+                "gate_failed_candidate_count": metrics.gate_failed_candidate_count,
+                "model_call_count": metrics.model_call_count,
+                "input_tokens": metrics.input_tokens,
+                "output_tokens": metrics.output_tokens,
+            },
+            ensure_ascii=False,
+        )
+    )
+    gate_passed = (
+        not record.gate_report.run_issues
+        and not record.gate_report.rejected_candidate_ids
+    )
+    return 0 if gate_passed else 2
 
 
 def run_research(args: argparse.Namespace) -> int:

@@ -1,0 +1,172 @@
+{
+  "brief_id": "official-segments",
+  "brief_version": "v1",
+  "sources": [
+    {
+      "source_id": "source-codex-direct-segment-rfm",
+      "url": "https://documentation.bloomreach.com/engagement/docs/rfm-segmentation",
+      "title": "RFM customer segmentation",
+      "publisher": "Bloomreach Documentation",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T00:51:00+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "Bloomreach 用最近购买、购买频次和消费金额划分至少有一次购买的客户，并把当前与上一个 RFM 分组保存为客户属性。",
+      "excerpt_ids": [
+        "source-codex-direct-segment-rfm-excerpt-001"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-codex-direct-segment-google-audiences",
+      "url": "https://support.google.com/analytics/answer/13290713?hl=en",
+      "title": "Audiences for common marketing objectives",
+      "publisher": "Google Analytics Help",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T00:51:00+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "Google Analytics 把购物车放弃、近期购买、重复购买、活跃未购买等列为线上销售和应用增长的常见受众。",
+      "excerpt_ids": [
+        "source-codex-direct-segment-google-audiences-excerpt-001"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-codex-direct-segment-amplitude-cohort",
+      "url": "https://www.amplitude.com/docs/analytics/define-cohort",
+      "title": "Define a new cohort",
+      "publisher": "Amplitude Docs",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T00:51:00+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "Amplitude 支持按事件次数、属性汇总、时间窗口、先后顺序、包含和排除条件定义动态行为客群。",
+      "excerpt_ids": [
+        "source-codex-direct-segment-amplitude-cohort-excerpt-001"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    },
+    {
+      "source_id": "source-codex-direct-segment-amplitude-compute",
+      "url": "https://www.amplitude.com/docs/analytics/computations",
+      "title": "Computations: Create new user properties on the fly",
+      "publisher": "Amplitude Docs",
+      "published_at": null,
+      "retrieved_at": "2026-09-05T00:51:00+08:00",
+      "discovered_by": "AGENT_SEARCH",
+      "excerpt": "Amplitude 可把事件次数、数值聚合或首末属性计算为用户属性，再将该属性作为客群筛选条件。",
+      "excerpt_ids": [
+        "source-codex-direct-segment-amplitude-compute-excerpt-001"
+      ],
+      "read_status": "READABLE",
+      "error_category": null
+    }
+  ],
+  "candidates": [
+    {
+      "candidate_id": "candidate-codex-direct-segment-rfm",
+      "brief_id": "official-segments",
+      "brief_version": "v1",
+      "asset_type": "SEGMENT_RULE_TEMPLATE",
+      "name": "RFM 价值分层客群",
+      "summary": "对至少有一次成功兑换或价值行为的用户，分别计算最近一次发生时间、发生次数和累计价值，再按运营确认的分段规则组合成客群。",
+      "project_fit": "需要内部字段 user_id、event_type、event_status、event_time 和 value_amount。时间窗口、分箱方式、价值口径及各层命名必须由运营确认。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "Bloomreach 的 RFM 方法依据 Recency、Frequency、Monetary 对至少有一次购买的客户分组，并记录分组变化。",
+          "source_ids": [
+            "source-codex-direct-segment-rfm"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "方法维度、适用对象和分组属性由公开文档直接支持。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "candidate-codex-direct-segment-abandoner",
+      "brief_id": "official-segments",
+      "brief_version": "v1",
+      "asset_type": "SEGMENT_RULE_TEMPLATE",
+      "name": "开始兑换但未完成客群",
+      "summary": "在运营确认的滚动窗口内包含开始兑换事件，同时排除成功兑换事件，形成可用于流程召回或故障排查的动态客群。",
+      "project_fit": "需要 user_id、award_id、exchange_started_at、exchange_result、result_time 和请求关联标识。窗口长度、终态范围、失败是否排除及触达方式需内部确认。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "Google Analytics 将购物车放弃者列为常见线上销售受众；Amplitude 支持在时间窗口中组合包含与排除事件。",
+          "source_ids": [
+            "source-codex-direct-segment-google-audiences",
+            "source-codex-direct-segment-amplitude-cohort"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "公开资料支持放弃行为客群及其事件包含、排除实现方式。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "candidate-codex-direct-segment-recent-redeemer",
+      "brief_id": "official-segments",
+      "brief_version": "v1",
+      "asset_type": "SEGMENT_RULE_TEMPLATE",
+      "name": "近期成功兑换客群",
+      "summary": "筛选滚动窗口内至少发生一次成功兑换事件的用户，可继续按奖品类别、积分区间或来源活动做内部属性过滤。",
+      "project_fit": "需要 user_id、exchange_status、completed_at、award_category、points_spent 和 campaign_id。窗口、成功终态、类别及积分区间均作为运营参数。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "Google Analytics 将近期购买者列为常见线上销售受众；Amplitude 支持按指定事件和滚动时间范围定义客群。",
+          "source_ids": [
+            "source-codex-direct-segment-google-audiences",
+            "source-codex-direct-segment-amplitude-cohort"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "近期行为受众和时间窗口实现均有公开文档依据。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "candidate-codex-direct-segment-repeat-redeemer",
+      "brief_id": "official-segments",
+      "brief_version": "v1",
+      "asset_type": "SEGMENT_RULE_TEMPLATE",
+      "name": "多次成功兑换客群",
+      "summary": "在指定窗口汇总每个用户的成功兑换次数，再用运营配置的次数条件筛选重复兑换用户。",
+      "project_fit": "需要 user_id、exchange_status、completed_at 和 exchange_order_id，并按订单去重。观察窗口、最低次数、退款或撤销处理需内部确认。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "Google Analytics 列出重复购买者受众；Amplitude 支持将事件次数计算为用户属性并用作客群筛选条件。",
+          "source_ids": [
+            "source-codex-direct-segment-google-audiences",
+            "source-codex-direct-segment-amplitude-compute"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "重复行为客群和事件次数计算方式均由公开文档支持。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "candidate-codex-direct-segment-active-no-redeem",
+      "brief_id": "official-segments",
+      "brief_version": "v1",
+      "asset_type": "SEGMENT_RULE_TEMPLATE",
+      "name": "活跃但未兑换客群",
+      "summary": "在相同滚动窗口内包含签到、浏览或任务完成等活跃事件，并排除成功兑换事件，得到有参与但尚未兑换的人群。",
+      "project_fit": "需要 user_id、activity_event_type、activity_time、exchange_status 和 completed_at。活跃事件集合、窗口、最少频次及排除口径必须由运营确认。",
+      "data_origin": "PUBLIC_RESEARCH",
+      "claims": [
+        {
+          "text": "Google Analytics 将活跃但未购买用户列为常见受众；Amplitude 支持事件条件、时间窗口和未发生事件的排除条件。",
+          "source_ids": [
+            "source-codex-direct-segment-google-audiences",
+            "source-codex-direct-segment-amplitude-cohort"
+          ],
+          "support_status": "SUPPORTED",
+          "review_note": "活跃未转化受众及其包含、排除计算方式均有公开文档依据。"
+        }
+      ]
+    }
+  ]
+}

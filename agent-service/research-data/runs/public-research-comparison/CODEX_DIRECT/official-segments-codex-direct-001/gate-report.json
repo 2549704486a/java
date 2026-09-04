@@ -1,0 +1,40 @@
+{
+  "brief_id": "official-segments",
+  "brief_version": "v1",
+  "run_issues": [],
+  "decisions": [
+    {
+      "candidate_id": "candidate-codex-direct-segment-rfm",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "candidate-codex-direct-segment-abandoner",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "candidate-codex-direct-segment-recent-redeemer",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "candidate-codex-direct-segment-repeat-redeemer",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "candidate-codex-direct-segment-active-no-redeem",
+      "approvable": true,
+      "issues": []
+    }
+  ],
+  "approvable_candidate_ids": [
+    "candidate-codex-direct-segment-rfm",
+    "candidate-codex-direct-segment-abandoner",
+    "candidate-codex-direct-segment-recent-redeemer",
+    "candidate-codex-direct-segment-repeat-redeemer",
+    "candidate-codex-direct-segment-active-no-redeem"
+  ],
+  "rejected_candidate_ids": []
+}

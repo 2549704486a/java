@@ -1,0 +1,40 @@
+{
+  "brief_id": "official-awards",
+  "brief_version": "v1",
+  "run_issues": [],
+  "decisions": [
+    {
+      "candidate_id": "candidate-codex-direct-jbl-go4",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "candidate-codex-direct-apple-airtag",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "candidate-codex-direct-anker-nano",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "candidate-codex-direct-mi-band9",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "candidate-codex-direct-logitech-m350s",
+      "approvable": true,
+      "issues": []
+    }
+  ],
+  "approvable_candidate_ids": [
+    "candidate-codex-direct-jbl-go4",
+    "candidate-codex-direct-apple-airtag",
+    "candidate-codex-direct-anker-nano",
+    "candidate-codex-direct-mi-band9",
+    "candidate-codex-direct-logitech-m350s"
+  ],
+  "rejected_candidate_ids": []
+}

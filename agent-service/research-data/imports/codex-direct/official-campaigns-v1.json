@@ -1,0 +1,226 @@
+{
+  "brief": {
+    "brief_id": "official-campaigns",
+    "version": "v1",
+    "run_kind": "OFFICIAL",
+    "title": "会员与积分活动机制公开案例",
+    "objective": "研究五个有公开规则依据的会员或积分活动机制，说明参与路径、激励方式、适用边界以及如何改造成项目内可审核的活动方案。",
+    "language": "zh-CN",
+    "targets": [
+      {
+        "asset_type": "CAMPAIGN_PATTERN",
+        "target_count": 5,
+        "research_questions": [
+          "公开规则中的参与、积分获取和权益兑换机制是什么？",
+          "机制适用于拉新、促活、留存或召回中的哪个目标？",
+          "迁移到本项目时需要哪些内部规则和风控约束？"
+        ]
+      }
+    ],
+    "source_requirements": [
+      "优先使用企业官网、会员计划条款或官方帮助中心",
+      "行业数字必须保留原主体、时间和适用范围",
+      "每条机制结论必须引用实际读取成功的规则正文"
+    ],
+    "forbidden_outputs": [
+      "本项目转化率或收益",
+      "本项目活动预算",
+      "自动发布的活动草案",
+      "把外部案例写成本项目历史效果"
+    ],
+    "explicit_source_urls": [],
+    "budget": {
+      "max_search_queries": 8,
+      "max_search_results_per_query": 5,
+      "max_pages_to_read": 10,
+      "max_parallel_tasks": 3,
+      "max_revision_rounds": 1
+    },
+    "output_label": "official-campaigns-v1"
+  },
+  "bundle": {
+    "brief_id": "official-campaigns",
+    "brief_version": "v1",
+    "sources": [
+      {
+        "source_id": "source-codex-direct-campaign-starbucks",
+        "url": "https://www.starbucks.com/rewards/terms/",
+        "title": "Starbucks Rewards Terms of Use",
+        "publisher": "Starbucks",
+        "published_at": "2026-03-10T00:00:00Z",
+        "retrieved_at": "2026-09-05T00:43:00+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "美国条款说明合资格消费获得 Stars、分层兑换、个性化奖励和限时加倍积分，并列出参与门店、到期与反滥用边界。",
+        "excerpt_ids": ["source-codex-direct-campaign-starbucks-excerpt-001"],
+        "read_status": "READABLE"
+      },
+      {
+        "source_id": "source-codex-direct-campaign-sephora",
+        "url": "https://www.sephora.com/beauty/terms-conditions-beauty-insider",
+        "title": "Beauty Insider Terms and Conditions",
+        "publisher": "Sephora",
+        "retrieved_at": "2026-09-05T00:45:00+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "美国和加拿大规则按合资格消费累计积分，可兑换限量奖励；奖励先到先得，并设置地区、库存、账户活动和兑换限制。",
+        "excerpt_ids": ["source-codex-direct-campaign-sephora-excerpt-001"],
+        "read_status": "READABLE"
+      },
+      {
+        "source_id": "source-codex-direct-campaign-microsoft",
+        "url": "https://support.microsoft.com/en-us/accounts-billing/rewards/how-to-earn-microsoft-rewards-points",
+        "title": "How to earn Microsoft Rewards points",
+        "publisher": "Microsoft Support",
+        "retrieved_at": "2026-09-05T00:47:00+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "Microsoft 说明可通过 Bing 搜索、商店购买、每日问答和 Xbox 任务赚取积分，并兑换礼品卡、内容、游戏或捐赠。",
+        "excerpt_ids": ["source-codex-direct-campaign-microsoft-excerpt-001"],
+        "read_status": "READABLE"
+      },
+      {
+        "source_id": "source-codex-direct-campaign-lego",
+        "url": "https://www.lego.com/en-gb/service/help-topics/article/earning-and-spending-lego-insiders-points",
+        "title": "Earning and spending LEGO Insiders points",
+        "publisher": "LEGO",
+        "retrieved_at": "2026-09-05T00:45:00+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "LEGO 说明购买、问卷和问答可赚积分，积分可用于折扣、专属商品、数字内容、活动体验和会员抽奖，并限制适用渠道。",
+        "excerpt_ids": ["source-codex-direct-campaign-lego-excerpt-001"],
+        "read_status": "READABLE"
+      },
+      {
+        "source_id": "source-codex-direct-campaign-marriott",
+        "url": "https://www.marriott.com/loyalty/terms/default.mi",
+        "title": "Marriott Bonvoy Loyalty Program Terms and Conditions",
+        "publisher": "Marriott",
+        "retrieved_at": "2026-09-05T00:47:00+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "万豪条款允许积分用于住宿、体验、航班、服务和商品，兑换受可用性、积分余额、渠道、账户归属和附加规则约束。",
+        "excerpt_ids": ["source-codex-direct-campaign-marriott-excerpt-001"],
+        "read_status": "READABLE"
+      }
+    ],
+    "candidates": [
+      {
+        "candidate_id": "candidate-codex-direct-starbucks-bonus",
+        "brief_id": "official-campaigns",
+        "brief_version": "v1",
+        "asset_type": "CAMPAIGN_PATTERN",
+        "name": "限时加倍积分与主动领取机制",
+        "summary": "参考 Starbucks Rewards：合资格消费形成基础积分，指定日期可设置加倍或多倍积分，并可能要求会员先在 App 或邮件中激活。",
+        "project_fit": "可改造成促活活动草案，但需内部配置合资格任务、倍率、客群、活动窗口、成本上限、防刷规则和人工审批，不能照搬外部数值。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "Starbucks 美国条款记载合资格消费赚取 Stars，并提供可能需要主动激活的 Double 或 Triple Star Day。",
+            "source_ids": ["source-codex-direct-campaign-starbucks"],
+            "support_status": "SUPPORTED",
+            "review_note": "参与路径与加倍机制由当前官方条款直接支持。"
+          }
+        ]
+      },
+      {
+        "candidate_id": "candidate-codex-direct-sephora-bazaar",
+        "brief_id": "official-campaigns",
+        "brief_version": "v1",
+        "asset_type": "CAMPAIGN_PATTERN",
+        "name": "积分奖励市集与限量兑换机制",
+        "summary": "参考 Sephora Beauty Insider：用户从合资格消费累积积分，在奖励市集选择限量权益，兑换遵循库存、地区、账户和次数限制。",
+        "project_fit": "可用于丰富长期兑换体验。项目需内部确定奖品目录、成本和积分梯度、库存扣减、限兑次数、退款回补、地域边界与人工审核。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "Sephora 条款规定合资格消费累计积分，奖励市集限时且数量有限，按先到先得并在兑换时扣积分。",
+            "source_ids": ["source-codex-direct-campaign-sephora"],
+            "support_status": "SUPPORTED",
+            "review_note": "积分获取、限量和兑换扣减机制均来自官方条款。"
+          }
+        ]
+      },
+      {
+        "candidate_id": "candidate-codex-direct-microsoft-missions",
+        "brief_id": "official-campaigns",
+        "brief_version": "v1",
+        "asset_type": "CAMPAIGN_PATTERN",
+        "name": "多行为任务中心与每日更新机制",
+        "summary": "参考 Microsoft Rewards：把搜索、购买、问答、游戏任务等异构行为放入统一赚分入口，并持续更新可参与任务。",
+        "project_fit": "适合扩展签到以外的日常促活。接入前需逐项确认事件可信度、积分规则、每日上限、地区与账号资格、反作弊和奖励目录。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "Microsoft 官方帮助列出 Bing 搜索、商店购买、每日问答和 Xbox 任务等赚分路径，以及多类兑换去向。",
+            "source_ids": ["source-codex-direct-campaign-microsoft"],
+            "support_status": "SUPPORTED",
+            "review_note": "多行为任务和兑换类型由官方帮助页直接支持。"
+          }
+        ]
+      },
+      {
+        "candidate_id": "candidate-codex-direct-lego-engagement",
+        "brief_id": "official-campaigns",
+        "brief_version": "v1",
+        "asset_type": "CAMPAIGN_PATTERN",
+        "name": "消费与非消费互动混合赚分机制",
+        "summary": "参考 LEGO Insiders：除购买外，也让问卷、问答等互动贡献积分，并用积分兑换折扣、商品、数字内容、体验或抽奖机会。",
+        "project_fit": "适合降低只有消费才能赚分的单一路径依赖。项目需评估每种互动的业务价值、凭证、频控、奖励成本、抽奖合规和渠道限制。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "LEGO 官方帮助说明购买、问卷和问答可赚积分，积分可用于折扣、专属内容、体验及会员抽奖。",
+            "source_ids": ["source-codex-direct-campaign-lego"],
+            "support_status": "SUPPORTED",
+            "review_note": "赚分来源和权益范围由官方帮助页直接支持。"
+          }
+        ]
+      },
+      {
+        "candidate_id": "candidate-codex-direct-marriott-flexible",
+        "brief_id": "official-campaigns",
+        "brief_version": "v1",
+        "asset_type": "CAMPAIGN_PATTERN",
+        "name": "多品类权益与可用性校验机制",
+        "summary": "参考 Marriott Bonvoy：积分可覆盖住宿、体验、航班、服务和商品等多类权益，但具体兑换受实时可用性与余额条件约束。",
+        "project_fit": "适合作为奖品池分层扩展的参考。项目需先建立供应方、适用渠道、实时可用性、取消补偿、账户归属、兑换幂等和人工审批规则。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "Marriott 条款列出住宿、体验、航班、服务和商品等兑换类型，并要求住宿兑换满足可用性和足额积分。",
+            "source_ids": ["source-codex-direct-campaign-marriott"],
+            "support_status": "SUPPORTED",
+            "review_note": "权益范围及可用性边界由官方条款直接支持。"
+          }
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "experiment_id": "public-research-comparison",
+    "run_id": "official-campaigns-codex-direct-001",
+    "brief_id": "official-campaigns",
+    "brief_version": "v1",
+    "run_kind": "OFFICIAL",
+    "arm": "CODEX_DIRECT",
+    "status": "COMPLETED",
+    "started_at": "2026-09-04T23:40:00+08:00",
+    "completed_at": "2026-09-05T00:50:00+08:00",
+    "stages": [
+      {
+        "stage": "codex-direct-research",
+        "status": "COMPLETED",
+        "started_at": "2026-09-04T23:40:00+08:00",
+        "completed_at": "2026-09-05T00:50:00+08:00",
+        "model_call_count": null,
+        "tool_call_count": 4,
+        "input_tokens": null,
+        "output_tokens": null,
+        "retry_count": 0,
+        "output_candidate_ids": [
+          "candidate-codex-direct-starbucks-bonus",
+          "candidate-codex-direct-sephora-bazaar",
+          "candidate-codex-direct-microsoft-missions",
+          "candidate-codex-direct-lego-engagement",
+          "candidate-codex-direct-marriott-flexible"
+        ]
+      }
+    ]
+  }
+}

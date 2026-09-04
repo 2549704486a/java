@@ -1,0 +1,243 @@
+{
+  "brief": {
+    "brief_id": "official-awards",
+    "version": "v1",
+    "run_kind": "OFFICIAL",
+    "title": "积分兑换奖品公开候选",
+    "objective": "研究五个适合积分激励产品的公开商品候选，覆盖不同价格和使用场景，并说明其对当前项目奖品池的适配价值。",
+    "language": "zh-CN",
+    "targets": [
+      {
+        "asset_type": "AWARD_CANDIDATE",
+        "target_count": 5,
+        "research_questions": [
+          "商品的公开名称、核心规格和价格口径是什么？",
+          "商品适合哪类积分用户或激励场景？",
+          "哪些采购和兑换参数仍必须由内部确认？"
+        ]
+      }
+    ],
+    "source_requirements": [
+      "每个候选至少引用一个实际读取成功的品牌官网或可信零售页面",
+      "规格和价格必须说明来源主体与获取时间",
+      "冲突价格或规格不得静默合并"
+    ],
+    "forbidden_outputs": [
+      "本项目库存或可用时间",
+      "本项目兑换积分",
+      "内部采购成本或预算",
+      "虚构的奖品 ID"
+    ],
+    "explicit_source_urls": [],
+    "budget": {
+      "max_search_queries": 8,
+      "max_search_results_per_query": 5,
+      "max_pages_to_read": 10,
+      "max_parallel_tasks": 3,
+      "max_revision_rounds": 1
+    },
+    "output_label": "official-awards-v1"
+  },
+  "bundle": {
+    "brief_id": "official-awards",
+    "brief_version": "v1",
+    "sources": [
+      {
+        "source_id": "source-codex-direct-award-jbl-go4",
+        "url": "https://www.jbl.com/GO-4.html",
+        "title": "JBL Go 4 | Ultra-Portable Bluetooth Speaker",
+        "publisher": "JBL",
+        "retrieved_at": "2026-09-05T00:34:00+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "JBL 美国官网列价 49.95 美元；页面列出最长 7 小时播放、IP67、蓝牙 5.3 和 4.2W 输出。",
+        "excerpt_ids": ["source-codex-direct-award-jbl-go4-excerpt-001"],
+        "read_status": "READABLE"
+      },
+      {
+        "source_id": "source-codex-direct-award-airtag-spec",
+        "url": "https://support.apple.com/en-us/111847",
+        "title": "AirTag - Tech Specs",
+        "publisher": "Apple Support",
+        "retrieved_at": "2026-09-05T00:34:00+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "该技术页标注 2021 年款，列出 IP67、蓝牙、U1 超宽带、NFC 和可更换 CR2032 电池。",
+        "excerpt_ids": ["source-codex-direct-award-airtag-spec-excerpt-001"],
+        "read_status": "READABLE"
+      },
+      {
+        "source_id": "source-codex-direct-award-airtag-price",
+        "url": "https://www.apple.com/shop/buy-airtag/airtag",
+        "title": "Buy AirTag",
+        "publisher": "Apple",
+        "retrieved_at": "2026-09-05T00:34:00+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "Apple 美国商店当前页面列出单件 29 美元、四件装 99 美元，并将商品描述为新一代 AirTag。",
+        "excerpt_ids": ["source-codex-direct-award-airtag-price-excerpt-001"],
+        "read_status": "READABLE"
+      },
+      {
+        "source_id": "source-codex-direct-award-anker-a1259",
+        "url": "https://www.anker.com/products/a1259-built-in-cable-power-bank-10000mah",
+        "title": "Anker Nano Power Bank (30W, Built-In USB-C Cable)",
+        "publisher": "Anker US",
+        "retrieved_at": "2026-09-05T00:34:00+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "Anker 美国官网列价 49.99 美元；页面列出 10000mAh、内置 USB-C 线和最高 30W 双向充电。",
+        "excerpt_ids": ["source-codex-direct-award-anker-a1259-excerpt-001"],
+        "read_status": "READABLE"
+      },
+      {
+        "source_id": "source-codex-direct-award-mi-band9",
+        "url": "https://www.mi.com/global/product/xiaomi-smart-band-9/specs/",
+        "title": "Xiaomi Smart Band 9 Specs",
+        "publisher": "Xiaomi Global",
+        "retrieved_at": "2026-09-05T00:36:00+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "小米全球规格页列出 1.62 英寸 AMOLED、最高 1200 尼特、典型续航最长 21 天和 5ATM；页面未展示价格。",
+        "excerpt_ids": ["source-codex-direct-award-mi-band9-excerpt-001"],
+        "read_status": "READABLE"
+      },
+      {
+        "source_id": "source-codex-direct-award-logitech-m350s",
+        "url": "https://info.logitech.com/rs/201-WGH-889/images/Logitech_B2B_US_MSRP_Price_List.pdf",
+        "title": "Logitech MSRP Pricelist US/Canada - June 2024",
+        "publisher": "Logitech",
+        "published_at": "2024-06-01T00:00:00Z",
+        "retrieved_at": "2026-09-05T00:36:00+08:00",
+        "discovered_by": "AGENT_SEARCH",
+        "excerpt": "罗技 2024 年 6 月美国/加拿大建议零售价表列出 Pebble Mouse 2 M350s，美国 MSRP 为 29.99 美元。",
+        "excerpt_ids": ["source-codex-direct-award-logitech-m350s-excerpt-001"],
+        "read_status": "READABLE"
+      }
+    ],
+    "candidates": [
+      {
+        "candidate_id": "candidate-codex-direct-jbl-go4",
+        "brief_id": "official-awards",
+        "brief_version": "v1",
+        "asset_type": "AWARD_CANDIDATE",
+        "name": "JBL Go 4 便携蓝牙音箱",
+        "summary": "截至 2026-09-05，JBL 美国官网公开价为 49.95 美元，并提供便携、防水防尘和无线播放规格。",
+        "project_fit": "适合作为数码生活类中档候选。是否采购、国内可供型号、含税到岸价、兑换所需积分和可用数量均需运营与采购确认。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "JBL 官网列出该型号最长 7 小时播放、IP67、蓝牙 5.3、4.2W 输出和 49.95 美元美国公开价。",
+            "source_ids": ["source-codex-direct-award-jbl-go4"],
+            "support_status": "SUPPORTED",
+            "review_note": "名称、规格与公开价均来自同一品牌官网页面。"
+          }
+        ]
+      },
+      {
+        "candidate_id": "candidate-codex-direct-apple-airtag",
+        "brief_id": "official-awards",
+        "brief_version": "v1",
+        "asset_type": "AWARD_CANDIDATE",
+        "name": "Apple AirTag 物品追踪器",
+        "summary": "Apple 的 2021 技术页提供旧代规格，当前美国商店则列出新一代商品及 29 美元单件价，两者不能直接视为同一代参数。",
+        "project_fit": "适合作为苹果生态用户的数码候选，但采购前必须锁定具体代际和 SKU，再重新核验该代规格、地区兼容性、采购价、兑换积分和数量。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "Apple 2021 技术页支持 IP67、蓝牙、U1 超宽带、NFC 和 CR2032 电池规格。",
+            "source_ids": ["source-codex-direct-award-airtag-spec"],
+            "support_status": "SUPPORTED",
+            "review_note": "结论明确限定为 2021 技术页所述型号。"
+          },
+          {
+            "text": "Apple 当前美国商店的新一代 AirTag 页面列出单件 29 美元和四件装 99 美元。",
+            "source_ids": ["source-codex-direct-award-airtag-price"],
+            "support_status": "SUPPORTED",
+            "review_note": "价格结论只描述当前商店页面，不与 2021 规格静默合并。"
+          }
+        ]
+      },
+      {
+        "candidate_id": "candidate-codex-direct-anker-nano",
+        "brief_id": "official-awards",
+        "brief_version": "v1",
+        "asset_type": "AWARD_CANDIDATE",
+        "name": "Anker Nano 10000mAh 移动电源",
+        "summary": "截至 2026-09-05，Anker 美国官网公开价为 49.99 美元，特点为内置 USB-C 线、10000mAh 和最高 30W 双向充电。",
+        "project_fit": "适合作为通用数码类中档候选。采购前仍需确认国内销售版本、认证与运输要求、批量采购价、兑换积分和可用数量。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "Anker 官网列出 10000mAh、内置 USB-C 线、最高 30W 双向充电和 49.99 美元美国公开价。",
+            "source_ids": ["source-codex-direct-award-anker-a1259"],
+            "support_status": "SUPPORTED",
+            "review_note": "规格与价格由同一品牌商品页直接支持。"
+          }
+        ]
+      },
+      {
+        "candidate_id": "candidate-codex-direct-mi-band9",
+        "brief_id": "official-awards",
+        "brief_version": "v1",
+        "asset_type": "AWARD_CANDIDATE",
+        "name": "Xiaomi Smart Band 9 智能手环",
+        "summary": "小米全球规格页提供屏幕、续航与防水参数，但截至 2026-09-05 该页没有公开价格，因此不能从该来源推断采购成本。",
+        "project_fit": "适合作为运动健康类候选。进入奖品池前需另行取得目标地区可验证报价，并确认版本、采购价、兑换积分、售后和可用数量。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "小米全球规格页列出 1.62 英寸 AMOLED、最高 1200 尼特、典型续航最长 21 天和 5ATM。",
+            "source_ids": ["source-codex-direct-award-mi-band9"],
+            "support_status": "SUPPORTED",
+            "review_note": "规格由品牌官网直接支持；候选没有虚构该页未提供的价格。"
+          }
+        ]
+      },
+      {
+        "candidate_id": "candidate-codex-direct-logitech-m350s",
+        "brief_id": "official-awards",
+        "brief_version": "v1",
+        "asset_type": "AWARD_CANDIDATE",
+        "name": "Logitech Pebble Mouse 2 M350s 无线鼠标",
+        "summary": "罗技 2024 年 6 月美国/加拿大价目表记录该型号美国 MSRP 为 29.99 美元；该历史价不能直接当作当前采购报价。",
+        "project_fit": "适合作为办公与学习类入门候选。采购前需通过当前官方或授权渠道复核规格、现价、供货状态、兑换积分和可用数量。",
+        "data_origin": "PUBLIC_RESEARCH",
+        "claims": [
+          {
+            "text": "罗技 2024 年 6 月价目表列出 Pebble Mouse 2 M350s，美国 MSRP 为 29.99 美元。",
+            "source_ids": ["source-codex-direct-award-logitech-m350s"],
+            "support_status": "SUPPORTED",
+            "review_note": "结论保留了价目表地区、日期和 MSRP 口径。"
+          }
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "experiment_id": "public-research-comparison",
+    "run_id": "official-awards-codex-direct-001",
+    "brief_id": "official-awards",
+    "brief_version": "v1",
+    "run_kind": "OFFICIAL",
+    "arm": "CODEX_DIRECT",
+    "status": "COMPLETED",
+    "started_at": "2026-09-04T23:30:00+08:00",
+    "completed_at": "2026-09-05T00:40:00+08:00",
+    "stages": [
+      {
+        "stage": "codex-direct-research",
+        "status": "COMPLETED",
+        "started_at": "2026-09-04T23:30:00+08:00",
+        "completed_at": "2026-09-05T00:40:00+08:00",
+        "model_call_count": null,
+        "tool_call_count": 4,
+        "input_tokens": null,
+        "output_tokens": null,
+        "retry_count": 0,
+        "output_candidate_ids": [
+          "candidate-codex-direct-jbl-go4",
+          "candidate-codex-direct-apple-airtag",
+          "candidate-codex-direct-anker-nano",
+          "candidate-codex-direct-mi-band9",
+          "candidate-codex-direct-logitech-m350s"
+        ]
+      }
+    ]
+  }
+}
