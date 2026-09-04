@@ -1,0 +1,44 @@
+{
+  "brief_id": "pilot-mixed",
+  "version": "v1",
+  "run_kind": "PILOT",
+  "title": "三类公网资料最小试运行",
+  "objective": "分别寻找一个公开商品候选、一个会员活动机制和一个可由内部事件计算的客群规则模板，用于验证来源发现、正文读取和证据整理流程。",
+  "language": "zh-CN",
+  "targets": [
+    {
+      "asset_type": "AWARD_CANDIDATE",
+      "target_count": 1,
+      "research_questions": ["该商品有哪些可由公开页面直接证实的规格或公开价格口径？"]
+    },
+    {
+      "asset_type": "CAMPAIGN_PATTERN",
+      "target_count": 1,
+      "research_questions": ["该会员或积分机制如何获取权益并完成兑换？"]
+    },
+    {
+      "asset_type": "SEGMENT_RULE_TEMPLATE",
+      "target_count": 1,
+      "research_questions": ["该客群方法需要哪些内部行为字段才能计算？"]
+    }
+  ],
+  "source_requirements": [
+    "优先使用品牌官网、官方规则、产品文档或方法提供方文档",
+    "每条事实性结论必须引用实际读取成功的页面正文",
+    "搜索标题和摘要只能发现页面，不能单独作为证据"
+  ],
+  "forbidden_outputs": [
+    "本项目真实用户或客群人数",
+    "本项目库存、兑换积分、内部成本或预算",
+    "本项目转化率、收益或已发生效果"
+  ],
+  "explicit_source_urls": [],
+  "budget": {
+    "max_search_queries": 6,
+    "max_search_results_per_query": 5,
+    "max_pages_to_read": 6,
+    "max_parallel_tasks": 3,
+    "max_revision_rounds": 1
+  },
+  "output_label": "pilot-public-research-v1"
+}
