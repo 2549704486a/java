@@ -67,6 +67,12 @@ class RunStatus(str, Enum):
     FAILED = "FAILED"
 
 
+class RetentionRecommendation(str, Enum):
+    KEEP_MULTI_AGENT = "KEEP_MULTI_AGENT"
+    KEEP_SINGLE_AGENT = "KEEP_SINGLE_AGENT"
+    INCONCLUSIVE = "INCONCLUSIVE"
+
+
 class StageStatus(str, Enum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
@@ -403,6 +409,161 @@ class GateReport(StrictModel):
     decisions: list[CandidateGateDecision] = Field(default_factory=list)
     approvable_candidate_ids: list[str] = Field(default_factory=list)
     rejected_candidate_ids: list[str] = Field(default_factory=list)
+
+
+class ExternalRunPayload(StrictModel):
+    brief: ResearchBrief
+    bundle: CandidateBundle
+    summary: RunSummary
+
+
+class EvaluationRunRecord(StrictModel):
+    brief: ResearchBrief
+    bundle: CandidateBundle
+    summary: RunSummary
+    gate_report: GateReport
+
+    @model_validator(mode="after")
+    def validate_consistent_run(self) -> "EvaluationRunRecord":
+        brief_identity = (self.brief.brief_id, self.brief.version)
+        if self.brief.run_kind != RunKind.OFFICIAL:
+            raise ValueError("正式对照不能导入 PILOT 简报")
+        if (self.bundle.brief_id, self.bundle.brief_version) != brief_identity:
+            raise ValueError("候选包与简报版本不一致")
+        if (self.summary.brief_id, self.summary.brief_version) != brief_identity:
+            raise ValueError("运行摘要与简报版本不一致")
+        if (
+            self.gate_report.brief_id,
+            self.gate_report.brief_version,
+        ) != brief_identity:
+            raise ValueError("门禁报告与简报版本不一致")
+        return self
+
+
+class RunEvaluationMetrics(StrictModel):
+    brief_id: str
+    brief_version: str
+    arm: ExperimentArm
+    status: RunStatus
+    schema_pass_rate: Literal[1.0] = 1.0
+    target_count: int = Field(ge=1)
+    candidate_count: int = Field(ge=0)
+    target_completion: float = Field(ge=0, le=1)
+    readable_source_count: int = Field(ge=0)
+    traceable_claim_rate: float | None = Field(default=None, ge=0, le=1)
+    evidence_supported_candidate_count: int = Field(ge=0)
+    approvable_candidate_count: int = Field(ge=0)
+    explicit_conflict_claim_rate: float | None = Field(default=None, ge=0, le=1)
+    unsupported_claim_count: int = Field(ge=0)
+    duplicate_candidate_count: int = Field(ge=0)
+    run_issue_count: int = Field(ge=0)
+    gate_failed_candidate_count: int = Field(ge=0)
+    elapsed_seconds: float = Field(ge=0)
+    model_call_count: int = Field(ge=0)
+    tool_call_count: int = Field(ge=0)
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
+    retry_count: int = Field(ge=0)
+    failure_stage: str | None = None
+
+
+class BlindMappingEntry(StrictModel):
+    blind_label: str = Field(pattern=r"^[A-Z]$")
+    arm: ExperimentArm
+
+
+class BlindMapping(StrictModel):
+    experiment_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
+    policy_version: str = Field(pattern=r"^v[1-9][0-9]*$")
+    created_at: AwareDatetime
+    entries: list[BlindMappingEntry] = Field(min_length=4, max_length=4)
+
+    @model_validator(mode="after")
+    def validate_one_to_one_mapping(self) -> "BlindMapping":
+        labels = [entry.blind_label for entry in self.entries]
+        arms = [entry.arm for entry in self.entries]
+        if len(set(labels)) != len(labels):
+            raise ValueError("匿名标签不能重复")
+        if set(arms) != set(ExperimentArm) or len(set(arms)) != len(ExperimentArm):
+            raise ValueError("匿名映射必须完整覆盖四个执行臂")
+        return self
+
+
+class BlindQualityMetrics(StrictModel):
+    schema_pass_rate: Literal[1.0] = 1.0
+    target_count: int = Field(ge=1)
+    candidate_count: int = Field(ge=0)
+    target_completion: float = Field(ge=0, le=1)
+    readable_source_count: int = Field(ge=0)
+    traceable_claim_rate: float | None = Field(default=None, ge=0, le=1)
+    evidence_supported_candidate_count: int = Field(ge=0)
+    approvable_candidate_count: int = Field(ge=0)
+    explicit_conflict_claim_rate: float | None = Field(default=None, ge=0, le=1)
+    unsupported_claim_count: int = Field(ge=0)
+    duplicate_candidate_count: int = Field(ge=0)
+    run_issue_count: int = Field(ge=0)
+    gate_failed_candidate_count: int = Field(ge=0)
+
+
+class BlindMaterial(StrictModel):
+    blind_label: str = Field(pattern=r"^[A-Z]$")
+    brief_id: str
+    brief_version: str
+    status: RunStatus
+    bundle: CandidateBundle
+    gate_report: GateReport
+    quality_metrics: BlindQualityMetrics
+
+
+class BlindPackage(StrictModel):
+    experiment_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
+    policy_version: str = Field(pattern=r"^v[1-9][0-9]*$")
+    created_at: AwareDatetime
+    materials: list[BlindMaterial] = Field(default_factory=list, max_length=12)
+
+    @model_validator(mode="after")
+    def validate_unique_materials(self) -> "BlindPackage":
+        keys = [(item.blind_label, item.brief_id) for item in self.materials]
+        if len(keys) != len(set(keys)):
+            raise ValueError("同一匿名执行臂和简报只能有一份评分材料")
+        return self
+
+
+class LockedScoreSet(StrictModel):
+    experiment_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
+    policy_version: str = Field(pattern=r"^v[1-9][0-9]*$")
+    locked_at: AwareDatetime
+    records: list[BlindScoreRecord] = Field(default_factory=list, max_length=12)
+
+    @model_validator(mode="after")
+    def validate_unique_scores(self) -> "LockedScoreSet":
+        keys = [(item.blind_label, item.brief_id) for item in self.records]
+        if len(keys) != len(set(keys)):
+            raise ValueError("同一匿名材料只能评分一次")
+        if any(item.experiment_id != self.experiment_id for item in self.records):
+            raise ValueError("评分记录与实验不一致")
+        return self
+
+
+class RevealedRunResult(StrictModel):
+    arm: ExperimentArm
+    brief_id: str
+    metrics: RunEvaluationMetrics
+    score: QualityScore
+
+
+class ComparisonReport(StrictModel):
+    experiment_id: str
+    policy_version: str
+    generated_at: AwareDatetime
+    complete_four_arm_comparison: bool
+    missing_results: list[str] = Field(default_factory=list)
+    results: list[RevealedRunResult] = Field(default_factory=list, max_length=12)
+    project_multi_brief_wins: int = Field(ge=0, le=3)
+    project_multi_extra_approvable_candidates: int
+    project_multi_added_gate_failures: int
+    recommendation: RetentionRecommendation
+    interpretation_notes: list[str] = Field(min_length=2, max_length=6)
 
 
 class RetentionRule(StrictModel):

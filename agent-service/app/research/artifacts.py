@@ -38,6 +38,24 @@ class ResearchRunStore:
         run_directory.mkdir(parents=True, exist_ok=False)
         return run_directory
 
+    def create_evaluation_directory(
+        self,
+        *,
+        experiment_id: str,
+        evaluation_id: str,
+    ) -> Path:
+        for name, value in {
+            "experiment_id": experiment_id,
+            "evaluation_id": evaluation_id,
+        }.items():
+            if not _SAFE_COMPONENT.fullmatch(value):
+                raise ValueError(f"{name} 不是安全的评估目录名")
+        evaluation_directory = self._ensure_below_root(
+            self._runs_root / experiment_id / "evaluation" / evaluation_id
+        )
+        evaluation_directory.mkdir(parents=True, exist_ok=False)
+        return evaluation_directory
+
     def write_json_once(
         self,
         run_directory: str | Path,

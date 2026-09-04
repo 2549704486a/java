@@ -377,3 +377,84 @@ CLI 已支持以下调用，输出仍进入按实验、执行臂和运行编号�
 从 `pilot-multi-20260904-002` 起冻结正式对照使用的简报字段、候选 Schema、规划任务 Schema、审核输出 Schema、收集/整理/规划/审核提示词、来源预算和确定性门禁。后续只允许修复会破坏公平性或数据安全的确定性缺陷；若必须改变冻结项，应提升版本并让所有执行臂重新运行，不能只重跑表现不佳的一臂。
 
 当前仍未验证：模型供应方在三个并发任务下的稳定吞吐、通用搜索自动发现能力、四臂正式材料导入、匿名盲评及最终保留决策。这些内容属于后续阶段，不计入本次 Pilot 完成范围。
+
+## 8. 四臂评估与盲评基础设施
+
+### 8.1 外部结果也必须走相同门禁
+
+`CODEX_DIRECT` 和 `CODEX_DELEGATED` 不直接复制到报告。导入对象必须同时包含正式 `ResearchBrief`、统一 `CandidateBundle` 和 `RunSummary`；代码重新执行 `evaluate_candidate_bundle()`，再把简报、候选、摘要和门禁报告写入不可覆盖的标准运行目录。`PILOT`、项目执行臂或版本不一致的数据不能冒充外部正式结果。
+
+统一指标实例：
+
+```json
+{
+  "brief_id": "official-awards",
+  "arm": "CODEX_DIRECT",
+  "schema_pass_rate": 1.0,
+  "target_count": 5,
+  "candidate_count": 4,
+  "target_completion": 0.8,
+  "readable_source_count": 5,
+  "traceable_claim_rate": 1.0,
+  "evidence_supported_candidate_count": 4,
+  "approvable_candidate_count": 3,
+  "input_tokens": null,
+  "output_tokens": null
+}
+```
+
+`schema_pass_rate=1.0` 只表示这份已导入结果通过统一 Schema；未导入或无法解析的结果在报告中记为缺失，不能伪造成 0 分记录。若执行环境没有给出 Token，字段保持 `null`，不能用其他执行臂推算，也不能写成 0。
+
+### 8.2 匿名材料和身份映射分开
+
+系统随机建立四个一一对应的匿名标签，但向评分者展示的 `blind-package.json` 只有标签、简报、候选、来源、失败状态和内容质量指标：
+
+```json
+{
+  "blind_label": "B",
+  "brief_id": "official-awards",
+  "status": "COMPLETED",
+  "quality_metrics": {
+    "target_completion": 0.8,
+    "traceable_claim_rate": 1.0,
+    "approvable_candidate_count": 3
+  }
+}
+```
+
+真实关系单独写入 `blind-mapping.json`：
+
+```json
+{
+  "entries": [
+    {"blind_label": "B", "arm": "PROJECT_SINGLE"},
+    {"blind_label": "D", "arm": "PROJECT_MULTI"},
+    {"blind_label": "A", "arm": "CODEX_DIRECT"},
+    {"blind_label": "C", "arm": "CODEX_DELEGATED"}
+  ]
+}
+```
+
+匿名材料不包含 `arm`、运行 ID、模型调用量、Tool 调用量或轨迹。来源和文风仍可能让评分者猜测执行方式，这是盲评的残余偏差，不能宣称绝对不可识别。
+
+### 8.3 评分锁定后才能揭盲
+
+每个“匿名标签 + 正式简报”必须且只能有一条四维评分。少一条、多一条或实验编号不一致都会拒绝锁定。完整评分生成 `locked-scores.json`，文件采用不可覆盖写入；再次写入会失败，而不是修改原分数。之后揭盲函数把锁定评分与独立映射、原始运行重新关联。
+
+```json
+{
+  "blind_label": "B",
+  "brief_id": "official-awards",
+  "score": {
+    "project_relevance": 4,
+    "factual_support": 5,
+    "adaptation_usability": 4,
+    "conflict_handling": 3,
+    "notes": "来源充分，但项目适配参数仍需补充。"
+  }
+}
+```
+
+最终报告分别保留每个执行臂的原始指标和评分，并按预声明规则计算建议。缺少任一执行臂或正式简报时，结论强制为 `INCONCLUSIVE`。只有完整十二份结果中，多 Agent 没有逐简报新增门禁失败、至少赢两份简报且比单 Agent 总计多至少两条可批准候选，才可能输出 `KEEP_MULTI_AGENT`；否则输出 `KEEP_SINGLE_AGENT`。项目对 Codex 的比较仍明确包含模型、搜索工具和运行环境差异。
+
+本阶段只完成评估基础设施和固定数据验证，尚未生成任何正式四臂胜负结论。正式运行、用户盲评和保留决策分别属于后续 5.2 至 6.1。
