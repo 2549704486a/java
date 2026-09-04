@@ -19,6 +19,7 @@ from app.research.models import (
     ExperimentArm,
     ResearchAgentOutput,
     ResearchBrief,
+    ResearchPlan,
     RunStatus,
     RunSummary,
     SourceDiscoveryMethod,
@@ -53,6 +54,14 @@ SINGLE_RESEARCH_FINALIZATION_PROMPT = """
 证据不足时如实使用 PARTIALLY_SUPPORTED、CONFLICTING 或 UNSUPPORTED，不得编造。
 """.strip()
 
+RESEARCH_PLANNING_PROMPT = """
+你是公网资料研究任务规划员。根据冻结研究简报生成最多三个互不重叠的结构化研究任务。
+你不搜索网页、不读取来源，也不生成候选结论。每个任务必须使用简报范围内的资产类型，
+所有任务合计覆盖简报的全部目标，并且 max_pages 总和不能超过简报页面预算。
+不同任务不得复用相同 focus_key、objective 或 search_queries；查询只用于后续研究 Agent 发现公开来源。
+不得添加简报禁止的业务事实，不得把推测写成研究结果。
+""".strip()
+
 
 class PublicSearchInput(BaseModel):
     query: str = Field(min_length=2, max_length=300)
@@ -74,6 +83,12 @@ class _FetchedSourceRecord:
 class SingleResearchRun:
     bundle: CandidateBundle
     summary: RunSummary
+
+
+@dataclass(frozen=True)
+class PlanningRun:
+    plan: ResearchPlan
+    stage: StageObservation
 
 
 class ResearchExecutionTraceHandler(BaseCallbackHandler):
@@ -363,6 +378,47 @@ class ResearchToolSession:
         return {"title": hit.title, "url": hit.url, "snippet": hit.snippet}
 
 
+class ResearchPlanningRunner:
+    def __init__(self, agent: Any) -> None:
+        self._agent = agent
+
+    def run(self, brief: ResearchBrief) -> PlanningRun:
+        started_at = datetime.now(timezone.utc)
+        result = self._agent.invoke(
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "请规划以下冻结研究简报：\n"
+                        + json.dumps(
+                            brief.model_dump(mode="json"),
+                            ensure_ascii=False,
+                        ),
+                    }
+                ]
+            },
+            config={"recursion_limit": 4},
+        )
+        plan = ResearchPlan.model_validate(result.get("structured_response"))
+        _validate_plan_against_brief(brief, plan)
+        completed_at = datetime.now(timezone.utc)
+        model_calls, input_tokens, output_tokens = _read_model_usage(result)
+        return PlanningRun(
+            plan=plan,
+            stage=StageObservation(
+                stage="research-planning-agent",
+                status=StageStatus.COMPLETED,
+                started_at=started_at,
+                completed_at=completed_at,
+                model_call_count=model_calls,
+                tool_call_count=0,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                output_candidate_ids=[],
+            ),
+        )
+
+
 class SingleResearchRunner:
     def __init__(
         self,
@@ -564,6 +620,67 @@ def build_single_research_agents(
         name="public-research-single-finalizer",
     )
     return collector, finalizer
+
+
+def build_research_planning_agent(settings: Settings) -> Any:
+    model = ChatOpenAI(
+        model=settings.llm_model,
+        api_key=settings.require_llm_api_key(),
+        base_url=settings.llm_base_url,
+        temperature=0,
+        timeout=settings.llm_timeout_seconds,
+        max_retries=1,
+    )
+    return create_agent(
+        model=model,
+        tools=[],
+        system_prompt=RESEARCH_PLANNING_PROMPT,
+        response_format=ToolStrategy(ResearchPlan, handle_errors=False),
+        name="public-research-planner",
+    )
+
+
+def _validate_plan_against_brief(
+    brief: ResearchBrief,
+    plan: ResearchPlan,
+) -> None:
+    if (plan.brief_id, plan.brief_version) != (brief.brief_id, brief.version):
+        raise ValueError("研究计划引用了错误的简报版本")
+    if len(plan.tasks) > brief.budget.max_parallel_tasks:
+        raise ValueError("研究任务数量超过简报并行上限")
+
+    allowed_asset_types = {target.asset_type for target in brief.targets}
+    planned_asset_types = {
+        asset_type for task in plan.tasks for asset_type in task.asset_types
+    }
+    unexpected_asset_types = planned_asset_types - allowed_asset_types
+    if unexpected_asset_types:
+        unexpected = ", ".join(
+            sorted(asset_type.value for asset_type in unexpected_asset_types)
+        )
+        raise ValueError(f"研究计划包含简报范围外的资产类型：{unexpected}")
+    missing_asset_types = allowed_asset_types - planned_asset_types
+    if missing_asset_types:
+        missing = ", ".join(
+            sorted(asset_type.value for asset_type in missing_asset_types)
+        )
+        raise ValueError(f"研究计划没有覆盖简报目标：{missing}")
+
+    if sum(task.max_pages for task in plan.tasks) > brief.budget.max_pages_to_read:
+        raise ValueError("研究计划页面预算总和超过简报上限")
+
+    normalized_objectives = [
+        "".join(task.objective.casefold().split()) for task in plan.tasks
+    ]
+    if len(normalized_objectives) != len(set(normalized_objectives)):
+        raise ValueError("研究任务目标不能重复")
+    normalized_queries = [
+        "".join(query.casefold().split())
+        for task in plan.tasks
+        for query in task.search_queries
+    ]
+    if len(normalized_queries) != len(set(normalized_queries)):
+        raise ValueError("不同研究任务不能复用相同查询")
 
 
 def _build_excerpt_options(
