@@ -526,3 +526,30 @@ research-data/runs/public-research-comparison/CODEX_DELEGATED/
 三份运行的模型调用次数和 Token 均无法从当前委派环境可靠取得，继续保留 `null`。活动研究员没有提供可形成正时间差的时间戳，因此耗时也不能记成 `0`；`RunEvaluationMetrics.elapsed_seconds` 改为可空字段，非正时间差按未知处理。奖品和客群保留研究员可观测的墙钟时间，但它们同样不等同于纯模型计算耗时。
 
 与直接执行臂相同，`5/5` 只代表统一确定性门禁通过。委派结果在候选多样性、适配可执行性和来源质量上的差异仍由后续匿名盲评判断，当前不宣布多 Agent 或委派方式更优。
+
+### 8.6 项目单 Agent 与多 Agent 正式运行
+
+项目自身两个执行臂使用同一个 CLI、三份冻结简报和 `public-research-comparison` 实验编号，各执行一次正式运行。`cli.py` 在每次运行中只调用一次 `Settings.from_env()`；单 Agent 的收集与整理模型，以及多 Agent 的规划、独立研究和审核模型都从同一个 `settings.llm_model`、`llm_base_url`、超时和重试配置创建。两个执行臂共享 `PublicWebClient`、`ResearchToolSession`、来源预算、`CandidateBundle` Schema 和 `evaluate_candidate_bundle()`，没有为任一执行臂临时放宽约束。
+
+```powershell
+.\.venv\Scripts\python.exe -m app.research.cli run `
+  --arm PROJECT_SINGLE `
+  --brief research-data\briefs\official-awards-v1.json `
+  --experiment-id public-research-comparison `
+  --run-id official-awards-project-single-001
+```
+
+六份原始结果如下，失败运行没有选择性重跑：
+
+| 执行臂 | 简报 | 执行状态 | 候选 | 可批准 | 真实结果 |
+| --- | --- | --- | ---: | ---: | --- |
+| `PROJECT_SINGLE` | 奖品 | `COMPLETED` | 5 | 1 | 4 个候选未通过证据门禁 |
+| `PROJECT_SINGLE` | 活动机制 | `COMPLETED` | 0 | 0 | `TARGET_COUNT_NOT_MET`，目标 5 个 |
+| `PROJECT_SINGLE` | 客群规则 | `FAILED` | 无标准候选包 | 0 | `GraphRecursionError`，达到 30 次递归限制 |
+| `PROJECT_MULTI` | 奖品 | `FAILED` | 无标准候选包 | 0 | 规划查询数超过简报搜索预算 |
+| `PROJECT_MULTI` | 活动机制 | `FAILED` | 无标准候选包 | 0 | 规划查询数超过简报搜索预算 |
+| `PROJECT_MULTI` | 客群规则 | `FAILED` | 无标准候选包 | 0 | 规划查询数超过简报搜索预算 |
+
+单 Agent 活动运行的 `COMPLETED` 只表示模型与 Tool 循环没有抛异常，不表示研究目标完成；`target_completion=0` 和运行级门禁问题才反映实际结果。单 Agent 客群的 `failure.json` 保留错误阶段、错误类别、错误消息及墙钟时间。多 Agent 三份结果都在规划完成后的确定性校验处停止，尚未访问公网：规划 Agent 为多个任务生成的查询总数超过冻结的 8 次上限，协调器拒绝执行。
+
+Pilot 曾允许根据可复现问题修正实现，正式对照冻结后则不能看到失败再只优化项目执行臂。若现在减少规划查询、提高递归上限或重跑失败样本，比较就会把“经过结果反馈优化的项目臂”与一次性 Codex 结果放在一起，结论失去公平性。因此，本阶段保留全部失败目录，后续匿名材料应把失败状态和零完成度展示给评分者；架构改进只能在本轮实验结束后进入新版本。

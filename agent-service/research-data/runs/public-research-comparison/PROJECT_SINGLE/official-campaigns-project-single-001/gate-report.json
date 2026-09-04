@@ -1,0 +1,14 @@
+{
+  "brief_id": "official-campaigns",
+  "brief_version": "v1",
+  "run_issues": [
+    {
+      "code": "TARGET_COUNT_NOT_MET",
+      "message": "CAMPAIGN_PATTERN 目标 5 个，实际产出 0 个",
+      "candidate_id": null
+    }
+  ],
+  "decisions": [],
+  "approvable_candidate_ids": [],
+  "rejected_candidate_ids": []
+}

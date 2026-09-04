@@ -1,0 +1,39 @@
+{
+  "brief_id": "official-segments",
+  "version": "v1",
+  "run_kind": "OFFICIAL",
+  "title": "可计算客群规则公开模板",
+  "objective": "研究五个能由项目内部事件和用户属性计算的客群规则模板，说明规则含义、所需字段、适用运营目标和不能从公网得到的内部参数。",
+  "language": "zh-CN",
+  "targets": [
+    {
+      "asset_type": "SEGMENT_RULE_TEMPLATE",
+      "target_count": 5,
+      "research_questions": [
+        "该客群方法使用哪些时间、频次、金额或行为条件？",
+        "项目需要哪些内部事件字段才能确定性计算？",
+        "阈值应如何作为待运营确认参数而不是公网事实？"
+      ]
+    }
+  ],
+  "source_requirements": [
+    "优先使用分析产品文档、公开方法文档或权威实践指南",
+    "规则模板必须能映射为内部数据条件而不是仅有营销标签",
+    "每条方法结论必须引用实际读取成功的页面正文"
+  ],
+  "forbidden_outputs": [
+    "真实用户或个人数据",
+    "本项目客群人数",
+    "模型猜测的固定阈值",
+    "预测转化率或活动收益"
+  ],
+  "explicit_source_urls": [],
+  "budget": {
+    "max_search_queries": 8,
+    "max_search_results_per_query": 5,
+    "max_pages_to_read": 10,
+    "max_parallel_tasks": 3,
+    "max_revision_rounds": 1
+  },
+  "output_label": "official-segments-v1"
+}

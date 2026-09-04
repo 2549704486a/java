@@ -1,0 +1,13 @@
+{
+  "experiment_id": "public-research-comparison",
+  "run_id": "official-segments-project-multi-001",
+  "brief_id": "official-segments",
+  "brief_version": "v1",
+  "arm": "PROJECT_MULTI",
+  "status": "FAILED",
+  "failure_stage": "PROJECT_MULTI_RUN",
+  "error_category": "ValueError",
+  "message": "研究计划查询数量超过简报搜索预算",
+  "started_at": "2026-09-04T17:18:09.390345+00:00",
+  "completed_at": "2026-09-04T17:18:14.994000+00:00"
+}

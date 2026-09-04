@@ -1,0 +1,65 @@
+{
+  "brief_id": "official-awards",
+  "brief_version": "v1",
+  "run_issues": [],
+  "decisions": [
+    {
+      "candidate_id": "xiaomi-band-9-award",
+      "approvable": false,
+      "issues": [
+        {
+          "code": "CLAIM_NOT_FULLY_SUPPORTED",
+          "message": "结论状态为 PARTIALLY_SUPPORTED，不能进入可批准集合",
+          "candidate_id": "xiaomi-band-9-award"
+        }
+      ]
+    },
+    {
+      "candidate_id": "xiaomi-router-ax3000t-award",
+      "approvable": true,
+      "issues": []
+    },
+    {
+      "candidate_id": "xiaomi-buds-6-award",
+      "approvable": false,
+      "issues": [
+        {
+          "code": "CLAIM_NOT_FULLY_SUPPORTED",
+          "message": "结论状态为 PARTIALLY_SUPPORTED，不能进入可批准集合",
+          "candidate_id": "xiaomi-buds-6-award"
+        }
+      ]
+    },
+    {
+      "candidate_id": "xiaomi-power-bank-award",
+      "approvable": false,
+      "issues": [
+        {
+          "code": "CLAIM_NOT_FULLY_SUPPORTED",
+          "message": "结论状态为 PARTIALLY_SUPPORTED，不能进入可批准集合",
+          "candidate_id": "xiaomi-power-bank-award"
+        }
+      ]
+    },
+    {
+      "candidate_id": "xiaomi-smart-speaker-award",
+      "approvable": false,
+      "issues": [
+        {
+          "code": "CLAIM_NOT_FULLY_SUPPORTED",
+          "message": "结论状态为 PARTIALLY_SUPPORTED，不能进入可批准集合",
+          "candidate_id": "xiaomi-smart-speaker-award"
+        }
+      ]
+    }
+  ],
+  "approvable_candidate_ids": [
+    "xiaomi-router-ax3000t-award"
+  ],
+  "rejected_candidate_ids": [
+    "xiaomi-band-9-award",
+    "xiaomi-buds-6-award",
+    "xiaomi-power-bank-award",
+    "xiaomi-smart-speaker-award"
+  ]
+}

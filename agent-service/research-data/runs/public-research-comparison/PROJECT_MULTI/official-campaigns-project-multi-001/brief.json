@@ -1,0 +1,39 @@
+{
+  "brief_id": "official-campaigns",
+  "version": "v1",
+  "run_kind": "OFFICIAL",
+  "title": "会员与积分活动机制公开案例",
+  "objective": "研究五个有公开规则依据的会员或积分活动机制，说明参与路径、激励方式、适用边界以及如何改造成项目内可审核的活动方案。",
+  "language": "zh-CN",
+  "targets": [
+    {
+      "asset_type": "CAMPAIGN_PATTERN",
+      "target_count": 5,
+      "research_questions": [
+        "公开规则中的参与、积分获取和权益兑换机制是什么？",
+        "机制适用于拉新、促活、留存或召回中的哪个目标？",
+        "迁移到本项目时需要哪些内部规则和风控约束？"
+      ]
+    }
+  ],
+  "source_requirements": [
+    "优先使用企业官网、会员计划条款或官方帮助中心",
+    "行业数字必须保留原主体、时间和适用范围",
+    "每条机制结论必须引用实际读取成功的规则正文"
+  ],
+  "forbidden_outputs": [
+    "本项目转化率或收益",
+    "本项目活动预算",
+    "自动发布的活动草案",
+    "把外部案例写成本项目历史效果"
+  ],
+  "explicit_source_urls": [],
+  "budget": {
+    "max_search_queries": 8,
+    "max_search_results_per_query": 5,
+    "max_pages_to_read": 10,
+    "max_parallel_tasks": 3,
+    "max_revision_rounds": 1
+  },
+  "output_label": "official-campaigns-v1"
+}

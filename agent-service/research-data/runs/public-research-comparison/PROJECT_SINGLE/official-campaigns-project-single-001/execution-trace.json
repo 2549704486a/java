@@ -1,0 +1,194 @@
+[
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:15:09.390089+00:00",
+    "requested_tools": [
+      "search_public_web",
+      "search_public_web",
+      "search_public_web"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:15:09.395092+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:15:09.397089+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:15:09.398619+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:15:16.766985+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:15:21.398567+00:00",
+    "ok": false,
+    "code": "SEARCH_FAILED"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:15:21.823290+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:15:23.393858+00:00",
+    "requested_tools": [
+      "search_public_web",
+      "search_public_web",
+      "search_public_web"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:15:23.398745+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:15:23.400336+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:15:23.402726+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:15:28.474385+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:15:29.200963+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:15:39.596203+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:15:41.445659+00:00",
+    "requested_tools": [
+      "search_public_web",
+      "search_public_web",
+      "read_public_page"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:15:41.449193+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:15:41.450191+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:15:41.451190+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:15:42.124207+00:00",
+    "ok": true,
+    "source_id": "source-page-001"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:15:52.173430+00:00",
+    "ok": true,
+    "result_count": 1
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:15:52.400307+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:15:54.731080+00:00",
+    "requested_tools": [
+      "read_public_page",
+      "read_public_page",
+      "read_public_page"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:15:54.734092+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:15:54.735089+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:15:54.736669+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:15:55.955193+00:00",
+    "ok": true,
+    "source_id": "source-page-002"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:15:56.145682+00:00",
+    "ok": true,
+    "source_id": "source-page-003"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:15:56.634159+00:00",
+    "ok": false,
+    "code": "EMPTY_CONTENT",
+    "source_id": "source-page-004"
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:15:58.582848+00:00",
+    "requested_tools": [
+      "search_public_web",
+      "search_public_web",
+      "search_public_web"
+    ]
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:16:01.348144+00:00",
+    "requested_tools": [
+      "ResearchAgentOutput"
+    ]
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:16:03.072393+00:00",
+    "requested_tools": [
+      "ResearchAgentOutput"
+    ]
+  }
+]

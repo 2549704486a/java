@@ -1,0 +1,33 @@
+{
+  "experiment_id": "public-research-comparison",
+  "run_id": "official-awards-project-single-001",
+  "brief_id": "official-awards",
+  "brief_version": "v1",
+  "run_kind": "OFFICIAL",
+  "arm": "PROJECT_SINGLE",
+  "status": "COMPLETED",
+  "started_at": "2026-09-04T17:13:45.731908Z",
+  "completed_at": "2026-09-04T17:14:51.486420Z",
+  "stages": [
+    {
+      "stage": "single-research-agent",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T17:13:45.731908Z",
+      "completed_at": "2026-09-04T17:14:51.486420Z",
+      "model_call_count": 6,
+      "tool_call_count": 9,
+      "input_tokens": null,
+      "output_tokens": null,
+      "retry_count": 0,
+      "output_candidate_ids": [
+        "xiaomi-band-9-award",
+        "xiaomi-router-ax3000t-award",
+        "xiaomi-buds-6-award",
+        "xiaomi-power-bank-award",
+        "xiaomi-smart-speaker-award"
+      ],
+      "error_category": null
+    }
+  ],
+  "failure_stage": null
+}

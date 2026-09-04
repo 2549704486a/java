@@ -1,0 +1,232 @@
+[
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:16:23.689170+00:00",
+    "requested_tools": [
+      "search_public_web",
+      "search_public_web"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:16:23.693170+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:16:23.694170+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:16:30.206217+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:16:32.983447+00:00",
+    "ok": false,
+    "code": "SEARCH_FAILED"
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:16:34.513799+00:00",
+    "requested_tools": [
+      "search_public_web",
+      "search_public_web"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:16:34.518332+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:16:34.519339+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:16:42.556927+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:16:44.117341+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:16:45.595019+00:00",
+    "requested_tools": [
+      "read_public_page",
+      "read_public_page",
+      "read_public_page"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:16:45.598531+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:16:45.599541+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:16:45.601538+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:16:46.816155+00:00",
+    "ok": true,
+    "source_id": "source-page-003"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:16:47.036440+00:00",
+    "ok": true,
+    "source_id": "source-page-002"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:16:47.248519+00:00",
+    "ok": true,
+    "source_id": "source-page-001"
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:16:48.860013+00:00",
+    "requested_tools": [
+      "search_public_web",
+      "search_public_web"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:16:48.863020+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:16:48.864019+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:16:55.232476+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:16:58.734423+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:17:00.725845+00:00",
+    "requested_tools": [
+      "read_public_page",
+      "read_public_page"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:17:00.726854+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:17:00.728363+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:17:02.266224+00:00",
+    "ok": true,
+    "source_id": "source-page-005"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:17:03.338299+00:00",
+    "ok": false,
+    "code": "RESPONSE_TOO_LARGE",
+    "source_id": "source-page-004"
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:17:05.149533+00:00",
+    "requested_tools": [
+      "search_public_web",
+      "search_public_web"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:17:05.152539+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:17:05.153540+00:00",
+    "tool_name": "search_public_web"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:17:10.744004+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:17:11.056371+00:00",
+    "ok": true,
+    "result_count": 5
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:17:13.589565+00:00",
+    "requested_tools": [
+      "read_public_page",
+      "read_public_page"
+    ]
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:17:13.592570+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_STARTED",
+    "at": "2026-09-04T17:17:13.593571+00:00",
+    "tool_name": "read_public_page"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:17:14.832420+00:00",
+    "ok": true,
+    "source_id": "source-page-006"
+  },
+  {
+    "event": "TOOL_COMPLETED",
+    "at": "2026-09-04T17:17:15.183976+00:00",
+    "ok": true,
+    "source_id": "source-page-007"
+  },
+  {
+    "event": "MODEL_COMPLETED",
+    "at": "2026-09-04T17:17:17.375875+00:00",
+    "requested_tools": [
+      "search_public_web"
+    ]
+  }
+]

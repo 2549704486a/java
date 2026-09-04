@@ -1,0 +1,27 @@
+{
+  "experiment_id": "public-research-comparison",
+  "run_id": "official-campaigns-project-single-001",
+  "brief_id": "official-campaigns",
+  "brief_version": "v1",
+  "run_kind": "OFFICIAL",
+  "arm": "PROJECT_SINGLE",
+  "status": "COMPLETED",
+  "started_at": "2026-09-04T17:15:07.378349Z",
+  "completed_at": "2026-09-04T17:16:03.076401Z",
+  "stages": [
+    {
+      "stage": "single-research-agent",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T17:15:07.378349Z",
+      "completed_at": "2026-09-04T17:16:03.076401Z",
+      "model_call_count": 8,
+      "tool_call_count": 12,
+      "input_tokens": null,
+      "output_tokens": null,
+      "retry_count": 1,
+      "output_candidate_ids": [],
+      "error_category": null
+    }
+  ],
+  "failure_stage": null
+}

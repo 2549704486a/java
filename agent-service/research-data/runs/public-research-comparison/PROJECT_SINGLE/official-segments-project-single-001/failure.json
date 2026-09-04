@@ -1,0 +1,13 @@
+{
+  "experiment_id": "public-research-comparison",
+  "run_id": "official-segments-project-single-001",
+  "brief_id": "official-segments",
+  "brief_version": "v1",
+  "arm": "PROJECT_SINGLE",
+  "status": "FAILED",
+  "failure_stage": "PROJECT_SINGLE_RUN",
+  "error_category": "GraphRecursionError",
+  "message": "Recursion limit of 30 reached without hitting a stop condition. You can increase the limit by setting the `recursion_limit` config key.\nFor troubleshooting, visit: https://docs.langchain.com/oss/python/langgraph/errors/GRAPH_RECURSION_LIMIT",
+  "started_at": "2026-09-04T17:16:19.226463+00:00",
+  "completed_at": "2026-09-04T17:17:17.381396+00:00"
+}
