@@ -1,0 +1,128 @@
+{
+  "experiment_id": "public-research-pilot",
+  "run_id": "pilot-multi-20260904-002",
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "run_kind": "PILOT",
+  "arm": "PROJECT_MULTI",
+  "status": "INCOMPLETE",
+  "started_at": "2026-09-04T09:27:49.725498Z",
+  "completed_at": "2026-09-04T09:29:10.910975Z",
+  "stages": [
+    {
+      "stage": "research-planning-agent",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T09:27:49.725498Z",
+      "completed_at": "2026-09-04T09:27:53.512083Z",
+      "model_call_count": 1,
+      "tool_call_count": 0,
+      "input_tokens": 1323,
+      "output_tokens": 502,
+      "retry_count": 0,
+      "output_candidate_ids": [],
+      "error_category": null
+    },
+    {
+      "stage": "researcher:award-candidate-mi-band",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T09:27:56.568435Z",
+      "completed_at": "2026-09-04T09:28:21.289462Z",
+      "model_call_count": 5,
+      "tool_call_count": 3,
+      "input_tokens": 19282,
+      "output_tokens": 2933,
+      "retry_count": 0,
+      "output_candidate_ids": [
+        "mi-band-9-public-spec-award-candidate"
+      ],
+      "error_category": null
+    },
+    {
+      "stage": "researcher:campaign-pattern-starbucks",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T09:27:56.533144Z",
+      "completed_at": "2026-09-04T09:28:20.695656Z",
+      "model_call_count": 4,
+      "tool_call_count": 1,
+      "input_tokens": 27422,
+      "output_tokens": 3435,
+      "retry_count": 1,
+      "output_candidate_ids": [
+        "starbucks-tiered-star-earn-redeem-pattern"
+      ],
+      "error_category": null
+    },
+    {
+      "stage": "researcher:segment-rule-rfm-bloomreach",
+      "status": "FAILED",
+      "started_at": "2026-09-04T09:28:13.971799Z",
+      "completed_at": "2026-09-04T09:28:13.971799Z",
+      "model_call_count": 0,
+      "tool_call_count": 0,
+      "input_tokens": null,
+      "output_tokens": null,
+      "retry_count": 0,
+      "output_candidate_ids": [],
+      "error_category": "OpenAIInvalidRequestError"
+    },
+    {
+      "stage": "evidence-review-agent",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T09:28:21.290572Z",
+      "completed_at": "2026-09-04T09:28:31.994012Z",
+      "model_call_count": 1,
+      "tool_call_count": 0,
+      "input_tokens": 6037,
+      "output_tokens": 2143,
+      "retry_count": 0,
+      "output_candidate_ids": [
+        "mi-band-9-public-spec-award-candidate",
+        "starbucks-tiered-star-earn-redeem-pattern"
+      ],
+      "error_category": null
+    },
+    {
+      "stage": "researcher-revision:award-candidate-mi-band",
+      "status": "FAILED",
+      "started_at": "2026-09-04T09:29:00.634418Z",
+      "completed_at": "2026-09-04T09:29:00.634418Z",
+      "model_call_count": 0,
+      "tool_call_count": 0,
+      "input_tokens": null,
+      "output_tokens": null,
+      "retry_count": 0,
+      "output_candidate_ids": [],
+      "error_category": "ToolCallLimitExceededError"
+    },
+    {
+      "stage": "researcher-revision:campaign-pattern-starbucks",
+      "status": "FAILED",
+      "started_at": "2026-09-04T09:28:38.540063Z",
+      "completed_at": "2026-09-04T09:28:38.540063Z",
+      "model_call_count": 0,
+      "tool_call_count": 0,
+      "input_tokens": null,
+      "output_tokens": null,
+      "retry_count": 0,
+      "output_candidate_ids": [],
+      "error_category": "ValueError"
+    },
+    {
+      "stage": "evidence-review-agent-after-revision",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T09:29:00.634418Z",
+      "completed_at": "2026-09-04T09:29:10.909975Z",
+      "model_call_count": 1,
+      "tool_call_count": 0,
+      "input_tokens": 6037,
+      "output_tokens": 2062,
+      "retry_count": 0,
+      "output_candidate_ids": [
+        "mi-band-9-public-spec-award-candidate",
+        "starbucks-tiered-star-earn-redeem-pattern"
+      ],
+      "error_category": null
+    }
+  ],
+  "failure_stage": "parallel-research"
+}

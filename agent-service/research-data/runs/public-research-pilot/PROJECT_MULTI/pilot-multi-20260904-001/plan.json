@@ -1,0 +1,60 @@
+{
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "tasks": [
+    {
+      "task_id": "task-award-candidate",
+      "focus_key": "xiaomi-band-9-specs",
+      "objective": "从小米官网公开页面收集小米手环9的公开规格与公开价格口径，验证该商品作为公开商品候选的证据。",
+      "asset_types": [
+        "AWARD_CANDIDATE"
+      ],
+      "target_count": 1,
+      "search_queries": [
+        "小米手环9 官方规格 价格",
+        "Xiaomi Smart Band 9 specs price official"
+      ],
+      "source_urls": [
+        "https://www.mi.com/global/product/xiaomi-smart-band-9/specs/"
+      ],
+      "excluded_focuses": [],
+      "max_pages": 2
+    },
+    {
+      "task_id": "task-campaign-pattern",
+      "focus_key": "starbucks-rewards-terms",
+      "objective": "从星巴克官方奖励条款页面收集会员如何获取积分（Star）以及如何兑换权益的机制步骤，形成会员活动机制模式。",
+      "asset_types": [
+        "CAMPAIGN_PATTERN"
+      ],
+      "target_count": 1,
+      "search_queries": [
+        "Starbucks Rewards how to earn stars redeem terms",
+        "星巴克会员积分获取兑换规则"
+      ],
+      "source_urls": [
+        "https://www.starbucks.com/rewards/terms/"
+      ],
+      "excluded_focuses": [],
+      "max_pages": 2
+    },
+    {
+      "task_id": "task-segment-rule-template",
+      "focus_key": "bloomreach-rfm-segmentation",
+      "objective": "从Bloomreach官方文档收集RFM客群划分方法所需的内部行为字段（如最近购买时间、购买频率、消费金额）及计算口径，形成可由内部事件计算的客群规则模板。",
+      "asset_types": [
+        "SEGMENT_RULE_TEMPLATE"
+      ],
+      "target_count": 1,
+      "search_queries": [
+        "Bloomreach RFM segmentation documentation fields",
+        "RFM segmentation internal behavior fields calculation"
+      ],
+      "source_urls": [
+        "https://documentation.bloomreach.com/engagement/docs/rfm-segmentation"
+      ],
+      "excluded_focuses": [],
+      "max_pages": 2
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "run_issues": [
+    {
+      "code": "TARGET_COUNT_NOT_MET",
+      "message": "SEGMENT_RULE_TEMPLATE 目标 1 个，实际产出 0 个",
+      "candidate_id": null
+    }
+  ],
+  "decisions": [
+    {
+      "candidate_id": "mi-band-9-public-spec-award-candidate",
+      "approvable": false,
+      "issues": [
+        {
+          "code": "CLAIM_NOT_FULLY_SUPPORTED",
+          "message": "结论状态为 PARTIALLY_SUPPORTED，不能进入可批准集合",
+          "candidate_id": "mi-band-9-public-spec-award-candidate"
+        }
+      ]
+    },
+    {
+      "candidate_id": "starbucks-tiered-star-earn-redeem-pattern",
+      "approvable": false,
+      "issues": [
+        {
+          "code": "CLAIM_NOT_FULLY_SUPPORTED",
+          "message": "结论状态为 PARTIALLY_SUPPORTED，不能进入可批准集合",
+          "candidate_id": "starbucks-tiered-star-earn-redeem-pattern"
+        }
+      ]
+    }
+  ],
+  "approvable_candidate_ids": [],
+  "rejected_candidate_ids": [
+    "mi-band-9-public-spec-award-candidate",
+    "starbucks-tiered-star-earn-redeem-pattern"
+  ]
+}

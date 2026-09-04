@@ -244,6 +244,10 @@ class MultiResearchWorkflow:
             planning.plan.tasks,
             revised=False,
         )
+        incomplete_task_ids = _find_incomplete_task_ids(
+            planning.plan.tasks,
+            task_runs,
+        )
         stages.extend(
             stage
             for task in planning.plan.tasks
@@ -301,7 +305,17 @@ class MultiResearchWorkflow:
 
         gate_report = evaluate_candidate_bundle(brief, reviewed_bundle)
         completed_at = datetime.now(timezone.utc)
-        status = RunStatus.INCOMPLETE if failed_task_ids else RunStatus.COMPLETED
+        incomplete_task_ids.update(failed_task_ids)
+        status = (
+            RunStatus.INCOMPLETE
+            if incomplete_task_ids
+            else RunStatus.COMPLETED
+        )
+        failure_stage = None
+        if failed_task_ids:
+            failure_stage = "parallel-research"
+        elif incomplete_task_ids:
+            failure_stage = "target-completion"
         return MultiResearchRun(
             plan=planning.plan,
             bundle=reviewed_bundle,
@@ -318,7 +332,7 @@ class MultiResearchWorkflow:
                 started_at=started_at,
                 completed_at=completed_at,
                 stages=stages,
-                failure_stage="parallel-research" if failed_task_ids else None,
+                failure_stage=failure_stage,
             ),
         )
 
@@ -468,6 +482,27 @@ def _candidate_task_map(task_runs: list[ResearchTaskRun]) -> dict[str, str]:
         for run in task_runs
         for candidate in run.bundle.candidates
     }
+
+
+def _find_incomplete_task_ids(
+    tasks: list[ResearchTask],
+    task_runs: list[ResearchTaskRun],
+) -> set[str]:
+    runs_by_task = {run.task_id: run for run in task_runs}
+    incomplete: set[str] = set()
+    for task in tasks:
+        run = runs_by_task.get(task.task_id)
+        if run is None:
+            incomplete.add(task.task_id)
+            continue
+        asset_type = task.asset_types[0]
+        actual_count = sum(
+            candidate.asset_type == asset_type
+            for candidate in run.bundle.candidates
+        )
+        if actual_count < task.target_count:
+            incomplete.add(task.task_id)
+    return incomplete
 
 
 def _replace_task_runs(

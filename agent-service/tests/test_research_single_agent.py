@@ -246,6 +246,17 @@ class ResearchSingleAgentTest(unittest.TestCase):
         self.assertEqual("NETWORK_ERROR", handler.events[0]["code"])
         self.assertNotIn("untrusted_material", handler.events[0])
 
+    def test_trace_records_public_target_without_query_credentials(self):
+        handler = ResearchExecutionTraceHandler()
+        handler.on_tool_start(
+            {"name": "read_public_page"},
+            '{"url":"https://example.com/path?q=secret"}',
+        )
+
+        self.assertEqual("example.com", handler.events[0]["target_host"])
+        self.assertEqual("/path", handler.events[0]["target_path"])
+        self.assertNotIn("secret", str(handler.events[0]))
+
     def test_materialization_rejects_unknown_excerpt_id(self):
         web_client = FakeWebClient()
         session = ResearchToolSession(self.brief, web_client)  # type: ignore[arg-type]

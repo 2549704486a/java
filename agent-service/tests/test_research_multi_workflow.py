@@ -362,6 +362,35 @@ class MultiResearchWorkflowTest(unittest.TestCase):
         self.assertEqual("researcher:task-campaign", failed[0].stage)
         self.assertEqual(2, len(run.bundle.candidates))
 
+    def test_empty_task_result_marks_run_incomplete_without_losing_candidates(self):
+        researcher = FakeParallelResearcher()
+        original_run = researcher.run
+
+        def run_without_campaign(brief, task):
+            result = original_run(brief, task)
+            if task.task_id != "task-campaign":
+                return result
+            bundle_payload = result.bundle.model_dump(mode="python")
+            bundle_payload["candidates"] = []
+            return ResearchTaskRun(
+                task_id=result.task_id,
+                bundle=CandidateBundle.model_validate(bundle_payload),
+                stage=result.stage.model_copy(update={"output_candidate_ids": []}),
+            )
+
+        researcher.run = run_without_campaign
+        run = self.run_workflow(researcher, FakeReviewer())
+
+        self.assertEqual(RunStatus.INCOMPLETE, run.summary.status)
+        self.assertEqual("target-completion", run.summary.failure_stage)
+        self.assertEqual(2, len(run.bundle.candidates))
+        self.assertTrue(
+            any(
+                issue.code == "TARGET_COUNT_NOT_MET"
+                for issue in run.gate_report.run_issues
+            )
+        )
+
     def test_only_affected_researcher_is_revised_once(self):
         researcher = FakeParallelResearcher()
         reviewer = FakeReviewer(

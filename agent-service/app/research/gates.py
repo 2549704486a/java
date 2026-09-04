@@ -88,6 +88,21 @@ def evaluate_candidate_bundle(
     target_counts = {
         target.asset_type: target.target_count for target in brief.targets
     }
+    actual_counts = Counter(
+        candidate.asset_type for candidate in bundle.candidates
+    )
+    for asset_type, target_count in target_counts.items():
+        actual_count = actual_counts[asset_type]
+        if actual_count < target_count:
+            run_issues.append(
+                GateIssue(
+                    code="TARGET_COUNT_NOT_MET",
+                    message=(
+                        f"{asset_type.value} 目标 {target_count} 个，"
+                        f"实际产出 {actual_count} 个"
+                    ),
+                )
+            )
     seen_names: set[tuple[str, str]] = set()
     seen_by_type: Counter = Counter()
     decisions: list[CandidateGateDecision] = []

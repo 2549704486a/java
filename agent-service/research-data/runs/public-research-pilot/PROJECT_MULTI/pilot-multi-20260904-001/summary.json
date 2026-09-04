@@ -1,0 +1,132 @@
+{
+  "experiment_id": "public-research-pilot",
+  "run_id": "pilot-multi-20260904-001",
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "run_kind": "PILOT",
+  "arm": "PROJECT_MULTI",
+  "status": "COMPLETED",
+  "started_at": "2026-09-04T08:33:04.199131Z",
+  "completed_at": "2026-09-04T08:34:11.952287Z",
+  "stages": [
+    {
+      "stage": "research-planning-agent",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T08:33:04.199131Z",
+      "completed_at": "2026-09-04T08:33:08.755023Z",
+      "model_call_count": 1,
+      "tool_call_count": 0,
+      "input_tokens": 1323,
+      "output_tokens": 499,
+      "retry_count": 0,
+      "output_candidate_ids": [],
+      "error_category": null
+    },
+    {
+      "stage": "researcher:task-award-candidate",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T08:33:11.459629Z",
+      "completed_at": "2026-09-04T08:33:48.548775Z",
+      "model_call_count": 6,
+      "tool_call_count": 4,
+      "input_tokens": 15686,
+      "output_tokens": 2038,
+      "retry_count": 0,
+      "output_candidate_ids": [
+        "xiaomi-smart-band-9-public-specs"
+      ],
+      "error_category": null
+    },
+    {
+      "stage": "researcher:task-campaign-pattern",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T08:33:11.416204Z",
+      "completed_at": "2026-09-04T08:33:25.356851Z",
+      "model_call_count": 4,
+      "tool_call_count": 1,
+      "input_tokens": 25930,
+      "output_tokens": 1456,
+      "retry_count": 1,
+      "output_candidate_ids": [],
+      "error_category": null
+    },
+    {
+      "stage": "researcher:task-segment-rule-template",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T08:33:11.374339Z",
+      "completed_at": "2026-09-04T08:33:37.601452Z",
+      "model_call_count": 4,
+      "tool_call_count": 1,
+      "input_tokens": 26133,
+      "output_tokens": 3591,
+      "retry_count": 1,
+      "output_candidate_ids": [
+        "rfm-segment-rule-template-bloomreach"
+      ],
+      "error_category": null
+    },
+    {
+      "stage": "evidence-review-agent",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T08:33:48.549851Z",
+      "completed_at": "2026-09-04T08:33:56.191744Z",
+      "model_call_count": 1,
+      "tool_call_count": 0,
+      "input_tokens": 6469,
+      "output_tokens": 1314,
+      "retry_count": 0,
+      "output_candidate_ids": [
+        "xiaomi-smart-band-9-public-specs",
+        "rfm-segment-rule-template-bloomreach"
+      ],
+      "error_category": null
+    },
+    {
+      "stage": "researcher-revision:task-award-candidate",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T08:33:56.192741Z",
+      "completed_at": "2026-09-04T08:34:02.330962Z",
+      "model_call_count": 1,
+      "tool_call_count": 0,
+      "input_tokens": 6163,
+      "output_tokens": 1100,
+      "retry_count": 1,
+      "output_candidate_ids": [
+        "xiaomi-smart-band-9-public-specs"
+      ],
+      "error_category": null
+    },
+    {
+      "stage": "researcher-revision:task-segment-rule-template",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T08:33:56.195743Z",
+      "completed_at": "2026-09-04T08:34:04.791885Z",
+      "model_call_count": 1,
+      "tool_call_count": 0,
+      "input_tokens": 9917,
+      "output_tokens": 1465,
+      "retry_count": 1,
+      "output_candidate_ids": [
+        "rfm-segment-rule-template-bloomreach"
+      ],
+      "error_category": null
+    },
+    {
+      "stage": "evidence-review-agent-after-revision",
+      "status": "COMPLETED",
+      "started_at": "2026-09-04T08:34:04.791885Z",
+      "completed_at": "2026-09-04T08:34:11.943979Z",
+      "model_call_count": 1,
+      "tool_call_count": 0,
+      "input_tokens": 6532,
+      "output_tokens": 1315,
+      "retry_count": 0,
+      "output_candidate_ids": [
+        "xiaomi-smart-band-9-public-specs",
+        "rfm-segment-rule-template-bloomreach"
+      ],
+      "error_category": null
+    }
+  ],
+  "failure_stage": null
+}

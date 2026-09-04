@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import urlsplit
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import ToolCallLimitMiddleware
@@ -152,14 +153,14 @@ class ResearchExecutionTraceHandler(BaseCallbackHandler):
         input_str: str,
         **kwargs: Any,
     ) -> None:
-        del input_str, kwargs
-        self.events.append(
-            {
-                "event": "TOOL_STARTED",
-                "at": datetime.now(timezone.utc).isoformat(),
-                "tool_name": serialized.get("name", "unknown"),
-            }
-        )
+        del kwargs
+        event = {
+            "event": "TOOL_STARTED",
+            "at": datetime.now(timezone.utc).isoformat(),
+            "tool_name": serialized.get("name", "unknown"),
+        }
+        event.update(_summarize_tool_input(input_str))
+        self.events.append(event)
 
     def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         del kwargs
@@ -196,6 +197,26 @@ class ResearchExecutionTraceHandler(BaseCallbackHandler):
                 "error_category": error.__class__.__name__,
             }
         )
+
+
+def _summarize_tool_input(input_str: str) -> dict[str, str]:
+    try:
+        payload = json.loads(input_str)
+    except (json.JSONDecodeError, TypeError):
+        return {}
+    if not isinstance(payload, dict):
+        return {}
+    url = payload.get("url")
+    if isinstance(url, str):
+        parsed = urlsplit(url)
+        return {
+            "target_host": parsed.hostname or "unknown",
+            "target_path": parsed.path[:200] or "/",
+        }
+    query = payload.get("query")
+    if isinstance(query, str):
+        return {"query": query[:200]}
+    return {}
 
 
 class ResearchToolSession:

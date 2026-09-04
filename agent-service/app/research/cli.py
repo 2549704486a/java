@@ -10,14 +10,19 @@ from dotenv import load_dotenv
 
 from app.config import Settings
 from app.research.agents import (
+    EvidenceReviewRunner,
+    ResearchPlanningRunner,
     ResearchToolSession,
     SingleResearchRunner,
+    build_evidence_review_agent,
+    build_research_planning_agent,
     build_single_research_agents,
 )
 from app.research.artifacts import ResearchRunStore
 from app.research.gates import evaluate_candidate_bundle
 from app.research.models import ExperimentArm, load_research_brief
 from app.research.web import PublicWebClient
+from app.research.workflow import IndependentResearcherRunner, MultiResearchWorkflow
 
 
 AGENT_SERVICE_ROOT = Path(__file__).resolve().parents[2]
@@ -31,7 +36,10 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument(
         "--arm",
         required=True,
-        choices=[ExperimentArm.PROJECT_SINGLE.value],
+        choices=[
+            ExperimentArm.PROJECT_SINGLE.value,
+            ExperimentArm.PROJECT_MULTI.value,
+        ],
     )
     run_parser.add_argument("--brief", required=True, type=Path)
     run_parser.add_argument(
@@ -64,32 +72,55 @@ def run_research(args: argparse.Namespace) -> int:
     store.write_json_once(run_directory, "brief.json", brief)
 
     started_at = datetime.now(timezone.utc)
-    runner = None
+    trace_runner = None
     try:
         settings = Settings.from_env()
-        with PublicWebClient() as web_client:
-            session = ResearchToolSession(brief, web_client)
-            collector, finalizer = build_single_research_agents(settings, session)
-            runner = SingleResearchRunner(
-                collector,
-                session,
-                finalizer=finalizer,
+        if arm == ExperimentArm.PROJECT_SINGLE:
+            with PublicWebClient() as web_client:
+                session = ResearchToolSession(brief, web_client)
+                collector, finalizer = build_single_research_agents(
+                    settings,
+                    session,
+                )
+                trace_runner = SingleResearchRunner(
+                    collector,
+                    session,
+                    finalizer=finalizer,
+                )
+                run = trace_runner.run(
+                    brief,
+                    experiment_id=args.experiment_id,
+                    run_id=run_id,
+                )
+            gate_report = evaluate_candidate_bundle(brief, run.bundle)
+        else:
+            planner = ResearchPlanningRunner(
+                build_research_planning_agent(settings)
             )
-            run = runner.run(
+            researcher = IndependentResearcherRunner(settings)
+            reviewer = EvidenceReviewRunner(build_evidence_review_agent(settings))
+            run = MultiResearchWorkflow(
+                planner,
+                researcher,
+                reviewer,
+            ).run(
                 brief,
                 experiment_id=args.experiment_id,
                 run_id=run_id,
             )
-        gate_report = evaluate_candidate_bundle(brief, run.bundle)
+            gate_report = run.gate_report
+            store.write_json_once(run_directory, "plan.json", run.plan)
+            if run.review is not None:
+                store.write_json_once(run_directory, "review.json", run.review)
         store.write_json_once(run_directory, "bundle.json", run.bundle)
         store.write_json_once(run_directory, "summary.json", run.summary)
         store.write_json_once(run_directory, "gate-report.json", gate_report)
     except Exception as exc:
-        if runner is not None and runner.trace_events:
+        if trace_runner is not None and trace_runner.trace_events:
             store.write_json_once(
                 run_directory,
                 "execution-trace.json",
-                runner.trace_events,
+                trace_runner.trace_events,
             )
         failure = {
             "experiment_id": args.experiment_id,
@@ -98,7 +129,7 @@ def run_research(args: argparse.Namespace) -> int:
             "brief_version": brief.version,
             "arm": arm.value,
             "status": "FAILED",
-            "failure_stage": "PROJECT_SINGLE_RUN",
+            "failure_stage": f"{arm.value}_RUN",
             "error_category": exc.__class__.__name__,
             "message": str(exc),
             "started_at": started_at.isoformat(),
@@ -117,16 +148,17 @@ def run_research(args: argparse.Namespace) -> int:
         )
         return 1
 
-    if runner is not None and runner.trace_events:
+    if trace_runner is not None and trace_runner.trace_events:
         store.write_json_once(
             run_directory,
             "execution-trace.json",
-            runner.trace_events,
+            trace_runner.trace_events,
         )
+    status = run.summary.status.value
     print(
         json.dumps(
             {
-                "status": "COMPLETED",
+                "status": status,
                 "run_directory": str(run_directory),
                 "candidate_count": len(run.bundle.candidates),
                 "approvable_count": len(gate_report.approvable_candidate_ids),
@@ -135,7 +167,7 @@ def run_research(args: argparse.Namespace) -> int:
             ensure_ascii=False,
         )
     )
-    return 0
+    return 0 if status == "COMPLETED" else 2
 
 
 def _new_run_id(arm: ExperimentArm) -> str:

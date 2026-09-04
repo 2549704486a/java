@@ -1,0 +1,123 @@
+{
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "reviews": [
+    {
+      "candidate_id": "xiaomi-smart-band-9-public-specs",
+      "claim_index": 0,
+      "source_ids": [
+        "source-task-award-candidate-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "官方全球规格页正文直接列出尺寸46.53×21.63×10.95mm（不含表带与凸起）与重量15.8g（不含表带），完全支持。"
+    },
+    {
+      "candidate_id": "xiaomi-smart-band-9-public-specs",
+      "claim_index": 1,
+      "source_ids": [
+        "source-task-award-candidate-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "官方全球规格页正文直接列出1.62英寸AMOLED触控屏、192×490分辨率、最高1200尼特亮度可调，完全支持。"
+    },
+    {
+      "candidate_id": "xiaomi-smart-band-9-public-specs",
+      "claim_index": 2,
+      "source_ids": [
+        "source-task-award-candidate-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "官方全球规格页正文直接列出磁吸充电、约1小时充电时间、典型使用最长21天、标称容量233mAh，完全支持。"
+    },
+    {
+      "candidate_id": "xiaomi-smart-band-9-public-specs",
+      "claim_index": 3,
+      "source_ids": [
+        "source-task-award-candidate-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "官方全球规格页正文直接列出5ATM防水、线性马达、兼容Android 8.0/iOS 12.0及以上、需Mi Fitness应用，完全支持。"
+    },
+    {
+      "candidate_id": "xiaomi-smart-band-9-public-specs",
+      "claim_index": 4,
+      "source_ids": [
+        "source-task-award-candidate-page-002"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "中文商城商品页正文显示小米手环9在售，含'立即购买'入口及参数页、防水场景说明等栏目，支持其在售状态与页面结构陈述。"
+    },
+    {
+      "candidate_id": "xiaomi-smart-band-9-public-specs",
+      "claim_index": 5,
+      "source_ids": [
+        "source-task-award-candidate-page-002"
+      ],
+      "support_status": "PARTIALLY_SUPPORTED",
+      "review_note": "中文商城页正文确实未出现小米手环9具体价格数字（所列价格均属其他品类），负面陈述可证实；但'价格口径证据不足'属推断性结论，原文未直接表述，故降级为部分支持。"
+    },
+    {
+      "candidate_id": "rfm-segment-rule-template-bloomreach",
+      "claim_index": 0,
+      "source_ids": [
+        "source-task-segment-rule-template-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "excerpt-026与excerpt-031明确所有至少一次购买的客户按RFM分段，购买条件为purchase_status=success且total_price>0，完全支持。"
+    },
+    {
+      "candidate_id": "rfm-segment-rule-template-bloomreach",
+      "claim_index": 1,
+      "source_ids": [
+        "source-task-segment-rule-template-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "excerpt-033明确说明recency、frequency、lifetime value分别由Recency Aggregate、Frequency Aggregate、Monetary Aggregate计算，完全支持。"
+    },
+    {
+      "candidate_id": "rfm-segment-rule-template-bloomreach",
+      "claim_index": 2,
+      "source_ids": [
+        "source-task-segment-rule-template-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "excerpt-031明确CLTV由purchase event的total_price属性计算，Monetary维度基于消费金额，完全支持。"
+    },
+    {
+      "candidate_id": "rfm-segment-rule-template-bloomreach",
+      "claim_index": 3,
+      "source_ids": [
+        "source-task-segment-rule-template-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "excerpt-027给出完整Jinja打分逻辑，按报告分位行比较r_value/f_value/m_value得到1-5分并拼接为rfm_score，完全支持。"
+    },
+    {
+      "candidate_id": "rfm-segment-rule-template-bloomreach",
+      "claim_index": 4,
+      "source_ids": [
+        "source-task-segment-rule-template-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "excerpt-027说明rfm_segment与previous_rfm_segment客户属性用于跟踪分段及变动；excerpt-026说明分段基于RFM值。命名客群映射表（Champions等）在excerpt-026/031中提及RFM分段用于忠诚度客群，基本支持。"
+    },
+    {
+      "candidate_id": "rfm-segment-rule-template-bloomreach",
+      "claim_index": 5,
+      "source_ids": [
+        "source-task-segment-rule-template-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "excerpt-026说明场景每月运行两次（Initial与Repeat flow）跟踪增量；excerpt-031说明按相对分位自动切片并分配客群，支持'每月更新、动态相对分位'陈述。"
+    },
+    {
+      "candidate_id": "rfm-segment-rule-template-bloomreach",
+      "claim_index": 6,
+      "source_ids": [
+        "source-task-segment-rule-template-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "excerpt-026明确说明该RFM场景需要18个可用客户属性才能正常运行，完全支持。"
+    }
+  ]
+}

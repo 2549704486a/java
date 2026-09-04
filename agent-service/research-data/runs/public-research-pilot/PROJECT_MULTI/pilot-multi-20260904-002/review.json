@@ -1,0 +1,190 @@
+{
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "reviews": [
+    {
+      "candidate_id": "mi-band-9-public-spec-award-candidate",
+      "claim_index": 0,
+      "source_ids": [
+        "source-award-candidate-mi-band-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "source-award-candidate-mi-band-page-001-excerpt-001 直接列出尺寸46.53×21.63×10.95mm、重量15.8g、表带135–210mm与TPU材质，完全支持。"
+    },
+    {
+      "candidate_id": "mi-band-9-public-spec-award-candidate",
+      "claim_index": 1,
+      "source_ids": [
+        "source-award-candidate-mi-band-page-001",
+        "source-award-candidate-mi-band-page-002"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "page-001-excerpt-001 列出1.62英寸AMOLED、192×490分辨率、1200尼特；page-002-excerpt-002 补充60Hz刷新率与自动亮度调节，两来源共同支持。"
+    },
+    {
+      "candidate_id": "mi-band-9-public-spec-award-candidate",
+      "claim_index": 2,
+      "source_ids": [
+        "source-award-candidate-mi-band-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "page-001-excerpt-001 直接列出磁吸充电、约1小时充电时间、21天典型续航与233mAh容量，完全支持。"
+    },
+    {
+      "candidate_id": "mi-band-9-public-spec-award-candidate",
+      "claim_index": 3,
+      "source_ids": [
+        "source-award-candidate-mi-band-page-001",
+        "source-award-candidate-mi-band-page-002"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "page-001-excerpt-001 列出5ATM防水；page-002-excerpt-015 补充TÜV SÜD认证、GB/T 30106:2013标准及使用限制，共同支持。"
+    },
+    {
+      "candidate_id": "mi-band-9-public-spec-award-candidate",
+      "claim_index": 4,
+      "source_ids": [
+        "source-award-candidate-mi-band-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "page-001-excerpt-001 列出加速度计、陀螺仪、光学心率、环境光传感器，Android 8.0/iOS 12.0兼容及Mi Fitness应用，完全支持。"
+    },
+    {
+      "candidate_id": "mi-band-9-public-spec-award-candidate",
+      "claim_index": 5,
+      "source_ids": [
+        "source-award-candidate-mi-band-page-001",
+        "source-award-candidate-mi-band-page-002"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "page-001-excerpt-001 列出五种颜色；page-002-excerpt-001 补充标配对应TPU表带、其他表带单独购买，共同支持。"
+    },
+    {
+      "candidate_id": "mi-band-9-public-spec-award-candidate",
+      "claim_index": 6,
+      "source_ids": [
+        "source-award-candidate-mi-band-page-002"
+      ],
+      "support_status": "PARTIALLY_SUPPORTED",
+      "review_note": "page-002-excerpt-001 支持150+运动模式、睡眠/心率/血氧监测；但200+表盘、压力监测、女性健康管理、呼吸训练等细节在已读取片段中未见明确文字，仅部分支持。"
+    },
+    {
+      "candidate_id": "mi-band-9-public-spec-award-candidate",
+      "claim_index": 7,
+      "source_ids": [
+        "source-award-candidate-mi-band-page-002"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "page-002-excerpt-012 列出21天/9天/6.6天三档续航，excerpt-018 说明数据来自小米内部实验室，完全支持。"
+    },
+    {
+      "candidate_id": "mi-band-9-public-spec-award-candidate",
+      "claim_index": 8,
+      "source_ids": [
+        "source-award-candidate-mi-band-page-002"
+      ],
+      "support_status": "PARTIALLY_SUPPORTED",
+      "review_note": "page-002-excerpt-012 支持线性马达与20种振动模式；但快速拆卸表带机制与前代表带兼容在已读取片段中未见明确文字，仅部分支持。"
+    },
+    {
+      "candidate_id": "mi-band-9-public-spec-award-candidate",
+      "claim_index": 9,
+      "source_ids": [
+        "source-award-candidate-mi-band-page-001",
+        "source-award-candidate-mi-band-page-002"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "两来源已读取片段均未包含价格信息，结论为否定性陈述，与证据一致，支持该结论。"
+    },
+    {
+      "candidate_id": "starbucks-tiered-star-earn-redeem-pattern",
+      "claim_index": 0,
+      "source_ids": [
+        "source-campaign-pattern-starbucks-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "官方条款明确说明会员可赚取累积Star并在参与门店兑换Rewards，完全支持。"
+    },
+    {
+      "candidate_id": "starbucks-tiered-star-earn-redeem-pattern",
+      "claim_index": 1,
+      "source_ids": [
+        "source-campaign-pattern-starbucks-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "条款明确列出Green 1 Star/$1、Gold 1.2 Star/$1、Reserve 1.7 Star/$1的赚取速率，完全支持。"
+    },
+    {
+      "candidate_id": "starbucks-tiered-star-earn-redeem-pattern",
+      "claim_index": 2,
+      "source_ids": [
+        "source-campaign-pattern-starbucks-page-001"
+      ],
+      "support_status": "PARTIALLY_SUPPORTED",
+      "review_note": "条款支持等级由12个月Star决定、未达500 Star则等级Star余额归零；但2500 Star达Reserve的具体门槛在已读取片段中未见明确文字，仅部分支持。"
+    },
+    {
+      "candidate_id": "starbucks-tiered-star-earn-redeem-pattern",
+      "claim_index": 3,
+      "source_ids": [
+        "source-campaign-pattern-starbucks-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "条款列出使用星巴克卡、绑定支付方式、扫描条码后现金/卡/钱包支付及促销Bonus Star等赚取途径，完全支持。"
+    },
+    {
+      "candidate_id": "starbucks-tiered-star-earn-redeem-pattern",
+      "claim_index": 4,
+      "source_ids": [
+        "source-campaign-pattern-starbucks-page-001"
+      ],
+      "support_status": "UNSUPPORTED",
+      "review_note": "已读取片段中未见任何关于25/60/100/200/300/400 Star兑换档位及对应价值的文字，该兑换目录细节无法由现有证据证实。"
+    },
+    {
+      "candidate_id": "starbucks-tiered-star-earn-redeem-pattern",
+      "claim_index": 5,
+      "source_ids": [
+        "source-campaign-pattern-starbucks-page-001"
+      ],
+      "support_status": "UNSUPPORTED",
+      "review_note": "已读取片段中未见关于Star有效期（第6个月末过期、充值延长等）的具体规则文字，无法由现有证据证实。"
+    },
+    {
+      "candidate_id": "starbucks-tiered-star-earn-redeem-pattern",
+      "claim_index": 6,
+      "source_ids": [
+        "source-campaign-pattern-starbucks-page-001"
+      ],
+      "support_status": "SUPPORTED",
+      "review_note": "条款明确说明并非所有门店都能授予或兑换Star，完全支持。"
+    },
+    {
+      "candidate_id": "starbucks-tiered-star-earn-redeem-pattern",
+      "claim_index": 7,
+      "source_ids": [
+        "source-campaign-pattern-starbucks-page-001"
+      ],
+      "support_status": "PARTIALLY_SUPPORTED",
+      "review_note": "条款提及部分交易（如星巴克卡激活/充值等）不可赚取Star；但酒精饮品、外送订单、电商商品、多份装食品等具体排除项在已读取片段中未见明确文字，仅部分支持。"
+    },
+    {
+      "candidate_id": "starbucks-tiered-star-earn-redeem-pattern",
+      "claim_index": 8,
+      "source_ids": [
+        "source-campaign-pattern-starbucks-page-001"
+      ],
+      "support_status": "UNSUPPORTED",
+      "review_note": "已读取片段中未见生日奖励、免费定制日、个性化优惠券、双倍/三倍Star日、数字充值Bonus Star、可重复使用杯双倍Star等附加权益的具体文字，无法由现有证据证实。"
+    },
+    {
+      "candidate_id": "starbucks-tiered-star-earn-redeem-pattern",
+      "claim_index": 9,
+      "source_ids": [
+        "source-campaign-pattern-starbucks-page-001"
+      ],
+      "support_status": "UNSUPPORTED",
+      "review_note": "已读取片段中未见Star为促销性质、无现金价值、不可转让等具体条款文字，无法由现有证据证实。"
+    }
+  ]
+}

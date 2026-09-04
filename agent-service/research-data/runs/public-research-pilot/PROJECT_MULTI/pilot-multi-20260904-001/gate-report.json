@@ -1,0 +1,29 @@
+{
+  "brief_id": "pilot-mixed",
+  "brief_version": "v1",
+  "run_issues": [],
+  "decisions": [
+    {
+      "candidate_id": "xiaomi-smart-band-9-public-specs",
+      "approvable": false,
+      "issues": [
+        {
+          "code": "CLAIM_NOT_FULLY_SUPPORTED",
+          "message": "结论状态为 PARTIALLY_SUPPORTED，不能进入可批准集合",
+          "candidate_id": "xiaomi-smart-band-9-public-specs"
+        }
+      ]
+    },
+    {
+      "candidate_id": "rfm-segment-rule-template-bloomreach",
+      "approvable": true,
+      "issues": []
+    }
+  ],
+  "approvable_candidate_ids": [
+    "rfm-segment-rule-template-bloomreach"
+  ],
+  "rejected_candidate_ids": [
+    "xiaomi-smart-band-9-public-specs"
+  ]
+}
