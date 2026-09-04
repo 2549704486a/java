@@ -301,6 +301,33 @@ class BlindScoreRecord(StrictModel):
     score: QualityScore
 
 
+class GateIssue(StrictModel):
+    code: str = Field(pattern=r"^[A-Z][A-Z0-9_]{2,79}$")
+    message: str = Field(min_length=2, max_length=500)
+    candidate_id: str | None = None
+
+
+class CandidateGateDecision(StrictModel):
+    candidate_id: str
+    approvable: bool
+    issues: list[GateIssue] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_decision(self) -> "CandidateGateDecision":
+        if self.approvable == bool(self.issues):
+            raise ValueError("可批准状态必须与门禁问题是否为空一致")
+        return self
+
+
+class GateReport(StrictModel):
+    brief_id: str
+    brief_version: str
+    run_issues: list[GateIssue] = Field(default_factory=list)
+    decisions: list[CandidateGateDecision] = Field(default_factory=list)
+    approvable_candidate_ids: list[str] = Field(default_factory=list)
+    rejected_candidate_ids: list[str] = Field(default_factory=list)
+
+
 class RetentionRule(StrictModel):
     require_no_added_gate_failures: Literal[True] = True
     required_brief_wins: int = Field(ge=1, le=3)
