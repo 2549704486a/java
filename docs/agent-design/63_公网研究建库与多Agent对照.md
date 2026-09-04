@@ -274,7 +274,9 @@ evaluate_candidate_bundle 确定性门禁
       "focus_key": "award-product-specs",
       "objective": "研究公开商品规格及其可核验的价格口径",
       "asset_types": ["AWARD_CANDIDATE"],
+      "target_count": 1,
       "search_queries": ["official smart band specifications"],
+      "source_urls": ["https://www.mi.com/global/product/xiaomi-smart-band-9/specs/"],
       "excluded_focuses": [],
       "max_pages": 2
     }
@@ -286,10 +288,55 @@ evaluate_candidate_bundle 确定性门禁
 
 1. `brief_id` 和版本必须与输入简报一致。
 2. 任务数不能超过简报声明的并行上限。
-3. 任务资产类型不能越过简报范围，并且必须覆盖全部目标类型。
+3. 每个任务只研究一种简报范围内的资产；同类任务的 `target_count` 合计必须与简报目标完全一致。
 4. 所有任务的 `max_pages` 总和不能超过简报页面预算。
 5. 任务 ID、关注方向、规范化目标和搜索查询不能重复。
+6. 任务只能分配简报已有的显式 URL，且同一 URL 不能跨任务重复，避免独立研究员重复读取同一指定页面。
 
 因此，规划 Agent 负责提出合理拆法，是否允许执行由确定性代码决定。定向测试使用假模型验证了有效计划、目标漏配、资产越界、总预算超限、重复任务、空计划和不可解析输出；所有失败分支均未调用公网搜索或页面读取。
 
-截至 4.1，只完成了规划 Agent 与前置校验。研究任务的独立上下文执行、并行汇合、证据审核和一次定向修订将在下一步接入，当前不能声称多 Agent 闭环已经完成。
+4.1 提交时只完成了规划 Agent 与前置校验；下面记录 4.2 新增的执行、审核和返修能力。真实多 Agent Pilot 尚未完成，因此当前仍不能声称实验闭环已经验收。
+
+### 7.2 确定性多 Agent 协调器
+
+4.2 已完成代码级多 Agent 候选流程，执行顺序不由主管 Agent 自由决定：
+
+```text
+Planning Agent -> ResearchPlan
+                       |
+            ThreadPoolExecutor 扇出
+              /        |        \
+      Researcher A Researcher B Researcher C
+              \        |        /
+               合并 CandidateBundle
+                       |
+              Evidence Reviewer
+                       |
+        存在证据缺口？ --否--> deterministic gates
+               |
+              是（最多一轮）
+               |
+       只返修受影响的原 Researcher
+               |
+          再审核 -> deterministic gates
+```
+
+每个 Researcher 都有独立的模型消息、`PublicWebClient`、`ResearchToolSession` 和来源命名空间。例如 `task-award` 的来源形如 `source-task-award-page-001`，不会与其他并行任务的 `source-page-001` 冲突。任务的搜索次数、页面数、候选数和显式 URL 均来自已经通过规划校验的 `ResearchTask`，所有任务合计不能突破原简报预算。
+
+审核 Agent 没有 Tool，不允许搜索新来源或改写候选正文，只能逐条返回：
+
+```json
+{
+  "candidate_id": "candidate-task-award",
+  "claim_index": 0,
+  "source_ids": ["source-task-award-page-001"],
+  "support_status": "PARTIALLY_SUPPORTED",
+  "review_note": "当前短证据只支持部分规格，需要返修结论范围"
+}
+```
+
+代码要求审核结果精确覆盖所有候选结论，不能缺少、重复或增加索引。审核只修改 `source_ids`、支持状态和审核说明，修改后的 Claim、Candidate 和 Bundle 会重新通过 Pydantic 校验。即使审核员错误地把未知来源标为 `SUPPORTED`，最终 `evaluate_candidate_bundle()` 仍会以 `UNKNOWN_SOURCE_REFERENCE` 拒绝，审核 Agent 无权覆盖门禁。
+
+若首次审核出现非 `SUPPORTED` 结论，协调器根据候选到原任务的映射，只把反馈送回受影响的 Researcher。返修阶段复用该任务已经读取的编号短证据，没有公网 Tool，候选 ID 集合必须保持不变；整条工作流最多进入一次返修分支，返修后必须重新审核。单个并行任务抛错时，摘要记录 `researcher:<task_id>` 和错误类别，其他任务结果仍会合并，整次运行标记为 `INCOMPLETE`。
+
+本阶段使用假模型和假网页验证 43 个研究模块用例，其中包括并行执行确实重叠、独立会话与来源 ID、失败任务定位、只返修受影响任务、返修不新增网页调用、审核逐条覆盖、审核不能覆盖门禁，以及各阶段模型/Tool 用量均进入运行摘要。真实模型的 `PROJECT_MULTI` Pilot 尚未执行，将在 4.3 接入 CLI 后验证。

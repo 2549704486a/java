@@ -117,8 +117,10 @@ class ResearchTask(StrictModel):
     task_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
     focus_key: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
     objective: str = Field(min_length=10, max_length=500)
-    asset_types: list[AssetType] = Field(min_length=1, max_length=3)
+    asset_types: list[AssetType] = Field(min_length=1, max_length=1)
+    target_count: int = Field(ge=1, le=10)
     search_queries: list[str] = Field(min_length=1, max_length=4)
+    source_urls: list[HttpUrl] = Field(default_factory=list, max_length=10)
     excluded_focuses: list[str] = Field(default_factory=list, max_length=6)
     max_pages: int = Field(ge=1, le=10)
 
@@ -140,7 +142,7 @@ class ResearchPlan(StrictModel):
 
 
 class SourceEvidence(StrictModel):
-    source_id: str = Field(pattern=r"^source-[a-z0-9-]{3,64}$")
+    source_id: str = Field(pattern=r"^source-[a-z0-9-]{3,95}$")
     url: HttpUrl
     title: str | None = Field(default=None, max_length=300)
     publisher: str | None = Field(default=None, max_length=200)
@@ -211,9 +213,9 @@ class CandidateBundle(StrictModel):
 
 
 class SourceExcerptSelection(StrictModel):
-    source_id: str = Field(pattern=r"^source-[a-z0-9-]{3,64}$")
+    source_id: str = Field(pattern=r"^source-[a-z0-9-]{3,95}$")
     excerpt_id: str = Field(
-        pattern=r"^source-[a-z0-9-]{3,64}-excerpt-[0-9]{3}$"
+        pattern=r"^source-[a-z0-9-]{3,95}-excerpt-[0-9]{3}$"
     )
 
     @model_validator(mode="after")
@@ -253,6 +255,27 @@ class ResearchAgentOutput(StrictModel):
                 "所有结论引用都必须提供来源摘录；缺少摘录："
                 + ", ".join(missing)
             )
+        return self
+
+
+class ClaimEvidenceReview(StrictModel):
+    candidate_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{4,95}$")
+    claim_index: int = Field(ge=0, le=19)
+    source_ids: list[str] = Field(default_factory=list, max_length=8)
+    support_status: SupportStatus
+    review_note: str = Field(min_length=2, max_length=500)
+
+
+class EvidenceReviewOutput(StrictModel):
+    brief_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
+    brief_version: str = Field(pattern=r"^v[1-9][0-9]*$")
+    reviews: list[ClaimEvidenceReview] = Field(default_factory=list, max_length=200)
+
+    @model_validator(mode="after")
+    def validate_unique_claim_reviews(self) -> "EvidenceReviewOutput":
+        keys = [(item.candidate_id, item.claim_index) for item in self.reviews]
+        if len(keys) != len(set(keys)):
+            raise ValueError("同一候选结论只能审核一次")
         return self
 
 

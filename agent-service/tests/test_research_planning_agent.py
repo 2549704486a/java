@@ -36,7 +36,11 @@ class ResearchPlanningAgentTest(unittest.TestCase):
                     "focus_key": "award-product-specs",
                     "objective": "研究公开商品规格及其可核验的价格口径",
                     "asset_types": ["AWARD_CANDIDATE"],
+                    "target_count": 1,
                     "search_queries": ["official smart band specifications"],
+                    "source_urls": [
+                        "https://www.mi.com/global/product/xiaomi-smart-band-9/specs/"
+                    ],
                     "max_pages": 2,
                 },
                 {
@@ -44,7 +48,9 @@ class ResearchPlanningAgentTest(unittest.TestCase):
                     "focus_key": "campaign-reward-mechanism",
                     "objective": "研究公开会员活动的积分获取和兑换机制",
                     "asset_types": ["CAMPAIGN_PATTERN"],
+                    "target_count": 1,
                     "search_queries": ["official membership rewards terms"],
+                    "source_urls": ["https://www.starbucks.com/rewards/terms/"],
                     "max_pages": 2,
                 },
                 {
@@ -52,7 +58,11 @@ class ResearchPlanningAgentTest(unittest.TestCase):
                     "focus_key": "segment-computable-fields",
                     "objective": "研究可由内部事件字段计算的客群规则模板",
                     "asset_types": ["SEGMENT_RULE_TEMPLATE"],
+                    "target_count": 1,
                     "search_queries": ["official RFM segmentation documentation"],
+                    "source_urls": [
+                        "https://documentation.bloomreach.com/engagement/docs/rfm-segmentation"
+                    ],
                     "max_pages": 2,
                 },
             ],
@@ -101,6 +111,7 @@ class ResearchPlanningAgentTest(unittest.TestCase):
                     "focus_key": "campaign-mechanism",
                     "objective": "研究公开会员活动的积分获取和兑换机制",
                     "asset_types": ["CAMPAIGN_PATTERN"],
+                    "target_count": 5,
                     "search_queries": ["official membership rewards terms"],
                     "max_pages": 2,
                 }
@@ -109,6 +120,27 @@ class ResearchPlanningAgentTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "范围外的资产类型"):
             ResearchPlanningRunner(FakePlanningAgent(payload)).run(brief)
+
+    def test_candidate_quota_and_explicit_urls_must_match_brief(self):
+        wrong_quota = self.valid_plan_payload()
+        wrong_quota["tasks"][0]["target_count"] = 2
+        unexpected_url = self.valid_plan_payload()
+        unexpected_url["tasks"][0]["source_urls"] = [
+            "https://example.com/not-in-brief"
+        ]
+        duplicate_url = self.valid_plan_payload()
+        duplicate_url["tasks"][1]["source_urls"] = duplicate_url["tasks"][0][
+            "source_urls"
+        ]
+
+        for payload, message in (
+            (wrong_quota, "候选配额"),
+            (unexpected_url, "简报之外"),
+            (duplicate_url, "不能分配给多个"),
+        ):
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    ResearchPlanningRunner(FakePlanningAgent(payload)).run(self.brief)
 
     def test_duplicate_empty_and_unparseable_plans_are_rejected(self):
         duplicate = self.valid_plan_payload()
