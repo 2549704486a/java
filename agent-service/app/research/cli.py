@@ -26,12 +26,21 @@ from app.research.evaluation import (
     create_blind_mapping,
     import_external_run,
     load_evaluation_run,
+    lock_score_submission,
     persist_blind_evaluation,
+    persist_comparison_report,
+    persist_locked_scores,
+    reveal_comparison,
 )
 from app.research.gates import evaluate_candidate_bundle
 from app.research.models import (
+    BlindMapping,
+    BlindPackage,
+    BlindScoreSubmission,
+    EvaluationInputManifest,
     ExternalRunPayload,
     ExperimentArm,
+    LockedScoreSet,
     load_experiment_policy,
     load_research_brief,
 )
@@ -94,6 +103,32 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_RUNS_ROOT,
     )
+    score_parser = subparsers.add_parser(
+        "lock-scores",
+        help="校验并不可覆盖地锁定十二份匿名评分",
+    )
+    score_parser.add_argument("--evaluation-directory", required=True, type=Path)
+    score_parser.add_argument("--scores", required=True, type=Path)
+    score_parser.add_argument(
+        "--runs-root",
+        type=Path,
+        default=DEFAULT_RUNS_ROOT,
+    )
+    reveal_parser = subparsers.add_parser(
+        "reveal-evaluation",
+        help="在评分锁定后揭盲并生成比较报告",
+    )
+    reveal_parser.add_argument("--evaluation-directory", required=True, type=Path)
+    reveal_parser.add_argument(
+        "--policy",
+        type=Path,
+        default=DEFAULT_POLICY_PATH,
+    )
+    reveal_parser.add_argument(
+        "--runs-root",
+        type=Path,
+        default=DEFAULT_RUNS_ROOT,
+    )
     return parser
 
 
@@ -105,6 +140,10 @@ def main(argv: list[str] | None = None) -> int:
         return import_external_result(args)
     if args.command == "prepare-evaluation":
         return prepare_evaluation(args)
+    if args.command == "lock-scores":
+        return lock_evaluation_scores(args)
+    if args.command == "reveal-evaluation":
+        return reveal_evaluation(args)
     raise RuntimeError(f"未知命令：{args.command}")
 
 
@@ -183,6 +222,96 @@ def prepare_evaluation(args: argparse.Namespace) -> int:
                 "status": "READY_FOR_BLIND_REVIEW",
                 "evaluation_directory": str(evaluation_directory.resolve()),
                 "material_count": len(package.materials),
+            },
+            ensure_ascii=False,
+        )
+    )
+    return 0
+
+
+def lock_evaluation_scores(args: argparse.Namespace) -> int:
+    package = BlindPackage.model_validate_json(
+        (args.evaluation_directory / "blind-package.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    submission = BlindScoreSubmission.model_validate_json(
+        args.scores.read_text(encoding="utf-8")
+    )
+    locked_scores = lock_score_submission(
+        package,
+        submission,
+        locked_at=datetime.now(timezone.utc),
+    )
+    persist_locked_scores(
+        ResearchRunStore(args.runs_root),
+        args.evaluation_directory,
+        locked_scores,
+    )
+    print(
+        json.dumps(
+            {
+                "status": "SCORES_LOCKED",
+                "score_count": len(locked_scores.records),
+            },
+            ensure_ascii=False,
+        )
+    )
+    return 0
+
+
+def reveal_evaluation(args: argparse.Namespace) -> int:
+    policy = load_experiment_policy(args.policy)
+    manifest = EvaluationInputManifest.model_validate_json(
+        (args.evaluation_directory / "evaluation-input.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    mapping = BlindMapping.model_validate_json(
+        (args.evaluation_directory / "blind-mapping.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    locked_scores = LockedScoreSet.model_validate_json(
+        (args.evaluation_directory / "locked-scores.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    records = []
+    for reference in manifest.runs:
+        run_directory = (
+            args.runs_root
+            / manifest.experiment_id
+            / reference.arm.value
+            / reference.run_id
+        )
+        record = load_evaluation_run(run_directory)
+        if (
+            record.summary.arm != reference.arm
+            or record.summary.run_id != reference.run_id
+            or record.brief.brief_id != reference.brief_id
+            or record.brief.version != reference.brief_version
+        ):
+            raise ValueError("评估输入清单与实际运行产物不一致")
+        records.append(record)
+    report = reveal_comparison(
+        policy,
+        mapping,
+        locked_scores,
+        records,
+        generated_at=datetime.now(timezone.utc),
+    )
+    persist_comparison_report(
+        ResearchRunStore(args.runs_root),
+        args.evaluation_directory,
+        report,
+    )
+    print(
+        json.dumps(
+            {
+                "status": "EVALUATION_REVEALED",
+                "recommendation": report.recommendation.value,
+                "complete": report.complete_four_arm_comparison,
             },
             ensure_ascii=False,
         )

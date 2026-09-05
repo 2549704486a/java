@@ -16,6 +16,7 @@ from app.research.models import (
     BlindPackage,
     BlindQualityMetrics,
     BlindScoreRecord,
+    BlindScoreSubmission,
     CandidateBundle,
     ComparisonReport,
     EvaluationInputManifest,
@@ -453,6 +454,34 @@ def build_blind_package(
         policy_version=policy.version,
         created_at=created_at,
         materials=materials,
+    )
+
+
+def lock_score_submission(
+    package: BlindPackage,
+    submission: BlindScoreSubmission,
+    *,
+    locked_at: datetime,
+) -> LockedScoreSet:
+    if (
+        submission.experiment_id != package.experiment_id
+        or submission.policy_version != package.policy_version
+    ):
+        raise ValueError("评分提交与匿名材料不属于同一实验版本")
+    return lock_scores(
+        package,
+        [
+            BlindScoreRecord(
+                experiment_id=submission.experiment_id,
+                brief_id=item.brief_id,
+                blind_label=item.blind_label,
+                scorer=submission.scorer,
+                scored_at=locked_at,
+                score=item.to_quality_score(),
+            )
+            for item in submission.records
+        ],
+        locked_at=locked_at,
     )
 
 

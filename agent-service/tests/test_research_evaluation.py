@@ -16,6 +16,7 @@ from app.research.evaluation import (
     create_blind_mapping,
     import_external_run,
     load_evaluation_run,
+    lock_score_submission,
     lock_scores,
     persist_blind_evaluation,
     persist_locked_scores,
@@ -24,6 +25,7 @@ from app.research.evaluation import (
 from app.research.gates import evaluate_candidate_bundle
 from app.research.models import (
     BlindScoreRecord,
+    BlindScoreSubmission,
     CandidateAsset,
     CandidateBundle,
     EvaluationRunRecord,
@@ -371,6 +373,45 @@ class ResearchEvaluationTest(unittest.TestCase):
             persist_locked_scores(store, evaluation_dir, locked)
             with self.assertRaises(FileExistsError):
                 persist_locked_scores(store, evaluation_dir, locked)
+
+    def test_score_submission_converts_only_after_complete_validation(self):
+        records = [
+            self.make_record(brief, arm)
+            for brief in self.briefs
+            for arm in ExperimentArm
+        ]
+        package = build_blind_package(
+            self.policy,
+            self.mapping,
+            records,
+            created_at=NOW,
+        )
+        submission = BlindScoreSubmission.model_validate(
+            {
+                "experiment_id": self.policy.experiment_id,
+                "policy_version": self.policy.version,
+                "scorer": "人工评分者",
+                "records": [
+                    {
+                        "blind_label": material.blind_label,
+                        "brief_id": material.brief_id,
+                        "project_relevance": 4,
+                        "factual_support": 4,
+                        "adaptation_usability": 3,
+                        "conflict_handling": 3,
+                        "notes": "匿名材料已逐项人工核对。",
+                    }
+                    for material in package.materials
+                ],
+            }
+        )
+
+        locked = lock_score_submission(package, submission, locked_at=NOW)
+
+        self.assertEqual(12, len(locked.records))
+        self.assertTrue(
+            all(record.scorer == "人工评分者" for record in locked.records)
+        )
 
     def test_missing_official_results_force_inconclusive_report(self):
         records = [

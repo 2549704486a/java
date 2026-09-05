@@ -595,3 +595,43 @@ research-data/runs/public-research-comparison/evaluation/official-blind-review-v
 | 冲突处理质量 | 是否识别时间、版本、地区、口径或来源冲突并避免静默合并 |
 
 评分前不读取 `blind-mapping.json`。只有十二份评分全部完成后才能生成不可覆盖的 `locked-scores.json`，之后才允许揭盲和生成比较报告。当前阶段已经完成材料准备，但尚未锁定人工评分，也尚未形成执行臂胜负或保留建议。
+
+### 8.8 评分锁定与揭盲命令
+
+评分提交采用严格的 `BlindScoreSubmission`，要求实验编号、策略版本、评分者和十二条评分同时存在。每条评分对应一个“匿名标签 + 简报”，四项分数只能为 1 至 5，说明不能为空；重复、缺失、多余或版本不一致都会在写文件前失败。
+
+```json
+{
+  "experiment_id": "public-research-comparison",
+  "policy_version": "v1",
+  "scorer": "人工评分者",
+  "records": [
+    {
+      "blind_label": "A",
+      "brief_id": "official-awards",
+      "project_relevance": 4,
+      "factual_support": 4,
+      "adaptation_usability": 3,
+      "conflict_handling": 3,
+      "notes": "候选与项目相关，但内部采购参数仍需补充。"
+    }
+  ]
+}
+```
+
+人工评分完成后，`lock-scores` 只读取匿名包和评分提交，不读取映射文件。校验通过后生成不可覆盖的 `locked-scores.json`；同一目录再次执行会因文件已存在而失败，不能悄悄覆盖原分数。
+
+```powershell
+.\.venv\Scripts\python.exe -m app.research.cli lock-scores `
+  --evaluation-directory research-data\runs\public-research-comparison\evaluation\official-blind-review-v1 `
+  --scores <已完成评分的JSON文件>
+```
+
+`reveal-evaluation` 必须在 `locked-scores.json` 已存在后执行。它此时才读取 `blind-mapping.json`，并按 `evaluation-input.json` 中冻结的执行臂、简报版本和运行 ID 重新加载原始产物；任何引用与实际目录不一致都会停止。比较报告同样不可覆盖写入。
+
+```powershell
+.\.venv\Scripts\python.exe -m app.research.cli reveal-evaluation `
+  --evaluation-directory research-data\runs\public-research-comparison\evaluation\official-blind-review-v1
+```
+
+这两个命令已经实现并通过固定材料验证，但正式目录尚未产生 `locked-scores.json` 和 `comparison-report.json`。在用户完成评分前，代码不会提前揭盲或生成推荐结论。

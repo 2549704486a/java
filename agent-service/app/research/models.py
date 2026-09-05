@@ -384,6 +384,39 @@ class BlindScoreRecord(StrictModel):
     score: QualityScore
 
 
+class BlindScoreSubmissionItem(StrictModel):
+    blind_label: str = Field(pattern=r"^[A-Z]$")
+    brief_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
+    project_relevance: int = Field(ge=1, le=5)
+    factual_support: int = Field(ge=1, le=5)
+    adaptation_usability: int = Field(ge=1, le=5)
+    conflict_handling: int = Field(ge=1, le=5)
+    notes: str = Field(min_length=2, max_length=1000)
+
+    def to_quality_score(self) -> QualityScore:
+        return QualityScore(
+            project_relevance=self.project_relevance,
+            factual_support=self.factual_support,
+            adaptation_usability=self.adaptation_usability,
+            conflict_handling=self.conflict_handling,
+            notes=self.notes,
+        )
+
+
+class BlindScoreSubmission(StrictModel):
+    experiment_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
+    policy_version: str = Field(pattern=r"^v[1-9][0-9]*$")
+    scorer: str = Field(min_length=2, max_length=80)
+    records: list[BlindScoreSubmissionItem] = Field(min_length=12, max_length=12)
+
+    @model_validator(mode="after")
+    def validate_unique_material_scores(self) -> "BlindScoreSubmission":
+        keys = [(item.blind_label, item.brief_id) for item in self.records]
+        if len(keys) != len(set(keys)):
+            raise ValueError("同一匿名材料只能提交一次评分")
+        return self
+
+
 class GateIssue(StrictModel):
     code: str = Field(pattern=r"^[A-Z][A-Z0-9_]{2,79}$")
     message: str = Field(min_length=2, max_length=500)
