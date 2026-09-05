@@ -19,15 +19,29 @@ from app.research.agents import (
     build_single_research_agents,
 )
 from app.research.artifacts import ResearchRunStore
-from app.research.evaluation import calculate_run_metrics, import_external_run
+from app.research.evaluation import (
+    build_blind_package,
+    build_evaluation_manifest,
+    calculate_run_metrics,
+    create_blind_mapping,
+    import_external_run,
+    load_evaluation_run,
+    persist_blind_evaluation,
+)
 from app.research.gates import evaluate_candidate_bundle
-from app.research.models import ExternalRunPayload, ExperimentArm, load_research_brief
+from app.research.models import (
+    ExternalRunPayload,
+    ExperimentArm,
+    load_experiment_policy,
+    load_research_brief,
+)
 from app.research.web import PublicWebClient
 from app.research.workflow import IndependentResearcherRunner, MultiResearchWorkflow
 
 
 AGENT_SERVICE_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RUNS_ROOT = AGENT_SERVICE_ROOT / "research-data" / "runs"
+DEFAULT_POLICY_PATH = AGENT_SERVICE_ROOT / "research-data" / "experiment-policy-v1.json"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -59,6 +73,27 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_RUNS_ROOT,
     )
+    evaluation_parser = subparsers.add_parser(
+        "prepare-evaluation",
+        help="锁定十二个正式运行并生成匿名评分材料",
+    )
+    evaluation_parser.add_argument(
+        "--policy",
+        type=Path,
+        default=DEFAULT_POLICY_PATH,
+    )
+    evaluation_parser.add_argument("--evaluation-id", required=True)
+    evaluation_parser.add_argument(
+        "--run-directory",
+        required=True,
+        action="append",
+        type=Path,
+    )
+    evaluation_parser.add_argument(
+        "--runs-root",
+        type=Path,
+        default=DEFAULT_RUNS_ROOT,
+    )
     return parser
 
 
@@ -68,6 +103,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_research(args)
     if args.command == "import-external":
         return import_external_result(args)
+    if args.command == "prepare-evaluation":
+        return prepare_evaluation(args)
     raise RuntimeError(f"未知命令：{args.command}")
 
 
@@ -114,6 +151,43 @@ def import_external_result(args: argparse.Namespace) -> int:
         and not record.gate_report.rejected_candidate_ids
     )
     return 0 if gate_passed else 2
+
+
+def prepare_evaluation(args: argparse.Namespace) -> int:
+    policy = load_experiment_policy(args.policy)
+    records = [load_evaluation_run(path) for path in args.run_directory]
+    created_at = datetime.now(timezone.utc)
+    manifest = build_evaluation_manifest(
+        policy,
+        records,
+        created_at=created_at,
+    )
+    mapping = create_blind_mapping(policy, created_at=created_at)
+    package = build_blind_package(
+        policy,
+        mapping,
+        records,
+        created_at=created_at,
+    )
+    evaluation_directory = persist_blind_evaluation(
+        ResearchRunStore(args.runs_root),
+        policy,
+        args.evaluation_id,
+        manifest,
+        mapping,
+        package,
+    )
+    print(
+        json.dumps(
+            {
+                "status": "READY_FOR_BLIND_REVIEW",
+                "evaluation_directory": str(evaluation_directory.resolve()),
+                "material_count": len(package.materials),
+            },
+            ensure_ascii=False,
+        )
+    )
+    return 0
 
 
 def run_research(args: argparse.Namespace) -> int:

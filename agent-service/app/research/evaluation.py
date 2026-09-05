@@ -16,17 +16,24 @@ from app.research.models import (
     BlindPackage,
     BlindQualityMetrics,
     BlindScoreRecord,
+    CandidateBundle,
     ComparisonReport,
+    EvaluationInputManifest,
     EvaluationRunRecord,
+    EvaluationRunReference,
     ExperimentArm,
     ExperimentPolicy,
     ExternalRunPayload,
+    FailedRunArtifact,
+    GateReport,
     LockedScoreSet,
     ResearchBrief,
     RetentionRecommendation,
     RevealedRunResult,
     RunEvaluationMetrics,
     RunKind,
+    RunStatus,
+    RunSummary,
     SourceReadStatus,
     SupportStatus,
 )
@@ -71,13 +78,93 @@ def import_external_run(
 
 def load_evaluation_run(run_directory: str | Path) -> EvaluationRunRecord:
     directory = Path(run_directory)
-    return EvaluationRunRecord.model_validate(
-        {
-            "brief": _read_json(directory / "brief.json"),
-            "bundle": _read_json(directory / "bundle.json"),
-            "summary": _read_json(directory / "summary.json"),
-            "gate_report": _read_json(directory / "gate-report.json"),
-        }
+    brief = ResearchBrief.model_validate(_read_json(directory / "brief.json"))
+    complete_files = [
+        directory / "bundle.json",
+        directory / "summary.json",
+        directory / "gate-report.json",
+    ]
+    if all(path.is_file() for path in complete_files):
+        return EvaluationRunRecord.model_validate(
+            {
+                "brief": brief,
+                "bundle": _read_json(complete_files[0]),
+                "summary": _read_json(complete_files[1]),
+                "gate_report": _read_json(complete_files[2]),
+            }
+        )
+    if any(path.is_file() for path in complete_files):
+        raise ValueError("运行目录只包含部分完成产物，不能进入正式评估")
+
+    failure_path = directory / "failure.json"
+    if not failure_path.is_file():
+        raise ValueError("运行目录既没有完整结果，也没有失败产物")
+    failure = FailedRunArtifact.model_validate(_read_json(failure_path))
+    if (failure.brief_id, failure.brief_version) != (
+        brief.brief_id,
+        brief.version,
+    ):
+        raise ValueError("失败产物与运行简报版本不一致")
+    bundle = CandidateBundle(
+        brief_id=brief.brief_id,
+        brief_version=brief.version,
+    )
+    summary = RunSummary(
+        experiment_id=failure.experiment_id,
+        run_id=failure.run_id,
+        brief_id=failure.brief_id,
+        brief_version=failure.brief_version,
+        run_kind=brief.run_kind,
+        arm=failure.arm,
+        status=RunStatus.FAILED,
+        started_at=failure.started_at,
+        completed_at=failure.completed_at,
+        failure_stage=failure.failure_stage,
+    )
+    return EvaluationRunRecord(
+        brief=brief,
+        bundle=bundle,
+        summary=summary,
+        gate_report=evaluate_candidate_bundle(brief, bundle),
+    )
+
+
+def build_evaluation_manifest(
+    policy: ExperimentPolicy,
+    records: Iterable[EvaluationRunRecord],
+    *,
+    created_at: datetime,
+) -> EvaluationInputManifest:
+    records_by_key = _index_records(policy, records)
+    expected_keys = _expected_run_keys(policy)
+    if set(records_by_key) != expected_keys:
+        missing = sorted(
+            expected_keys - records_by_key.keys(),
+            key=lambda item: (item[0].value, item[1]),
+        )
+        unexpected = sorted(
+            records_by_key.keys() - expected_keys,
+            key=lambda item: (item[0].value, item[1]),
+        )
+        raise ValueError(
+            f"正式评估必须锁定全部十二个运行；缺少 {missing}，越界 {unexpected}"
+        )
+    return EvaluationInputManifest(
+        experiment_id=policy.experiment_id,
+        policy_version=policy.version,
+        created_at=created_at,
+        runs=[
+            EvaluationRunReference(
+                arm=arm,
+                brief_id=brief_id,
+                brief_version=record.brief.version,
+                run_id=record.summary.run_id,
+            )
+            for (arm, brief_id), record in sorted(
+                records_by_key.items(),
+                key=lambda item: (item[0][0].value, item[0][1]),
+            )
+        ],
     )
 
 
@@ -85,6 +172,7 @@ def persist_blind_evaluation(
     store: ResearchRunStore,
     policy: ExperimentPolicy,
     evaluation_id: str,
+    manifest: EvaluationInputManifest,
     mapping: BlindMapping,
     package: BlindPackage,
 ) -> Path:
@@ -94,12 +182,28 @@ def persist_blind_evaluation(
         or package.policy_version != policy.version
     ):
         raise ValueError("匿名评分材料与实验策略不一致")
+    if (
+        manifest.experiment_id != policy.experiment_id
+        or manifest.policy_version != policy.version
+    ):
+        raise ValueError("评估输入清单与实验策略不一致")
     evaluation_directory = store.create_evaluation_directory(
         experiment_id=policy.experiment_id,
         evaluation_id=evaluation_id,
     )
     store.write_json_once(evaluation_directory, "blind-package.json", package)
     store.write_json_once(evaluation_directory, "blind-mapping.json", mapping)
+    store.write_json_once(evaluation_directory, "evaluation-input.json", manifest)
+    store.write_json_once(
+        evaluation_directory,
+        "score-sheet-template.json",
+        build_score_sheet_template(package),
+    )
+    store.write_text_once(
+        evaluation_directory,
+        "blind-review.md",
+        render_blind_review(package),
+    )
     return evaluation_directory
 
 
@@ -208,12 +312,92 @@ def calculate_run_metrics(record: EvaluationRunRecord) -> RunEvaluationMetrics:
         gate_failed_candidate_count=len(record.gate_report.rejected_candidate_ids),
         elapsed_seconds=elapsed_seconds,
         model_call_count=_sum_known(stage.model_call_count for stage in stages),
-        tool_call_count=sum(stage.tool_call_count for stage in stages),
+        tool_call_count=_sum_known(stage.tool_call_count for stage in stages),
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         retry_count=sum(stage.retry_count for stage in stages),
         failure_stage=record.summary.failure_stage,
     )
+
+
+def build_score_sheet_template(package: BlindPackage) -> dict:
+    return {
+        "experiment_id": package.experiment_id,
+        "policy_version": package.policy_version,
+        "scorer": None,
+        "records": [
+            {
+                "blind_label": material.blind_label,
+                "brief_id": material.brief_id,
+                "project_relevance": None,
+                "factual_support": None,
+                "adaptation_usability": None,
+                "conflict_handling": None,
+                "notes": None,
+            }
+            for material in package.materials
+        ],
+    }
+
+
+def render_blind_review(package: BlindPackage) -> str:
+    lines = [
+        "# 公网研究四臂匿名评分材料",
+        "",
+        "请对每份材料分别给出 1 至 5 分：项目相关性、事实支持程度、适配建议可用性、冲突处理质量。失败材料也需要评分，不能根据候选数量直接跳过。",
+        "",
+    ]
+    for material in package.materials:
+        metrics = material.quality_metrics
+        lines.extend(
+            [
+                f"## {material.blind_label} / {material.brief_id}",
+                "",
+                f"- 运行状态：`{material.status.value}`",
+                f"- 候选完成：{metrics.candidate_count}/{metrics.target_count}",
+                f"- 可读来源：{metrics.readable_source_count}",
+                f"- 可批准候选：{metrics.approvable_candidate_count}",
+                f"- 运行级门禁问题：{metrics.run_issue_count}",
+                f"- 候选级门禁失败：{metrics.gate_failed_candidate_count}",
+                "",
+            ]
+        )
+        if not material.bundle.candidates:
+            lines.extend(["本次运行没有产出候选。", ""])
+        for candidate in material.bundle.candidates:
+            lines.extend(
+                [
+                    f"### {candidate.name}",
+                    "",
+                    candidate.summary,
+                    "",
+                    f"项目适配：{candidate.project_fit}",
+                    "",
+                    "证据结论：",
+                    "",
+                ]
+            )
+            for claim in candidate.claims:
+                references = "、".join(claim.source_ids) or "无来源"
+                lines.append(
+                    f"- {claim.text}（{claim.support_status.value}；{references}）"
+                )
+            lines.append("")
+        if material.bundle.sources:
+            lines.extend(["### 来源", ""])
+        for source in material.bundle.sources:
+            lines.append(
+                f"- `{source.source_id}` [{source.title or source.url}]({source.url})："
+                f"{source.excerpt or source.read_status.value}"
+            )
+        if material.bundle.sources:
+            lines.append("")
+        if material.gate_report.run_issues:
+            lines.extend(["### 门禁说明", ""])
+            for issue in material.gate_report.run_issues:
+                lines.append(f"- `{issue.code}`：{issue.message}")
+            lines.append("")
+    return "\n".join(lines)
 
 
 def create_blind_mapping(
@@ -252,14 +436,15 @@ def build_blind_package(
         key=lambda item: (labels_by_arm[item[0][0]], item[0][1]),
     ):
         metrics = calculate_run_metrics(record)
+        blind_bundle, blind_gate_report = _anonymize_material(record)
         materials.append(
             BlindMaterial(
                 blind_label=labels_by_arm[arm],
                 brief_id=brief_id,
                 brief_version=record.brief.version,
                 status=record.summary.status,
-                bundle=record.bundle,
-                gate_report=record.gate_report,
+                bundle=blind_bundle,
+                gate_report=blind_gate_report,
                 quality_metrics=_blind_quality_metrics(metrics),
             )
         )
@@ -391,6 +576,146 @@ def _blind_quality_metrics(metrics: RunEvaluationMetrics) -> BlindQualityMetrics
         run_issue_count=metrics.run_issue_count,
         gate_failed_candidate_count=metrics.gate_failed_candidate_count,
     )
+
+
+def _anonymize_material(
+    record: EvaluationRunRecord,
+) -> tuple[CandidateBundle, GateReport]:
+    source_ids = [source.source_id for source in record.bundle.sources]
+    source_ids.extend(
+        source_id
+        for candidate in record.bundle.candidates
+        for claim in candidate.claims
+        for source_id in claim.source_ids
+        if source_id not in source_ids
+    )
+    source_id_map = {
+        source_id: f"source-blind-{index:03d}"
+        for index, source_id in enumerate(dict.fromkeys(source_ids), start=1)
+    }
+    candidate_id_map = {
+        candidate.candidate_id: f"candidate-blind-{index:03d}"
+        for index, candidate in enumerate(record.bundle.candidates, start=1)
+    }
+    excerpt_id_map = {
+        excerpt_id: f"{source_id_map[source.source_id]}-excerpt-{index:03d}"
+        for source in record.bundle.sources
+        for index, excerpt_id in enumerate(source.excerpt_ids, start=1)
+    }
+    text_replacements = {
+        **source_id_map,
+        **candidate_id_map,
+        **excerpt_id_map,
+    }
+
+    def anonymize_text(value: str | None) -> str | None:
+        if value is None:
+            return None
+        result = value
+        for original, replacement in sorted(
+            text_replacements.items(),
+            key=lambda item: len(item[0]),
+            reverse=True,
+        ):
+            result = result.replace(original, replacement)
+        return result
+
+    sources = []
+    for source in record.bundle.sources:
+        blind_source_id = source_id_map[source.source_id]
+        sources.append(
+            source.model_copy(
+                update={
+                    "source_id": blind_source_id,
+                    "excerpt_ids": [
+                        excerpt_id_map[excerpt_id]
+                        for excerpt_id in source.excerpt_ids
+                    ],
+                    "title": anonymize_text(source.title),
+                    "publisher": anonymize_text(source.publisher),
+                    "excerpt": anonymize_text(source.excerpt),
+                    "error_category": anonymize_text(source.error_category),
+                }
+            )
+        )
+    candidates = []
+    for candidate in record.bundle.candidates:
+        candidates.append(
+            candidate.model_copy(
+                update={
+                    "candidate_id": candidate_id_map[candidate.candidate_id],
+                    "name": anonymize_text(candidate.name),
+                    "summary": anonymize_text(candidate.summary),
+                    "project_fit": anonymize_text(candidate.project_fit),
+                    "claims": [
+                        claim.model_copy(
+                            update={
+                                "text": anonymize_text(claim.text),
+                                "source_ids": [
+                                    source_id_map[source_id]
+                                    for source_id in claim.source_ids
+                                ],
+                                "review_note": anonymize_text(claim.review_note),
+                            }
+                        )
+                        for claim in candidate.claims
+                    ],
+                }
+            )
+        )
+    bundle = CandidateBundle(
+        brief_id=record.bundle.brief_id,
+        brief_version=record.bundle.brief_version,
+        sources=sources,
+        candidates=candidates,
+    )
+
+    def blind_candidate_id(candidate_id: str | None) -> str | None:
+        if candidate_id is None:
+            return None
+        return candidate_id_map.get(candidate_id, "candidate-blind-unknown")
+
+    gate_report = record.gate_report.model_copy(
+        update={
+            "run_issues": [
+                issue.model_copy(
+                    update={
+                        "message": anonymize_text(issue.message),
+                        "candidate_id": blind_candidate_id(issue.candidate_id),
+                    }
+                )
+                for issue in record.gate_report.run_issues
+            ],
+            "decisions": [
+                decision.model_copy(
+                    update={
+                        "candidate_id": blind_candidate_id(decision.candidate_id),
+                        "issues": [
+                            issue.model_copy(
+                                update={
+                                    "message": anonymize_text(issue.message),
+                                    "candidate_id": blind_candidate_id(
+                                        issue.candidate_id
+                                    )
+                                }
+                            )
+                            for issue in decision.issues
+                        ],
+                    }
+                )
+                for decision in record.gate_report.decisions
+            ],
+            "approvable_candidate_ids": [
+                blind_candidate_id(candidate_id)
+                for candidate_id in record.gate_report.approvable_candidate_ids
+            ],
+            "rejected_candidate_ids": [
+                blind_candidate_id(candidate_id)
+                for candidate_id in record.gate_report.rejected_candidate_ids
+            ],
+        }
+    )
+    return bundle, gate_report
 
 
 def _project_multi_results(

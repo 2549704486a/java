@@ -1,0 +1,115 @@
+{
+  "experiment_id": "public-research-comparison",
+  "policy_version": "v1",
+  "scorer": null,
+  "records": [
+    {
+      "blind_label": "A",
+      "brief_id": "official-awards",
+      "project_relevance": null,
+      "factual_support": null,
+      "adaptation_usability": null,
+      "conflict_handling": null,
+      "notes": null
+    },
+    {
+      "blind_label": "A",
+      "brief_id": "official-campaigns",
+      "project_relevance": null,
+      "factual_support": null,
+      "adaptation_usability": null,
+      "conflict_handling": null,
+      "notes": null
+    },
+    {
+      "blind_label": "A",
+      "brief_id": "official-segments",
+      "project_relevance": null,
+      "factual_support": null,
+      "adaptation_usability": null,
+      "conflict_handling": null,
+      "notes": null
+    },
+    {
+      "blind_label": "B",
+      "brief_id": "official-awards",
+      "project_relevance": null,
+      "factual_support": null,
+      "adaptation_usability": null,
+      "conflict_handling": null,
+      "notes": null
+    },
+    {
+      "blind_label": "B",
+      "brief_id": "official-campaigns",
+      "project_relevance": null,
+      "factual_support": null,
+      "adaptation_usability": null,
+      "conflict_handling": null,
+      "notes": null
+    },
+    {
+      "blind_label": "B",
+      "brief_id": "official-segments",
+      "project_relevance": null,
+      "factual_support": null,
+      "adaptation_usability": null,
+      "conflict_handling": null,
+      "notes": null
+    },
+    {
+      "blind_label": "C",
+      "brief_id": "official-awards",
+      "project_relevance": null,
+      "factual_support": null,
+      "adaptation_usability": null,
+      "conflict_handling": null,
+      "notes": null
+    },
+    {
+      "blind_label": "C",
+      "brief_id": "official-campaigns",
+      "project_relevance": null,
+      "factual_support": null,
+      "adaptation_usability": null,
+      "conflict_handling": null,
+      "notes": null
+    },
+    {
+      "blind_label": "C",
+      "brief_id": "official-segments",
+      "project_relevance": null,
+      "factual_support": null,
+      "adaptation_usability": null,
+      "conflict_handling": null,
+      "notes": null
+    },
+    {
+      "blind_label": "D",
+      "brief_id": "official-awards",
+      "project_relevance": null,
+      "factual_support": null,
+      "adaptation_usability": null,
+      "conflict_handling": null,
+      "notes": null
+    },
+    {
+      "blind_label": "D",
+      "brief_id": "official-campaigns",
+      "project_relevance": null,
+      "factual_support": null,
+      "adaptation_usability": null,
+      "conflict_handling": null,
+      "notes": null
+    },
+    {
+      "blind_label": "D",
+      "brief_id": "official-segments",
+      "project_relevance": null,
+      "factual_support": null,
+      "adaptation_usability": null,
+      "conflict_handling": null,
+      "notes": null
+    }
+  ]
+}

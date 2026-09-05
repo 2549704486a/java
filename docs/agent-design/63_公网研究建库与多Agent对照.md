@@ -553,3 +553,45 @@ research-data/runs/public-research-comparison/CODEX_DELEGATED/
 单 Agent 活动运行的 `COMPLETED` 只表示模型与 Tool 循环没有抛异常，不表示研究目标完成；`target_completion=0` 和运行级门禁问题才反映实际结果。单 Agent 客群的 `failure.json` 保留错误阶段、错误类别、错误消息及墙钟时间。多 Agent 三份结果都在规划完成后的确定性校验处停止，尚未访问公网：规划 Agent 为多个任务生成的查询总数超过冻结的 8 次上限，协调器拒绝执行。
 
 Pilot 曾允许根据可复现问题修正实现，正式对照冻结后则不能看到失败再只优化项目执行臂。若现在减少规划查询、提高递归上限或重跑失败样本，比较就会把“经过结果反馈优化的项目臂”与一次性 Codex 结果放在一起，结论失去公平性。因此，本阶段保留全部失败目录，后续匿名材料应把失败状态和零完成度展示给评分者；架构改进只能在本轮实验结束后进入新版本。
+
+### 8.7 正式匿名评分材料
+
+正式评分不能只读取包含 `bundle.json` 的成功目录。项目多 Agent 的三份结果和项目单 Agent 的一份结果只有 `brief.json + failure.json`；如果忽略这些目录，评分会悄悄排除表现最差的执行结果。`load_evaluation_run()` 现在对失败产物执行严格解析，再构造统一评估记录：
+
+```json
+{
+  "status": "FAILED",
+  "candidate_count": 0,
+  "target_completion": 0.0,
+  "model_call_count": null,
+  "tool_call_count": null,
+  "input_tokens": null,
+  "output_tokens": null
+}
+```
+
+这里的零候选和零完成度是已知事实；模型、Tool 与 Token 调用量没有统一失败摘要，因此保持 `null`，不能因为没有标准阶段记录就写成 0。空候选包仍重新执行统一门禁，所以会保留 `NO_READABLE_SOURCE` 和 `TARGET_COUNT_NOT_MET` 等质量问题。
+
+`prepare-evaluation` 要求显式传入并锁定十二个正式运行，生成以下五个文件：
+
+```text
+research-data/runs/public-research-comparison/evaluation/official-blind-review-v1/
+├── evaluation-input.json       # 本轮固定使用的十二个运行，仅揭盲流程使用
+├── blind-mapping.json          # 匿名标签与执行臂映射，不提供给评分者
+├── blind-package.json          # 机器可读匿名材料
+├── blind-review.md             # 人工可读匿名材料
+└── score-sheet-template.json   # 待填写的十二份四维评分
+```
+
+匿名化不只删除 `arm` 和 `run_id`。原始数据中的候选 ID、来源 ID、摘录 ID，以及 `review_note`、门禁说明中对这些 ID 的文字引用也会同步改写为 `candidate-blind-*`、`source-blind-*`。第一次生成后，反向扫描发现 `review_note` 仍残留 `source-page-001-excerpt-004`；该版材料被废弃，修正正文引用后重新生成。最终对四个执行臂名称、十二个运行 ID 和所有原始候选/来源/摘录 ID 共 135 个值执行扫描，用户可见文件命中数为 0。
+
+正式匿名包包含 12 份材料：8 份状态为 `COMPLETED`，4 份为 `FAILED`，其中 5 份没有候选。评分者需要按“匿名标签 + 简报”分别给出以下四项 1 至 5 分，并填写简短依据：
+
+| 维度 | 评分关注点 |
+| --- | --- |
+| 项目相关性 | 候选是否能充实当前积分激励项目，而不是只有泛泛概念 |
+| 事实支持程度 | 关键结论是否能由展示的公开来源直接支持 |
+| 适配建议可用性 | 是否说明如何迁移到项目，以及哪些参数仍需内部确认 |
+| 冲突处理质量 | 是否识别时间、版本、地区、口径或来源冲突并避免静默合并 |
+
+评分前不读取 `blind-mapping.json`。只有十二份评分全部完成后才能生成不可覆盖的 `locked-scores.json`，之后才允许揭盲和生成比较报告。当前阶段已经完成材料准备，但尚未锁定人工评分，也尚未形成执行臂胜负或保留建议。

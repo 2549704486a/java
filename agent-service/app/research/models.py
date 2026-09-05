@@ -417,6 +417,26 @@ class ExternalRunPayload(StrictModel):
     summary: RunSummary
 
 
+class FailedRunArtifact(StrictModel):
+    experiment_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
+    run_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{4,95}$")
+    brief_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
+    brief_version: str = Field(pattern=r"^v[1-9][0-9]*$")
+    arm: ExperimentArm
+    status: Literal["FAILED"]
+    failure_stage: str = Field(min_length=2, max_length=80)
+    error_category: str = Field(min_length=2, max_length=80)
+    message: str = Field(min_length=1, max_length=5000)
+    started_at: AwareDatetime
+    completed_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def validate_failure_timing(self) -> "FailedRunArtifact":
+        if self.completed_at < self.started_at:
+            raise ValueError("失败运行的结束时间不能早于开始时间")
+        return self
+
+
 class EvaluationRunRecord(StrictModel):
     brief: ResearchBrief
     bundle: CandidateBundle
@@ -460,7 +480,7 @@ class RunEvaluationMetrics(StrictModel):
     gate_failed_candidate_count: int = Field(ge=0)
     elapsed_seconds: float | None = Field(default=None, ge=0)
     model_call_count: int | None = Field(default=None, ge=0)
-    tool_call_count: int = Field(ge=0)
+    tool_call_count: int | None = Field(default=None, ge=0)
     input_tokens: int | None = Field(default=None, ge=0)
     output_tokens: int | None = Field(default=None, ge=0)
     retry_count: int = Field(ge=0)
@@ -486,6 +506,32 @@ class BlindMapping(StrictModel):
             raise ValueError("匿名标签不能重复")
         if set(arms) != set(ExperimentArm) or len(set(arms)) != len(ExperimentArm):
             raise ValueError("匿名映射必须完整覆盖四个执行臂")
+        return self
+
+
+class EvaluationRunReference(StrictModel):
+    arm: ExperimentArm
+    brief_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
+    brief_version: str = Field(pattern=r"^v[1-9][0-9]*$")
+    run_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{4,95}$")
+
+
+class EvaluationInputManifest(StrictModel):
+    experiment_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
+    policy_version: str = Field(pattern=r"^v[1-9][0-9]*$")
+    created_at: AwareDatetime
+    runs: list[EvaluationRunReference] = Field(min_length=12, max_length=12)
+
+    @model_validator(mode="after")
+    def validate_unique_runs(self) -> "EvaluationInputManifest":
+        keys = [(item.arm, item.brief_id) for item in self.runs]
+        run_ids = [item.run_id for item in self.runs]
+        if len(keys) != len(set(keys)):
+            raise ValueError("同一执行臂和简报只能选择一个正式运行")
+        if len(run_ids) != len(set(run_ids)):
+            raise ValueError("同一个运行不能重复进入正式评估")
+        if any(keys.count((arm, brief_id)) > 1 for arm, brief_id in keys):
+            raise ValueError("正式评估运行存在重复")
         return self
 
 

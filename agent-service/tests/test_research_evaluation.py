@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from datetime import datetime, timezone
@@ -10,9 +11,11 @@ from pydantic import ValidationError
 from app.research.artifacts import ResearchRunStore
 from app.research.evaluation import (
     build_blind_package,
+    build_evaluation_manifest,
     calculate_run_metrics,
     create_blind_mapping,
     import_external_run,
+    load_evaluation_run,
     lock_scores,
     persist_blind_evaluation,
     persist_locked_scores,
@@ -68,22 +71,25 @@ class ResearchEvaluationTest(unittest.TestCase):
         *,
         candidate_count: int = 1,
         known_tokens: bool = True,
+        identity_tag: str = "fixed",
     ) -> EvaluationRunRecord:
         source = SourceEvidence(
-            source_id="source-fixed-page-001",
+            source_id=f"source-{identity_tag}-page-001",
             url="https://example.com/official",
             title="Official source",
             publisher="example.com",
             retrieved_at=NOW,
             discovered_by=SourceDiscoveryMethod.BRIEF_URL,
             excerpt="This official source supports the fixed comparison candidate.",
-            excerpt_ids=["source-fixed-page-001-excerpt-001"],
+            excerpt_ids=[f"source-{identity_tag}-page-001-excerpt-001"],
             read_status=SourceReadStatus.READABLE,
         )
         asset_type = brief.targets[0].asset_type
         candidates = [
             CandidateAsset(
-                candidate_id=f"candidate-{brief.brief_id}-{index + 1:02d}",
+                candidate_id=(
+                    f"candidate-{identity_tag}-{brief.brief_id}-{index + 1:02d}"
+                ),
                 brief_id=brief.brief_id,
                 brief_version=brief.version,
                 asset_type=asset_type,
@@ -243,9 +249,54 @@ class ResearchEvaluationTest(unittest.TestCase):
         self.assertIsNone(metrics.elapsed_seconds)
         self.assertEqual(1.0, metrics.traceable_claim_rate)
 
+    def test_failure_only_run_is_loaded_as_zero_candidate_failed_record(self):
+        brief = self.briefs[0]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            run_dir = Path(temp_dir) / "failed-run"
+            run_dir.mkdir()
+            (run_dir / "brief.json").write_text(
+                brief.model_dump_json(indent=2),
+                encoding="utf-8",
+            )
+            (run_dir / "failure.json").write_text(
+                json.dumps(
+                    {
+                        "experiment_id": self.policy.experiment_id,
+                        "run_id": "official-awards-project-multi-failed",
+                        "brief_id": brief.brief_id,
+                        "brief_version": brief.version,
+                        "arm": ExperimentArm.PROJECT_MULTI.value,
+                        "status": "FAILED",
+                        "failure_stage": "PROJECT_MULTI_RUN",
+                        "error_category": "ValueError",
+                        "message": "研究计划超过冻结预算",
+                        "started_at": NOW.isoformat(),
+                        "completed_at": NOW.isoformat(),
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            record = load_evaluation_run(run_dir)
+            metrics = calculate_run_metrics(record)
+
+        self.assertEqual(RunStatus.FAILED, record.summary.status)
+        self.assertEqual([], record.bundle.candidates)
+        self.assertEqual(0.0, metrics.target_completion)
+        self.assertIsNone(metrics.model_call_count)
+        self.assertIsNone(metrics.tool_call_count)
+        self.assertIsNone(metrics.input_tokens)
+        self.assertEqual(2, metrics.run_issue_count)
+
     def test_blind_package_does_not_expose_arm_or_run_identity(self):
         records = [
-            self.make_record(self.briefs[0], arm) for arm in ExperimentArm
+            self.make_record(
+                self.briefs[0],
+                arm,
+                identity_tag=arm.value.lower().replace("_", "-"),
+            )
+            for arm in ExperimentArm
         ]
         package = build_blind_package(
             self.policy,
@@ -259,7 +310,13 @@ class ResearchEvaluationTest(unittest.TestCase):
             self.assertNotIn(arm.value, serialized)
         for record in records:
             self.assertNotIn(record.summary.run_id, serialized)
+            for source in record.bundle.sources:
+                self.assertNotIn(source.source_id, serialized)
+            for candidate in record.bundle.candidates:
+                self.assertNotIn(candidate.candidate_id, serialized)
         self.assertEqual(4, len(package.materials))
+        self.assertIn("source-blind-001", serialized)
+        self.assertIn("candidate-blind-001", serialized)
 
         payload = package.model_dump(mode="python")
         payload["materials"][0]["quality_metrics"]["arm"] = "PROJECT_SINGLE"
@@ -268,8 +325,15 @@ class ResearchEvaluationTest(unittest.TestCase):
 
     def test_score_lock_requires_every_anonymous_material_once(self):
         records = [
-            self.make_record(self.briefs[0], arm) for arm in ExperimentArm
+            self.make_record(brief, arm)
+            for brief in self.briefs
+            for arm in ExperimentArm
         ]
+        manifest = build_evaluation_manifest(
+            self.policy,
+            records,
+            created_at=NOW,
+        )
         package = build_blind_package(
             self.policy,
             self.mapping,
@@ -282,7 +346,7 @@ class ResearchEvaluationTest(unittest.TestCase):
             lock_scores(package, scores[:-1], locked_at=NOW)
 
         locked = lock_scores(package, scores, locked_at=NOW)
-        self.assertEqual(4, len(locked.records))
+        self.assertEqual(12, len(locked.records))
 
         with tempfile.TemporaryDirectory() as temp_dir:
             store = ResearchRunStore(temp_dir)
@@ -290,8 +354,19 @@ class ResearchEvaluationTest(unittest.TestCase):
                 store,
                 self.policy,
                 "evaluation-fixed-001",
+                manifest,
                 self.mapping,
                 package,
+            )
+            self.assertEqual(
+                {
+                    "blind-mapping.json",
+                    "blind-package.json",
+                    "blind-review.md",
+                    "evaluation-input.json",
+                    "score-sheet-template.json",
+                },
+                {path.name for path in evaluation_dir.iterdir()},
             )
             persist_locked_scores(store, evaluation_dir, locked)
             with self.assertRaises(FileExistsError):

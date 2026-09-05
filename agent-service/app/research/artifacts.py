@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 _SAFE_COMPONENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{1,95}$")
 _SAFE_FILENAME = re.compile(r"^[a-z0-9][a-z0-9-]{1,63}\.json$")
+_SAFE_TEXT_FILENAME = re.compile(r"^[a-z0-9][a-z0-9-]{1,63}\.md$")
 
 
 class ResearchRunStore:
@@ -71,6 +72,23 @@ class ResearchRunStore:
         payload = value.model_dump(mode="json") if isinstance(value, BaseModel) else value
         with output_path.open("x", encoding="utf-8", newline="\n") as output:
             json.dump(payload, output, ensure_ascii=False, indent=2)
+            output.write("\n")
+        return output_path
+
+    def write_text_once(
+        self,
+        run_directory: str | Path,
+        filename: str,
+        value: str,
+    ) -> Path:
+        if not _SAFE_TEXT_FILENAME.fullmatch(filename):
+            raise ValueError("文本产物文件名必须是安全的小写 Markdown 文件名")
+        checked_directory = self._ensure_below_root(Path(run_directory).resolve())
+        if not checked_directory.is_dir():
+            raise ValueError("运行目录不存在")
+        output_path = self._ensure_below_root(checked_directory / filename)
+        with output_path.open("x", encoding="utf-8", newline="\n") as output:
+            output.write(value.rstrip())
             output.write("\n")
         return output_path
 

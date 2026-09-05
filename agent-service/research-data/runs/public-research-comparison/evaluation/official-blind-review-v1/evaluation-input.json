@@ -1,0 +1,79 @@
+{
+  "experiment_id": "public-research-comparison",
+  "policy_version": "v1",
+  "created_at": "2026-09-05T01:14:31.794126Z",
+  "runs": [
+    {
+      "arm": "CODEX_DELEGATED",
+      "brief_id": "official-awards",
+      "brief_version": "v1",
+      "run_id": "official-awards-codex-delegated-001"
+    },
+    {
+      "arm": "CODEX_DELEGATED",
+      "brief_id": "official-campaigns",
+      "brief_version": "v1",
+      "run_id": "official-campaigns-codex-delegated-001"
+    },
+    {
+      "arm": "CODEX_DELEGATED",
+      "brief_id": "official-segments",
+      "brief_version": "v1",
+      "run_id": "official-segments-codex-delegated-001"
+    },
+    {
+      "arm": "CODEX_DIRECT",
+      "brief_id": "official-awards",
+      "brief_version": "v1",
+      "run_id": "official-awards-codex-direct-001"
+    },
+    {
+      "arm": "CODEX_DIRECT",
+      "brief_id": "official-campaigns",
+      "brief_version": "v1",
+      "run_id": "official-campaigns-codex-direct-001"
+    },
+    {
+      "arm": "CODEX_DIRECT",
+      "brief_id": "official-segments",
+      "brief_version": "v1",
+      "run_id": "official-segments-codex-direct-001"
+    },
+    {
+      "arm": "PROJECT_MULTI",
+      "brief_id": "official-awards",
+      "brief_version": "v1",
+      "run_id": "official-awards-project-multi-001"
+    },
+    {
+      "arm": "PROJECT_MULTI",
+      "brief_id": "official-campaigns",
+      "brief_version": "v1",
+      "run_id": "official-campaigns-project-multi-001"
+    },
+    {
+      "arm": "PROJECT_MULTI",
+      "brief_id": "official-segments",
+      "brief_version": "v1",
+      "run_id": "official-segments-project-multi-001"
+    },
+    {
+      "arm": "PROJECT_SINGLE",
+      "brief_id": "official-awards",
+      "brief_version": "v1",
+      "run_id": "official-awards-project-single-001"
+    },
+    {
+      "arm": "PROJECT_SINGLE",
+      "brief_id": "official-campaigns",
+      "brief_version": "v1",
+      "run_id": "official-campaigns-project-single-001"
+    },
+    {
+      "arm": "PROJECT_SINGLE",
+      "brief_id": "official-segments",
+      "brief_version": "v1",
+      "run_id": "official-segments-project-single-001"
+    }
+  ]
+}
