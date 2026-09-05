@@ -1,6 +1,6 @@
 # 积分激励与智能运营产品基线
 
-> 本页描述用户和运营人员当前能够完成什么，以及产品明确不做什么。实现细节和开发顺序分别查看 `docs/agent-context/` 与路线图；源码与本页冲突时，以当前源码为准并修正文档。
+> 本页为可选产品说明，仅在需要解释业务含义时选读相关章节。当前源码与运行证据优先；开发范围由用户当前需求及已确认任务决定。
 
 ## 1. Product
 
@@ -113,7 +113,7 @@
 
 ## 9. Where To Go Next
 
-- 当前优先级：[Agent 课程能力落地路线图](docs/agent-design/20_Agent课程能力落地路线图.md)
+- 当前优先级：用户最新需求与已确认的当前任务，不自动读取历史路线图。
 - 项目事实：[Agent 上下文包](docs/agent-context/README.md)
 - 代码与运行文档：[文档导航](docs/README.md)
 - 复杂功能设计：[OpenSpec 当前变更](openspec/changes/)；使用规则见 [AGENTS.md](AGENTS.md)

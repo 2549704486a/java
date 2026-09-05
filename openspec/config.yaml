@@ -4,9 +4,11 @@ context: |
   This is a brownfield points-incentive product with a Java business service,
   Python user/operator Agents, and a React web UI.
   Read AGENTS.md first for repository navigation and immutable boundaries.
-  Read PRODUCT.md for the current product baseline, then load only the relevant
-  files from docs/agent-context/ and the current priority roadmap at
-  docs/agent-design/20_Agent课程能力落地路线图.md.
+  Reuse context already read in this session. Read only the current change's
+  task, relevant spec sections, and directly affected code. Product and design
+  documents are optional references; never follow links as a reading checklist.
+  Do not load or maintain the capability roadmap, course index, transcripts,
+  or any course materials unless explicitly requested in the current question.
   The exchange flow only uses the existing RocketMQ transaction-message chain.
   Historical load-test documents and results are excluded from Agent work.
 
@@ -26,7 +28,7 @@ rules:
     - State source-of-truth, authorization, idempotency, audit, and rollback boundaries when relevant.
   tasks:
     - Keep each task scoped to one observable outcome and order tasks by dependency.
-    - Include documentation updates only where they prevent factual drift; do not create parallel documentation systems.
+    - Update only directly affected documentation; no routine roadmap, course-coverage or journal updates.
     - Prefer targeted checks; require broad regression only when the change impact justifies it.
 
 operations:

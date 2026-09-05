@@ -104,15 +104,17 @@ public class AwardQueryMcpConfiguration {
                                      McpJsonMapper jsonMapper,
                                      JsonSchemaValidator schemaValidator,
                                      AwardQueryMcpTool tool) {
-        return McpServer.sync(transport)
+        var server = McpServer.sync(transport)
                 .serverInfo("incentive-award-query", "0.1.0")
-                .instructions("只提供公开奖品详情查询，不提供用户、订单、兑换或运营写操作。")
+                .instructions("提供用户 Agent 所需的受控只读业务查询；身份参数仅供受信客户端注入。")
                 .requestTimeout(Duration.ofSeconds(5))
                 .capabilities(McpSchema.ServerCapabilities.builder().tools(false).build())
                 .jsonMapper(jsonMapper)
-                .jsonSchemaValidator(schemaValidator)
-                .toolCall(tool.definition(), (exchange, request) -> tool.invoke(request))
-                .build();
+                .jsonSchemaValidator(schemaValidator);
+        for (McpSchema.Tool definition : tool.definitions()) {
+            server.toolCall(definition, (exchange, request) -> tool.invoke(request));
+        }
+        return server.build();
     }
 
     static final class LoopbackOnlyFilter extends OncePerRequestFilter {
